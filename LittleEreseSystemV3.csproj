@@ -33,11 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="PresentationCore" />
-    <Reference Include="PresentationFramework" />
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -47,44 +45,79 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Controls\ucActivityLog.xaml.cs">
-      <DependentUpon>ucActivityLog.xaml</DependentUpon>
+    <Compile Include="Controls\ucActivityLog.cs">
+      <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\ucAppointments.xaml.cs">
-      <DependentUpon>ucAppointments.xaml</DependentUpon>
+    <Compile Include="Controls\ucActivityLog.Designer.cs">
+      <DependentUpon>ucActivityLog.cs</DependentUpon>
     </Compile>
-    <Compile Include="Controls\ucBilling.xaml.cs">
-      <DependentUpon>ucBilling.xaml</DependentUpon>
+    <Compile Include="Controls\ucAppointments.cs">
+      <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\ucClients.xaml.cs">
-      <DependentUpon>ucClients.xaml</DependentUpon>
+    <Compile Include="Controls\ucAppointments.Designer.cs">
+      <DependentUpon>ucAppointments.cs</DependentUpon>
     </Compile>
-    <Compile Include="Controls\ucCommissions.xaml.cs">
-      <DependentUpon>ucCommissions.xaml</DependentUpon>
+    <Compile Include="Controls\ucBilling.cs">
+      <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\ucDashboard.xaml.cs">
-      <DependentUpon>ucDashboard.xaml</DependentUpon>
+    <Compile Include="Controls\ucBilling.Designer.cs">
+      <DependentUpon>ucBilling.cs</DependentUpon>
     </Compile>
-    <Compile Include="Controls\ucFileMaintenance.xaml.cs">
-      <DependentUpon>ucFileMaintenance.xaml</DependentUpon>
+    <Compile Include="Controls\ucClients.cs">
+      <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\ucPromotions.xaml.cs">
-      <DependentUpon>ucPromotions.xaml</DependentUpon>
+    <Compile Include="Controls\ucClients.Designer.cs">
+      <DependentUpon>ucClients.cs</DependentUpon>
     </Compile>
-    <Compile Include="Controls\ucReports.xaml.cs">
-      <DependentUpon>ucReports.xaml</DependentUpon>
+    <Compile Include="Controls\ucCommissions.cs">
+      <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\ucServices.xaml.cs">
-      <DependentUpon>ucServices.xaml</DependentUpon>
+    <Compile Include="Controls\ucCommissions.Designer.cs">
+      <DependentUpon>ucCommissions.cs</DependentUpon>
     </Compile>
-    <Compile Include="Controls\ucSettings.xaml.cs">
-      <DependentUpon>ucSettings.xaml</DependentUpon>
+    <Compile Include="Controls\ucDashboard.cs">
+      <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\ucStaffAccounts.xaml.cs">
-      <DependentUpon>ucStaffAccounts.xaml</DependentUpon>
+    <Compile Include="Controls\ucDashboard.Designer.cs">
+      <DependentUpon>ucDashboard.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ucFileMaintenance.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ucFileMaintenance.Designer.cs">
+      <DependentUpon>ucFileMaintenance.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ucPromotions.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ucPromotions.Designer.cs">
+      <DependentUpon>ucPromotions.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ucReports.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ucReports.Designer.cs">
+      <DependentUpon>ucReports.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ucServices.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ucServices.Designer.cs">
+      <DependentUpon>ucServices.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ucSettings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ucSettings.Designer.cs">
+      <DependentUpon>ucSettings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ucStaffAccounts.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ucStaffAccounts.Designer.cs">
+      <DependentUpon>ucStaffAccounts.cs</DependentUpon>
     </Compile>
     <Compile Include="Data\ActivityRepository.cs" />
     <Compile Include="Data\AppointmentRepository.cs" />
@@ -159,7 +192,6 @@
     <Compile Include="Helpers\Session.cs" />
     <Compile Include="Helpers\Theme.cs" />
     <Compile Include="Helpers\Validators.cs" />
-    <Compile Include="obj\Debug\.NETFramework,Version=v4.8.AssemblyAttributes.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -171,8 +203,6 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <None Include="obj\Debug\DesignTimeResolveAssemblyReferencesInput.cache" />
-    <None Include="obj\Debug\LittleEreseSystemV3.csproj.AssemblyReference.cache" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -187,92 +217,12 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include=".gitattributes" />
-    <Content Include="Assets\Images\BillingIcon.png" />
-    <Content Include="Assets\Images\BusinessIcon.png" />
-    <Content Include="Assets\Images\BusinessLogoIcon.png" />
-    <Content Include="Assets\Images\CalendarDarkIcon.png" />
-    <Content Include="Assets\Images\CalendarWhiteIcon.png" />
-    <Content Include="Assets\Images\CheckIcon.png" />
-    <Content Include="Assets\Images\ClockIcon.png" />
-    <Content Include="Assets\Images\CrownIcon.png" />
-    <Content Include="Assets\Images\DashboardHouseIcon.png" />
-    <Content Include="Assets\Images\DiscountIcon.png" />
-    <Content Include="Assets\Images\FileMaintenanceIcon.png" />
-    <Content Include="Assets\Images\FullSpaImage.png" />
-    <Content Include="Assets\Images\ImageSpaLogoMiddle.png" />
-    <Content Include="Assets\Images\ImageSpaLogoTop.png" />
-    <Content Include="Assets\Images\InformationIcon.png" />
-    <Content Include="Assets\Images\LogoutIcon.png" />
-    <Content Include="Assets\Images\MenuDarkIcon.png" />
-    <Content Include="Assets\Images\MenuShapesIcon.png" />
-    <Content Include="Assets\Images\MenuWhiteIcon.png" />
-    <Content Include="Assets\Images\NoteAsteriskIcon.png" />
-    <Content Include="Assets\Images\PeopleIcon.png" />
-    <Content Include="Assets\Images\PriceIcon.png" />
-    <Content Include="Assets\Images\ReportIcon.png" />
-    <Content Include="Assets\Images\ServicesIcon.png" />
-    <Content Include="Assets\Images\SettingsIcon.png" />
-    <Content Include="Assets\Images\StaffRoleIcon.png" />
-    <Content Include="Assets\Images\TimeIcon.png" />
-    <Content Include="Assets\Images\UserIconDarkYellowishColorTransparent.png" />
-    <Content Include="Assets\Images\UserIconYellowishColorTransparent.png" />
-    <Content Include="Assets\Images\UserTransparentIcon.png" />
-    <Content Include="Assets\Images\WhiteUserIcon.png" />
+    <Content Include="Assets\**\*.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="bin\Debug\" />
-    <Folder Include="obj\Debug\TempPE\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Page Include="Controls\ucActivityLog.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\ucAppointments.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\ucBilling.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\ucClients.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\ucCommissions.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\ucDashboard.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\ucFileMaintenance.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\ucPromotions.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\ucReports.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\ucServices.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\ucSettings.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\ucStaffAccounts.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
+    <None Include="Database\*.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
