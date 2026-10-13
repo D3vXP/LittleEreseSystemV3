@@ -65,6 +65,12 @@
     <Compile Include="Controls\ucBilling.Designer.cs">
       <DependentUpon>ucBilling.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\ucCalendarMonth.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ucCalendarMonth.Designer.cs">
+      <DependentUpon>ucCalendarMonth.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\ucClients.cs">
       <SubType>UserControl</SubType>
     </Compile>
