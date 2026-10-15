@@ -13,8 +13,16 @@ namespace LittleEreseSystemV3
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
+            // --smoketest: build every form/control and check the database, then exit.
+            // Used after a change to prove nothing in the UI is broken.
+            if (args != null && Array.IndexOf(args, "--smoketest") >= 0)
+            {
+                SmokeTest.Run();
+                return;
+            }
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
@@ -23,6 +31,25 @@ namespace LittleEreseSystemV3
             Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
             Application.ThreadException += new System.Threading.ThreadExceptionEventHandler(OnThreadException);
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(OnDomainException);
+
+            // Without a reachable database nothing works, so say so and stop instead of
+            // letting the login screen fail in a confusing way.
+            string databaseError;
+            if (!Db.CanConnect(out databaseError))
+            {
+                Messages.Error(databaseError);
+                return;
+            }
+
+            // Demo accounts (admin + staff) for the owner to try the system with.
+            try
+            {
+                DemoDataSeeder.EnsureDemoUsers();
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+            }
 
             Application.Run(new LoginForm());
         }
