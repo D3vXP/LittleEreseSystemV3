@@ -43,3 +43,11 @@ Read this file, PROGRESS.md and Database/LittleEreses_Database.sql at the start 
 ## At the end of every task
 - Update PROGRESS.md: what was finished, what is next, known issues.
 - Tell the user which forms/controls to open in the Designer to check.
+
+## Additions (Step 1)
+- Designer.cs files set colors with literal Color.FromArgb values copied from Theme so the Designer preview matches runtime. Theme methods are for runtime styling in Load events only.
+- Exception to "controls only in InitializeComponent": items generated from data (for example the day cells of the calendar) may be created in code, inside a method that runs after Load and starts with: if (DesignTime.IsDesignMode) return; Never create fixed layout controls in code.
+- Controls\ucCalendarMonth already exists for the Dashboard month calendar. It is a read-only overview; booking and rescheduling stay in the Appointments module.
+- Never run git commands that change the repository (commit, add, reset, checkout, clean, stash, push, pull). Reading git status or git diff is fine.
+- Save tokens: do not re-read files you already read in this chat, read only the files the task needs, and summarize build output (error/warning counts and the first few messages) instead of pasting all of it.
+- Demo accounts: admin / Admin@123. Staff accounts use the password Staff@123.
