@@ -1,11 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace LittleEreseSystemV3.Forms
@@ -15,6 +8,21 @@ namespace LittleEreseSystemV3.Forms
         public LoginForm()
         {
             InitializeComponent();
+        }
+
+        private void LoginForm_Load(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
+
+        private void btnLogin_Click(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
+
+        private void btnShowPassword_Click(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
         }
     }
 }

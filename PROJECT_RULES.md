@@ -51,3 +51,43 @@ Read this file, PROGRESS.md and Database/LittleEreses_Database.sql at the start 
 - Never run git commands that change the repository (commit, add, reset, checkout, clean, stash, push, pull). Reading git status or git diff is fine.
 - Save tokens: do not re-read files you already read in this chat, read only the files the task needs, and summarize build output (error/warning counts and the first few messages) instead of pasting all of it.
 - Demo accounts: admin / Admin@123. Staff accounts use the password Staff@123.
+
+## Additions (Step 2)
+### Standard clean build (do this at the end of every prompt)
+Close any running copy of the app. Delete only bin and obj (also .vs if it is not locked). Build: msbuild LittleEreseSystemV3.csproj /t:Rebuild /p:Configuration=Debug /nologo /v:minimal (find MSBuild with vswhere). Required: 0 errors, 0 warnings. Then run bin\Debug\LittleEreseSystemV3.exe --smoketest and report the SUMMARY line (everything must PASS).
+### Layout prompts (Designer work only)
+- Edit only the files named in the prompt (.cs and .Designer.cs). No database, file or Session access and no logic. Every event wired in InitializeComponent gets an empty handler in the .cs with the exact signature and the comment // TODO(logic prompt).
+- Every form/control keeps a public parameterless constructor that only calls InitializeComponent().
+- DataGridView: AutoGenerateColumns = false; columns are defined in the Designer with Name, HeaderText and DataPropertyName set; ID columns Visible = false; ReadOnly = true unless said otherwise.
+- Do not set Image properties in the Designer (images load at runtime). Use literal Color.FromArgb values equal to Theme colors, and give buttons/grids the same look as Theme.StylePrimaryButton / StyleSecondaryButton / StyleDangerButton / StyleGrid so the Designer preview matches runtime.
+- Use Dock, Anchor, TableLayoutPanel and FlowLayoutPanel so screens work at 1366x768. Pages (UserControls) have BackColor AppBack and a default size of 1000x640; the MainForm docks them to Fill.
+- After building, run bin\Debug\LittleEreseSystemV3.exe --preview <ClassName>, open previews\<ClassName>.png, and fix overlaps, truncated text and misaligned controls (maximum 2 fix rounds).
+### Logic prompts (code-behind and repositories)
+- Do not restructure the Designer layout. Small Designer fixes (a missing control or column) are allowed and must be mentioned in the report.
+- Query column aliases must match the DataPropertyName values in the Designer exactly.
+- Load data in the Load event, guarded by: if (DesignTime.IsDesignMode) return;
+- Repository methods use Db helpers and parameters only and return DataTable / DataRow / scalars. Forms contain no SQL. Wrap repository calls in try/catch and show Messages.DbError(ex).
+- All input validation uses Validators and an ErrorProvider (errorProvider1). Add new patterns to Validators, never inline.
+- Log important actions with ActivityRepository.Log(Session.UserId, action, module, description).
+- Edit forms (ClientEditForm, ServiceEditForm, ...) keep a parameterless constructor and expose public properties (for example public int EditId, 0 = new) that the caller sets before ShowDialog(); data loads in the Load event.
+- Add // POLISH: comments where I may want to adjust text, limits or rules.
+- Extend Helpers\SmokeTest.cs with up to 3 READ-ONLY checks for the repository methods you add.
+- Finish with the standard clean build and update PROGRESS.md.
+### Roles
+- Admin: everything.
+- Staff: Dashboard, Appointments, Clients (view/add/edit), Services and Promotions (view only; Promotions shows only Active ones valid today), Billing, Settings (own password).
+- Staff must NOT see: Commissions, Reports, Staff Accounts, File Maintenance, Activity Log, or sales amounts on the Dashboard. Hide those navigation buttons and controls, and also check Session.IsAdmin before running admin actions in code.
+### Database value lists (CHECK constraints - use exactly these strings)
+Users.role: Admin | Staff. Users.status: Active | Inactive. Services.status: Active | Archived. Promotions.discount_type: Percentage | Fixed. Promotions.status: Active | Inactive | Expired. Rooms.status: Available | Unavailable. ClientPackages.status: Active | Completed | Expired. Appointments.booking_source: Walk-in | Messenger | Text | Phone. Appointments.status: Upcoming | Ongoing | Completed | Cancelled | Rescheduled. AppointmentServices.status: Pending | Completed | Cancelled. AppointmentStaff.status: Assigned | Completed | Reassigned. AppointmentRooms.status: Reserved | In Use | Released. AppointmentHistory.change_type: Created | Rescheduled | Cancelled | Status Change. Billing.downpayment_status: None | Held | Applied | Forfeited. Billing.payment_status: Unpaid | Partial | Paid | Forfeited. Payments.payment_type: Downpayment | Final. Payments.payment_method: Cash | GCash | Bank Transfer. Payments.verification_status: Pending | Verified | Rejected. Commissions.payout_status: Unpaid | Paid.
+### Business rules
+- Business: Little Erese's Aesthetics and Spa, San Nicolas Poblacion, Concepcion, Tarlac. Money format: PHP peso sign with #,##0.00. Dates: MMM dd, yyyy. Times: h:mm tt.
+- Opening hours: aesthetic services 10:00 AM to 8:00 PM; massage services (category name starts with "Massage") 1:00 PM to 10:00 PM. Appointment end time = start + sum of duration_minutes of its services; it must finish inside the opening hours of every service in it. Start times are on 30-minute marks.
+- Capacity per day: at most 30 non-cancelled appointments and at most 10 that contain a massage service.
+- Rooms: each appointment service needs a room linked to its category in RoomServiceCategories; a room cannot have more overlapping assigned services than its capacity. A technician cannot have two overlapping services. Technicians are Users with role Staff and status Active.
+- Booking: a non-walk-in booking (Messenger, Text, Phone) needs a 50% downpayment of the subtotal, saved as a Payments row of type Downpayment, Billing.downpayment_status 'Held'. Walk-ins need no downpayment ('None').
+- Promos: only Status Active and today between start_date and end_date. Percentage = subtotal x value / 100; Fixed = value; the discount never exceeds the subtotal. Promos need FULL payment upfront (no installments): when a promo is applied, the amount due now is the full total_amount, saved as a Payments row of type Final, and Billing.payment_status becomes 'Paid'.
+- Cancel / reschedule: must be requested at least 3 days before the appointment date. Inside 3 days only an Admin may do it, and must type a reason. A cancellation always forfeits the money paid upfront: Billing.downpayment_status 'Forfeited' (or payment_status 'Forfeited' for a fully prepaid promo). A reschedule keeps the downpayment 'Held', the appointment stays 'Upcoming', and an AppointmentHistory row with change_type 'Rescheduled' stores the old date, old time and reason.
+- Billing: subtotal = sum of line prices (price at booking time). total_amount = subtotal - discount_amount. balance_due = total_amount - SUM(amount_paid of Payments whose verification_status <> 'Rejected'). payment_status: Unpaid (no payments), Partial, Paid (balance_due = 0).
+- Packages: Services.price is the price of the WHOLE package when default_total_sessions > 1. The package price is charged on the first session line; later sessions of that package have price 0.00. When a client books a service with default_total_sessions > 1 and has no Active package for it, a ClientPackages row is created automatically. Completing a package session adds 1 to sessions_completed; at total_sessions the package becomes 'Completed'.
+- Commission: created when a service line is completed at billing, for the attending staff of that line: 10% (commission_rate 10.00) of the line's net amount (line price minus its proportional share of the discount). For package lines it is 10% of Services.price divided by total_sessions. POLISH: confirm the package rule with the owner.
+- Payment methods: Cash, GCash, Bank Transfer. GCash/Bank Transfer need a reference number and a "payment verified" tick before the payment is saved as 'Verified'. The system never calls any bank or GCash API.

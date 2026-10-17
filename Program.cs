@@ -23,6 +23,14 @@ namespace LittleEreseSystemV3
                 return;
             }
 
+            // --preview <ClassName> [--role Admin|Staff]: build one screen, save a PNG of it
+            // and exit. Used to check a layout without clicking through the app.
+            if (args != null && Array.IndexOf(args, "--preview") >= 0)
+            {
+                PreviewTool.Run(args);
+                return;
+            }
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
