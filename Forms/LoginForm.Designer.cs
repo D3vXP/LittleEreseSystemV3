@@ -66,10 +66,11 @@ namespace LittleEreseSystemV3.Forms
             this.tlpMain.Controls.Add(this.pnlForm, 1, 0);
             this.tlpMain.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlpMain.Location = new System.Drawing.Point(0, 0);
+            this.tlpMain.Margin = new System.Windows.Forms.Padding(4);
             this.tlpMain.Name = "tlpMain";
             this.tlpMain.RowCount = 1;
             this.tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tlpMain.Size = new System.Drawing.Size(920, 580);
+            this.tlpMain.Size = new System.Drawing.Size(1227, 714);
             this.tlpMain.TabIndex = 0;
             // 
             // pnlSide
@@ -81,7 +82,7 @@ namespace LittleEreseSystemV3.Forms
             this.pnlSide.Location = new System.Drawing.Point(0, 0);
             this.pnlSide.Margin = new System.Windows.Forms.Padding(0);
             this.pnlSide.Name = "pnlSide";
-            this.pnlSide.Size = new System.Drawing.Size(460, 580);
+            this.pnlSide.Size = new System.Drawing.Size(613, 714);
             this.pnlSide.TabIndex = 0;
             // 
             // picSide
@@ -89,8 +90,9 @@ namespace LittleEreseSystemV3.Forms
             this.picSide.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(42)))), ((int)(((byte)(36)))), ((int)(((byte)(32)))));
             this.picSide.Dock = System.Windows.Forms.DockStyle.Fill;
             this.picSide.Location = new System.Drawing.Point(0, 0);
+            this.picSide.Margin = new System.Windows.Forms.Padding(4);
             this.picSide.Name = "picSide";
-            this.picSide.Size = new System.Drawing.Size(460, 524);
+            this.picSide.Size = new System.Drawing.Size(613, 645);
             this.picSide.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.picSide.TabIndex = 0;
             this.picSide.TabStop = false;
@@ -101,9 +103,10 @@ namespace LittleEreseSystemV3.Forms
             this.lblTagline.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.lblTagline.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblTagline.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
-            this.lblTagline.Location = new System.Drawing.Point(0, 524);
+            this.lblTagline.Location = new System.Drawing.Point(0, 645);
+            this.lblTagline.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblTagline.Name = "lblTagline";
-            this.lblTagline.Size = new System.Drawing.Size(460, 56);
+            this.lblTagline.Size = new System.Drawing.Size(613, 69);
             this.lblTagline.TabIndex = 1;
             this.lblTagline.Text = "Enhancing your true beauty.";
             this.lblTagline.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -113,25 +116,26 @@ namespace LittleEreseSystemV3.Forms
             this.pnlForm.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
             this.pnlForm.Controls.Add(this.tlpFormOuter);
             this.pnlForm.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pnlForm.Location = new System.Drawing.Point(460, 0);
+            this.pnlForm.Location = new System.Drawing.Point(613, 0);
             this.pnlForm.Margin = new System.Windows.Forms.Padding(0);
             this.pnlForm.Name = "pnlForm";
-            this.pnlForm.Size = new System.Drawing.Size(460, 580);
+            this.pnlForm.Size = new System.Drawing.Size(614, 714);
             this.pnlForm.TabIndex = 1;
             // 
             // tlpFormOuter
             // 
             this.tlpFormOuter.ColumnCount = 3;
             this.tlpFormOuter.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tlpFormOuter.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 340F));
+            this.tlpFormOuter.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 453F));
             this.tlpFormOuter.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tlpFormOuter.Controls.Add(this.tlpLoginCard, 1, 0);
             this.tlpFormOuter.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlpFormOuter.Location = new System.Drawing.Point(0, 0);
+            this.tlpFormOuter.Margin = new System.Windows.Forms.Padding(4);
             this.tlpFormOuter.Name = "tlpFormOuter";
             this.tlpFormOuter.RowCount = 1;
             this.tlpFormOuter.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tlpFormOuter.Size = new System.Drawing.Size(460, 580);
+            this.tlpFormOuter.Size = new System.Drawing.Size(614, 714);
             this.tlpFormOuter.TabIndex = 0;
             // 
             // tlpLoginCard
@@ -140,7 +144,7 @@ namespace LittleEreseSystemV3.Forms
             this.tlpLoginCard.AutoSize = true;
             this.tlpLoginCard.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.tlpLoginCard.ColumnCount = 1;
-            this.tlpLoginCard.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 340F));
+            this.tlpLoginCard.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 453F));
             this.tlpLoginCard.Controls.Add(this.picLogo, 0, 0);
             this.tlpLoginCard.Controls.Add(this.lblTitle, 0, 1);
             this.tlpLoginCard.Controls.Add(this.lblSubtitle, 0, 2);
@@ -151,7 +155,7 @@ namespace LittleEreseSystemV3.Forms
             this.tlpLoginCard.Controls.Add(this.lblError, 0, 7);
             this.tlpLoginCard.Controls.Add(this.btnLogin, 0, 8);
             this.tlpLoginCard.Controls.Add(this.lblFooter, 0, 9);
-            this.tlpLoginCard.Location = new System.Drawing.Point(60, 84);
+            this.tlpLoginCard.Location = new System.Drawing.Point(80, 91);
             this.tlpLoginCard.Margin = new System.Windows.Forms.Padding(0);
             this.tlpLoginCard.Name = "tlpLoginCard";
             this.tlpLoginCard.RowCount = 10;
@@ -165,16 +169,16 @@ namespace LittleEreseSystemV3.Forms
             this.tlpLoginCard.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tlpLoginCard.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tlpLoginCard.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tlpLoginCard.Size = new System.Drawing.Size(340, 413);
+            this.tlpLoginCard.Size = new System.Drawing.Size(453, 531);
             this.tlpLoginCard.TabIndex = 0;
             // 
             // picLogo
             // 
             this.picLogo.Anchor = System.Windows.Forms.AnchorStyles.None;
-            this.picLogo.Location = new System.Drawing.Point(115, 0);
-            this.picLogo.Margin = new System.Windows.Forms.Padding(0, 0, 0, 16);
+            this.picLogo.Location = new System.Drawing.Point(153, 0);
+            this.picLogo.Margin = new System.Windows.Forms.Padding(0, 0, 0, 20);
             this.picLogo.Name = "picLogo";
-            this.picLogo.Size = new System.Drawing.Size(110, 110);
+            this.picLogo.Size = new System.Drawing.Size(147, 135);
             this.picLogo.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.picLogo.TabIndex = 0;
             this.picLogo.TabStop = false;
@@ -185,10 +189,10 @@ namespace LittleEreseSystemV3.Forms
             this.lblTitle.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblTitle.Font = new System.Drawing.Font("Segoe UI Semibold", 22F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblTitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.lblTitle.Location = new System.Drawing.Point(0, 126);
+            this.lblTitle.Location = new System.Drawing.Point(0, 155);
             this.lblTitle.Margin = new System.Windows.Forms.Padding(0, 0, 0, 2);
             this.lblTitle.Name = "lblTitle";
-            this.lblTitle.Size = new System.Drawing.Size(340, 40);
+            this.lblTitle.Size = new System.Drawing.Size(453, 50);
             this.lblTitle.TabIndex = 1;
             this.lblTitle.Text = "Welcome Back";
             this.lblTitle.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -199,10 +203,10 @@ namespace LittleEreseSystemV3.Forms
             this.lblSubtitle.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblSubtitle.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblSubtitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblSubtitle.Location = new System.Drawing.Point(0, 168);
-            this.lblSubtitle.Margin = new System.Windows.Forms.Padding(0, 0, 0, 18);
+            this.lblSubtitle.Location = new System.Drawing.Point(0, 207);
+            this.lblSubtitle.Margin = new System.Windows.Forms.Padding(0, 0, 0, 22);
             this.lblSubtitle.Name = "lblSubtitle";
-            this.lblSubtitle.Size = new System.Drawing.Size(340, 19);
+            this.lblSubtitle.Size = new System.Drawing.Size(453, 23);
             this.lblSubtitle.TabIndex = 2;
             this.lblSubtitle.Text = "Sign in to continue";
             this.lblSubtitle.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -213,10 +217,10 @@ namespace LittleEreseSystemV3.Forms
             this.lblUsername.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblUsername.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblUsername.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.lblUsername.Location = new System.Drawing.Point(0, 205);
+            this.lblUsername.Location = new System.Drawing.Point(0, 252);
             this.lblUsername.Margin = new System.Windows.Forms.Padding(0, 0, 0, 2);
             this.lblUsername.Name = "lblUsername";
-            this.lblUsername.Size = new System.Drawing.Size(340, 19);
+            this.lblUsername.Size = new System.Drawing.Size(453, 23);
             this.lblUsername.TabIndex = 3;
             this.lblUsername.Text = "Username";
             this.lblUsername.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -225,10 +229,10 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.txtUsername.Dock = System.Windows.Forms.DockStyle.Fill;
             this.txtUsername.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtUsername.Location = new System.Drawing.Point(0, 226);
-            this.txtUsername.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
+            this.txtUsername.Location = new System.Drawing.Point(0, 277);
+            this.txtUsername.Margin = new System.Windows.Forms.Padding(0, 0, 0, 15);
             this.txtUsername.Name = "txtUsername";
-            this.txtUsername.Size = new System.Drawing.Size(340, 25);
+            this.txtUsername.Size = new System.Drawing.Size(453, 30);
             this.txtUsername.TabIndex = 4;
             // 
             // lblPassword
@@ -237,10 +241,10 @@ namespace LittleEreseSystemV3.Forms
             this.lblPassword.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblPassword.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblPassword.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.lblPassword.Location = new System.Drawing.Point(0, 263);
+            this.lblPassword.Location = new System.Drawing.Point(0, 322);
             this.lblPassword.Margin = new System.Windows.Forms.Padding(0, 0, 0, 2);
             this.lblPassword.Name = "lblPassword";
-            this.lblPassword.Size = new System.Drawing.Size(340, 19);
+            this.lblPassword.Size = new System.Drawing.Size(453, 23);
             this.lblPassword.TabIndex = 5;
             this.lblPassword.Text = "Password";
             this.lblPassword.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -252,11 +256,11 @@ namespace LittleEreseSystemV3.Forms
             this.pnlPassword.Controls.Add(this.txtPassword);
             this.pnlPassword.Controls.Add(this.btnShowPassword);
             this.pnlPassword.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pnlPassword.Location = new System.Drawing.Point(0, 284);
-            this.pnlPassword.Margin = new System.Windows.Forms.Padding(0, 0, 0, 8);
+            this.pnlPassword.Location = new System.Drawing.Point(0, 347);
+            this.pnlPassword.Margin = new System.Windows.Forms.Padding(0, 0, 0, 10);
             this.pnlPassword.Name = "pnlPassword";
-            this.pnlPassword.Padding = new System.Windows.Forms.Padding(6, 3, 0, 3);
-            this.pnlPassword.Size = new System.Drawing.Size(340, 30);
+            this.pnlPassword.Padding = new System.Windows.Forms.Padding(8, 4, 0, 4);
+            this.pnlPassword.Size = new System.Drawing.Size(453, 36);
             this.pnlPassword.TabIndex = 6;
             // 
             // txtPassword
@@ -264,9 +268,10 @@ namespace LittleEreseSystemV3.Forms
             this.txtPassword.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.txtPassword.Dock = System.Windows.Forms.DockStyle.Fill;
             this.txtPassword.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtPassword.Location = new System.Drawing.Point(6, 3);
+            this.txtPassword.Location = new System.Drawing.Point(8, 4);
+            this.txtPassword.Margin = new System.Windows.Forms.Padding(4);
             this.txtPassword.Name = "txtPassword";
-            this.txtPassword.Size = new System.Drawing.Size(298, 18);
+            this.txtPassword.Size = new System.Drawing.Size(398, 23);
             this.txtPassword.TabIndex = 0;
             this.txtPassword.UseSystemPasswordChar = true;
             // 
@@ -279,13 +284,13 @@ namespace LittleEreseSystemV3.Forms
             this.btnShowPassword.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnShowPassword.Font = new System.Drawing.Font("Segoe MDL2 Assets", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnShowPassword.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.btnShowPassword.Location = new System.Drawing.Point(304, 3);
+            this.btnShowPassword.Location = new System.Drawing.Point(406, 4);
             this.btnShowPassword.Margin = new System.Windows.Forms.Padding(0);
             this.btnShowPassword.Name = "btnShowPassword";
-            this.btnShowPassword.Size = new System.Drawing.Size(34, 22);
+            this.btnShowPassword.Size = new System.Drawing.Size(45, 26);
             this.btnShowPassword.TabIndex = 1;
             this.btnShowPassword.TabStop = false;
-            this.btnShowPassword.Text = "\uE7B3";
+            this.btnShowPassword.Text = "Ã®Å¾Â³";
             this.btnShowPassword.UseVisualStyleBackColor = false;
             this.btnShowPassword.Click += new System.EventHandler(this.btnShowPassword_Click);
             // 
@@ -294,10 +299,10 @@ namespace LittleEreseSystemV3.Forms
             this.lblError.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblError.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblError.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(57)))), ((int)(((byte)(43)))));
-            this.lblError.Location = new System.Drawing.Point(0, 322);
-            this.lblError.Margin = new System.Windows.Forms.Padding(0, 0, 0, 8);
+            this.lblError.Location = new System.Drawing.Point(0, 393);
+            this.lblError.Margin = new System.Windows.Forms.Padding(0, 0, 0, 10);
             this.lblError.Name = "lblError";
-            this.lblError.Size = new System.Drawing.Size(340, 32);
+            this.lblError.Size = new System.Drawing.Size(453, 39);
             this.lblError.TabIndex = 7;
             this.lblError.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
@@ -307,16 +312,15 @@ namespace LittleEreseSystemV3.Forms
             this.btnLogin.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnLogin.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btnLogin.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
-            this.btnLogin.FlatAppearance.BorderSize = 1;
             this.btnLogin.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
             this.btnLogin.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(195)))), ((int)(((byte)(157)))), ((int)(((byte)(74)))));
             this.btnLogin.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnLogin.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnLogin.ForeColor = System.Drawing.Color.White;
-            this.btnLogin.Location = new System.Drawing.Point(0, 362);
-            this.btnLogin.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
+            this.btnLogin.Location = new System.Drawing.Point(0, 442);
+            this.btnLogin.Margin = new System.Windows.Forms.Padding(0, 0, 0, 15);
             this.btnLogin.Name = "btnLogin";
-            this.btnLogin.Size = new System.Drawing.Size(340, 44);
+            this.btnLogin.Size = new System.Drawing.Size(453, 54);
             this.btnLogin.TabIndex = 8;
             this.btnLogin.Text = "Login";
             this.btnLogin.UseVisualStyleBackColor = false;
@@ -328,10 +332,10 @@ namespace LittleEreseSystemV3.Forms
             this.lblFooter.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblFooter.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblFooter.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblFooter.Location = new System.Drawing.Point(0, 418);
+            this.lblFooter.Location = new System.Drawing.Point(0, 511);
             this.lblFooter.Margin = new System.Windows.Forms.Padding(0);
             this.lblFooter.Name = "lblFooter";
-            this.lblFooter.Size = new System.Drawing.Size(340, 16);
+            this.lblFooter.Size = new System.Drawing.Size(453, 20);
             this.lblFooter.TabIndex = 9;
             this.lblFooter.Text = "Little Erese\'s Aesthetics and Spa";
             this.lblFooter.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -339,12 +343,13 @@ namespace LittleEreseSystemV3.Forms
             // LoginForm
             // 
             this.AcceptButton = this.btnLogin;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
-            this.ClientSize = new System.Drawing.Size(920, 580);
+            this.ClientSize = new System.Drawing.Size(1227, 714);
             this.Controls.Add(this.tlpMain);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.MaximizeBox = false;
             this.Name = "LoginForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -355,13 +360,13 @@ namespace LittleEreseSystemV3.Forms
             ((System.ComponentModel.ISupportInitialize)(this.picSide)).EndInit();
             this.pnlForm.ResumeLayout(false);
             this.tlpFormOuter.ResumeLayout(false);
+            this.tlpFormOuter.PerformLayout();
             this.tlpLoginCard.ResumeLayout(false);
             this.tlpLoginCard.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picLogo)).EndInit();
             this.pnlPassword.ResumeLayout(false);
             this.pnlPassword.PerformLayout();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 

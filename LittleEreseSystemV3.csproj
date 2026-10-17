@@ -195,13 +195,15 @@
     <Compile Include="Helpers\IconHelper.cs" />
     <Compile Include="Helpers\Messages.cs" />
     <Compile Include="Helpers\PasswordHasher.cs" />
-    <Compile Include="Helpers\PreviewTool.cs" />
     <Compile Include="Helpers\Session.cs" />
     <Compile Include="Helpers\SmokeTest.cs" />
     <Compile Include="Helpers\Theme.cs" />
     <Compile Include="Helpers\Validators.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Forms\LoginForm.resx">
+      <DependentUpon>LoginForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
