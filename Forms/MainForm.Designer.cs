@@ -1,4 +1,4 @@
-namespace LittleEreseSystemV3.Forms
+﻿namespace LittleEreseSystemV3.Forms
 {
     partial class MainForm
     {
@@ -117,7 +117,9 @@ namespace LittleEreseSystemV3.Forms
             this.btnNavActivityLog.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
             this.btnNavActivityLog.Location = new System.Drawing.Point(0, 480);
             this.btnNavActivityLog.Name = "btnNavActivityLog";
-            this.btnNavActivityLog.Padding = new System.Windows.Forms.Padding(56, 0, 0, 0);
+            this.btnNavActivityLog.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnNavActivityLog.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnNavActivityLog.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
             this.btnNavActivityLog.Size = new System.Drawing.Size(240, 48);
             this.btnNavActivityLog.TabIndex = 10;
             this.btnNavActivityLog.Text = "Activity Log";
@@ -138,7 +140,9 @@ namespace LittleEreseSystemV3.Forms
             this.btnNavFileMaintenance.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
             this.btnNavFileMaintenance.Location = new System.Drawing.Point(0, 432);
             this.btnNavFileMaintenance.Name = "btnNavFileMaintenance";
-            this.btnNavFileMaintenance.Padding = new System.Windows.Forms.Padding(56, 0, 0, 0);
+            this.btnNavFileMaintenance.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnNavFileMaintenance.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnNavFileMaintenance.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
             this.btnNavFileMaintenance.Size = new System.Drawing.Size(240, 48);
             this.btnNavFileMaintenance.TabIndex = 9;
             this.btnNavFileMaintenance.Text = "File Maintenance";
@@ -159,7 +163,9 @@ namespace LittleEreseSystemV3.Forms
             this.btnNavStaff.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
             this.btnNavStaff.Location = new System.Drawing.Point(0, 384);
             this.btnNavStaff.Name = "btnNavStaff";
-            this.btnNavStaff.Padding = new System.Windows.Forms.Padding(56, 0, 0, 0);
+            this.btnNavStaff.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnNavStaff.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnNavStaff.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
             this.btnNavStaff.Size = new System.Drawing.Size(240, 48);
             this.btnNavStaff.TabIndex = 8;
             this.btnNavStaff.Text = "Staff Accounts";
@@ -180,7 +186,9 @@ namespace LittleEreseSystemV3.Forms
             this.btnNavReports.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
             this.btnNavReports.Location = new System.Drawing.Point(0, 336);
             this.btnNavReports.Name = "btnNavReports";
-            this.btnNavReports.Padding = new System.Windows.Forms.Padding(56, 0, 0, 0);
+            this.btnNavReports.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnNavReports.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnNavReports.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
             this.btnNavReports.Size = new System.Drawing.Size(240, 48);
             this.btnNavReports.TabIndex = 7;
             this.btnNavReports.Text = "Reports";
@@ -201,7 +209,9 @@ namespace LittleEreseSystemV3.Forms
             this.btnNavCommissions.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
             this.btnNavCommissions.Location = new System.Drawing.Point(0, 288);
             this.btnNavCommissions.Name = "btnNavCommissions";
-            this.btnNavCommissions.Padding = new System.Windows.Forms.Padding(56, 0, 0, 0);
+            this.btnNavCommissions.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnNavCommissions.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnNavCommissions.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
             this.btnNavCommissions.Size = new System.Drawing.Size(240, 48);
             this.btnNavCommissions.TabIndex = 6;
             this.btnNavCommissions.Text = "Commissions";
@@ -222,7 +232,9 @@ namespace LittleEreseSystemV3.Forms
             this.btnNavBilling.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
             this.btnNavBilling.Location = new System.Drawing.Point(0, 240);
             this.btnNavBilling.Name = "btnNavBilling";
-            this.btnNavBilling.Padding = new System.Windows.Forms.Padding(56, 0, 0, 0);
+            this.btnNavBilling.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnNavBilling.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnNavBilling.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
             this.btnNavBilling.Size = new System.Drawing.Size(240, 48);
             this.btnNavBilling.TabIndex = 5;
             this.btnNavBilling.Text = "Billing";
@@ -243,7 +255,9 @@ namespace LittleEreseSystemV3.Forms
             this.btnNavPromotions.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
             this.btnNavPromotions.Location = new System.Drawing.Point(0, 192);
             this.btnNavPromotions.Name = "btnNavPromotions";
-            this.btnNavPromotions.Padding = new System.Windows.Forms.Padding(56, 0, 0, 0);
+            this.btnNavPromotions.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnNavPromotions.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnNavPromotions.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
             this.btnNavPromotions.Size = new System.Drawing.Size(240, 48);
             this.btnNavPromotions.TabIndex = 4;
             this.btnNavPromotions.Text = "Promotions";
@@ -264,7 +278,9 @@ namespace LittleEreseSystemV3.Forms
             this.btnNavServices.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
             this.btnNavServices.Location = new System.Drawing.Point(0, 144);
             this.btnNavServices.Name = "btnNavServices";
-            this.btnNavServices.Padding = new System.Windows.Forms.Padding(56, 0, 0, 0);
+            this.btnNavServices.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnNavServices.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnNavServices.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
             this.btnNavServices.Size = new System.Drawing.Size(240, 48);
             this.btnNavServices.TabIndex = 3;
             this.btnNavServices.Text = "Services";
@@ -285,7 +301,9 @@ namespace LittleEreseSystemV3.Forms
             this.btnNavClients.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
             this.btnNavClients.Location = new System.Drawing.Point(0, 96);
             this.btnNavClients.Name = "btnNavClients";
-            this.btnNavClients.Padding = new System.Windows.Forms.Padding(56, 0, 0, 0);
+            this.btnNavClients.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnNavClients.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnNavClients.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
             this.btnNavClients.Size = new System.Drawing.Size(240, 48);
             this.btnNavClients.TabIndex = 2;
             this.btnNavClients.Text = "Clients";
@@ -306,7 +324,9 @@ namespace LittleEreseSystemV3.Forms
             this.btnNavAppointments.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
             this.btnNavAppointments.Location = new System.Drawing.Point(0, 48);
             this.btnNavAppointments.Name = "btnNavAppointments";
-            this.btnNavAppointments.Padding = new System.Windows.Forms.Padding(56, 0, 0, 0);
+            this.btnNavAppointments.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnNavAppointments.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnNavAppointments.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
             this.btnNavAppointments.Size = new System.Drawing.Size(240, 48);
             this.btnNavAppointments.TabIndex = 1;
             this.btnNavAppointments.Text = "Appointments";
@@ -327,7 +347,9 @@ namespace LittleEreseSystemV3.Forms
             this.btnNavDashboard.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
             this.btnNavDashboard.Location = new System.Drawing.Point(0, 0);
             this.btnNavDashboard.Name = "btnNavDashboard";
-            this.btnNavDashboard.Padding = new System.Windows.Forms.Padding(56, 0, 0, 0);
+            this.btnNavDashboard.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnNavDashboard.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnNavDashboard.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
             this.btnNavDashboard.Size = new System.Drawing.Size(240, 48);
             this.btnNavDashboard.TabIndex = 0;
             this.btnNavDashboard.Text = "Dashboard";
