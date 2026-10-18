@@ -73,6 +73,34 @@ namespace LittleEreseSystemV3.Helpers
             return amount > 0m;
         }
 
+        /// <summary>Reads a money amount typed by the user. Returns false when it is not a number.</summary>
+        public static bool TryMoney(string value, out decimal amount)
+        {
+            amount = 0m;
+            if (string.IsNullOrWhiteSpace(value)) return false;
+
+            // POLISH: same InvariantCulture note as IsPositiveMoney above.
+            return decimal.TryParse(value.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out amount);
+        }
+
+        /// <summary>
+        /// Checks the trimmed length of a free text field (service name, promo name, ...).
+        /// WHY: names have a database column of 100 characters, and one character is not a name.
+        /// </summary>
+        public static bool IsLengthBetween(string value, int minimum, int maximum)
+        {
+            if (value == null) return false;
+
+            int length = value.Trim().Length;
+            return length >= minimum && length <= maximum;
+        }
+
+        /// <summary>True when the amount is a percentage that makes sense (greater than 0, at most 100).</summary>
+        public static bool IsValidPercentage(decimal amount)
+        {
+            return amount > 0m && amount <= 100m;
+        }
+
         /// <summary>Attaches the red error icon and tooltip to a control.</summary>
         public static void SetError(ErrorProvider provider, Control control, string message)
         {

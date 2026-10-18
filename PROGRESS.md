@@ -127,12 +127,56 @@ Update this file at the end of every task.
   --preview checked for ucServices, ucPromotions, ServiceEditForm, PromotionEditForm (nothing
   overlaps, no truncated text, no misaligned control).
 
+- Step 7 (this task): the LOGIC for the Services and Promotions module (code-behind + repositories).
+  Designer layout untouched; no small Designer fix was needed.
+  - Data\ServiceRepository.cs (new content): GetCategories(), GetServices(search, categoryId, status)
+    (categoryId 0 = all, status "All" = all, search matches service OR category name; returns
+    service_id, category_name, service_name, description, price, duration_minutes,
+    default_total_sessions, status), GetById(id) (DataRow or null), GetActiveForBooking(),
+    ServiceNameExists(name, categoryId, excludeId), Add(...) (returns the new service_id),
+    Update(...), SetStatus(id, status). A service name is unique INSIDE its category; the check
+    runs in the form and again in Add/Update (a friendly InvalidOperationException). Services are
+    never deleted.
+  - Data\PromotionRepository.cs (new content): RefreshExpired() (Active + end_date < today ->
+    'Expired'), GetPromotions(search, status), GetById(id), GetActiveValid() (Active and today
+    between start_date and end_date, for Billing / Appointments later), PromoNameExists(...),
+    Add(...) (returns the new promo_id), Update(...), SetStatus(id, status). Promo names are unique
+    (checked in the form and again in Add/Update). Promotions are never deleted.
+  - Helpers\Validators.cs: added TryMoney (money parse used by the forms) and IsLengthBetween
+    (trimmed length, e.g. service/promo names 2..100) and IsValidPercentage (> 0 and <= 100).
+    No existing rule was changed.
+  - Controls\ucServices.cs: Load styles the grid + buttons with Theme, hides btnAdd / btnEdit /
+    btnArchive for a Staff user (view only), fills cboCategory with "All categories" + the real
+    categories and starts cboStatus on "Active". Search and both filters reload (guarded by a
+    _loading flag so filling the combos does not double-load). Add / Edit open ServiceEditForm
+    (EditId set before ShowDialog) and reload with the saved row selected. Double-click = Edit
+    (Admin only). btnArchive flips between "Archive" (Active rows) and "Restore" (Archived rows)
+    via CellFormatting-free SelectionChanged, confirms with Messages.Confirm, calls SetStatus and
+    logs "Add" / "Edit" / "Archive" / "Restore" with the service name through
+    ActivityRepository.Log. CellFormatting colors the Status cell with Theme.StatusColor and
+    appends " min" to the duration.
+  - Controls\ucPromotions.cs: Staff see only GetActiveValid() and the status filter + all action
+    buttons are hidden. Admin gets the full list; Load and Refresh call RefreshExpired() first.
+    btnToggle reads "Deactivate" (Active), "Activate" (Inactive) and is disabled for Expired rows.
+    Add / Edit open PromotionEditForm; CellFormatting colors the status and shows the value as
+    "15 %" for Percentage or as money for Fixed. Every Add / Edit / Activate / Deactivate is logged.
+  - Forms\ServiceEditForm.cs / PromotionEditForm.cs: both keep the parameterless constructor and
+    expose EditId (0 = new) plus SavedServiceId / SavedPromoId (the caller selects that row after
+    saving). Load styles the buttons, fills the category list / defaults, and for EditId > 0 loads
+    the row and retitles to "Edit Service" / "Edit Promotion". Save validates with Validators +
+    errorProvider1 (category + name 2..100 + unique, price money > 0; promo: name + type + value > 0,
+    percentage <= 100, end >= start, and a NEW promo may not end in the past), then Add or Update
+    in a try/catch, sets DialogResult.OK and closes. Cancel returns Cancel.
+  - Helpers\SmokeTest.cs: three read-only checks (GetCategories = 10 rows,
+    GetServices("", 0, "Active") = 77 rows, GetPromotions("", "All") runs without error).
+  - LittleEreseSystemV3.csproj was NOT edited (all files already listed).
+- Standard clean build (bin, obj and .vs deleted first): 0 errors, 0 warnings.
+  --smoketest: 32 passed, 0 failed, 0 skipped (the 3 new repository checks all PASS).
+  --preview checked for ucServices (grid + filters populated, count "77 services"), ucPromotions
+  (empty until a promo is added - no promo seed data exists yet), ServiceEditForm (category "Botox"
+  loaded, hint text visible) and PromotionEditForm (dates default to today / +1 month).
+
 ## Next
-- Step 7: the logic prompt for ucServices / ucPromotions (load from ServiceRepository /
-  PromotionRepository, search + filter, Add/Edit through ServiceEditForm / PromotionEditForm,
-  Archive / Deactivate, status colors in CellFormatting, ActivityRepository.Log) and the same for
-  the four edit forms (ServiceEditForm, PromotionEditForm: EditId properties, Validators +
-  errorProvider1, save/cancel), including the up-to-3 read-only smoke test checks.
 - Step 8: the Dashboard screen (ucDashboard with ucCalendarMonth) and then the remaining modules
   (Appointments, Clients, Services, Promotions, Billing, Commissions, Reports, Staff Accounts,
   File Maintenance, Activity Log, Settings). Every page is still an empty UserControl, so the
@@ -143,6 +187,9 @@ Update this file at the end of every task.
 ## Known issues
 - None blocking. The page UserControls are still empty shells, so switching pages shows an empty
   content area (this is expected until each page is built).
+- The Promotions list is empty at first because the seed data has no Promotions rows; add one with
+  "Add Promotion" to see the grid, the status colors and the "15 %" / money formatting. POLISH:
+  the owner may want 2-3 sample promos in Database\SeedData.sql.
 - Demo staff accounts still have the placeholder names "Aesthetician 1".."Nurse 1" (the schema
   has no job-title column) - rename them in Staff Accounts when it is built.
 - The smoke test only constructs the forms (no Show), so it does not cover the new event handlers;

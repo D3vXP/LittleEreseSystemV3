@@ -52,6 +52,9 @@ namespace LittleEreseSystemV3.Helpers
             CheckLogin();
 
             Line("");
+            CheckRepositories();
+
+            Line("");
             Line("SUMMARY: " + _passed + " passed, " + _failed + " failed, " + _skipped + " skipped");
 
             WriteLog();
@@ -175,6 +178,49 @@ namespace LittleEreseSystemV3.Helpers
             catch (Exception ex)
             {
                 Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// Read-only checks for the Service / Promotion repositories added with the Services and
+        /// Promotions logic. Nothing is written or changed here.
+        /// </summary>
+        private static void CheckRepositories()
+        {
+            try
+            {
+                DataTable categories = ServiceRepository.GetCategories();
+                string message = "ServiceRepository.GetCategories rows = " +
+                    categories.Rows.Count + " (expected 10)";
+                if (categories.Rows.Count == 10) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail("ServiceRepository.GetCategories", ex);
+            }
+
+            try
+            {
+                DataTable services = ServiceRepository.GetServices("", 0, "Active");
+                string message = "ServiceRepository.GetServices(\"\", 0, \"Active\") rows = " +
+                    services.Rows.Count + " (expected 77)";
+                if (services.Rows.Count == ExpectedServices) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail("ServiceRepository.GetServices", ex);
+            }
+
+            try
+            {
+                DataTable promos = PromotionRepository.GetPromotions("", "All");
+                Pass("PromotionRepository.GetPromotions(\"\", \"All\") rows = " + promos.Rows.Count);
+            }
+            catch (Exception ex)
+            {
+                Fail("PromotionRepository.GetPromotions", ex);
             }
         }
 
