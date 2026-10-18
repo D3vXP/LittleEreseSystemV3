@@ -21,6 +21,8 @@ namespace LittleEreseSystemV3.Helpers
         private const int ExpectedTables = 17;
         private const int ExpectedServices = 77;
         private const int ExpectedMinUsers = 8;
+        // The seeder creates 1 admin + 7 staff, so at least this many Active technicians must exist.
+        private const int ExpectedMinActiveStaff = 7;
 
         private static readonly StringBuilder _log = new StringBuilder();
         private static int _passed;
@@ -221,6 +223,45 @@ namespace LittleEreseSystemV3.Helpers
             catch (Exception ex)
             {
                 Fail("PromotionRepository.GetPromotions", ex);
+            }
+
+            // The three read-only Staff Accounts checks (Step 9). Nothing is written or changed here.
+            try
+            {
+                DataTable users = UserRepository.GetUsers("", "All");
+                string message = "UserRepository.GetUsers(\"\", \"All\") rows = " +
+                    users.Rows.Count + " (expected at least " + ExpectedMinUsers + ")";
+                if (users.Rows.Count >= ExpectedMinUsers) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail("UserRepository.GetUsers", ex);
+            }
+
+            try
+            {
+                int admins = UserRepository.CountActiveAdmins();
+                string message = "UserRepository.CountActiveAdmins() = " + admins + " (expected at least 1)";
+                if (admins >= 1) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail("UserRepository.CountActiveAdmins", ex);
+            }
+
+            try
+            {
+                DataTable staff = UserRepository.GetActiveStaff();
+                string message = "UserRepository.GetActiveStaff() rows = " +
+                    staff.Rows.Count + " (expected at least " + ExpectedMinActiveStaff + ")";
+                if (staff.Rows.Count >= ExpectedMinActiveStaff) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail("UserRepository.GetActiveStaff", ex);
             }
         }
 

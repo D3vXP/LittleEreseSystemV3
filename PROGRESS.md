@@ -221,22 +221,79 @@ Update this file at the end of every task.
   visible), StaffEditForm (no overlap, hint visible, footer complete) and ucSettings (640 px
   column centered, three cards, nothing cut off). The app was started once and closed again.
 
+- Step 9 (this task): the LOGIC for Staff Accounts and Settings (code-behind + repository).
+  Designer layout untouched; no small Designer fix was needed.
+  - Data\UserRepository.cs keeps Authenticate / UsernameExists / Create / SetPassword and adds:
+    GetUsers(search, status) (search matches full name OR username, status "All" = all; returns
+    user_id, full_name, username, role, contact_number, status, created_at), GetById(id),
+    Update(userId, fullName, role, contact, status), SetStatus(userId, status),
+    CountActiveAdmins(), ChangeOwnPassword(userId, currentPassword, newPassword) -> bool (false
+    when the current password is wrong) and GetActiveStaff() (role Staff + status Active, returns
+    user_id, full_name for the technician drop-downs later).
+    The "do not lock yourself out" rules live in one private helper used by Update AND SetStatus:
+    you cannot change your own role, you cannot deactivate your own account, and the LAST Active
+    Admin can neither be demoted or deactivated. Each rule throws an InvalidOperationException
+    with a plain English message that the forms show as a warning (not as a database error).
+    UsernameExists now compares with UPPER() on both sides so the unique username rule is
+    case-insensitive whatever collation the database uses.
+  - Controls\ucStaffAccounts.cs: Load exits early (and says so) unless Session.IsAdmin; it styles
+    the grid + all five buttons with Theme, starts the status filter on "All" and loads the grid.
+    Search and status reload with a _loading guard. Add / Edit open StaffEditForm (EditId set first,
+    the saved row is selected again through SavedUserId). Reset Password opens the same form with
+    PasswordOnly = true. SelectionChanged enables Edit / Deactivate / Reset and flips the danger
+    button between "Deactivate" and "Activate"; ToggleStatus confirms first, then calls SetStatus.
+    CellFormatting colors the Status cell with Theme.StatusColor. Every Add / Edit / Reset Password /
+    Activate / Deactivate is logged with ActivityRepository.Log - the password is NEVER logged.
+  - Forms\StaffEditForm.cs: public properties EditId (0 = new) and PasswordOnly, plus
+    SavedUserId for the caller. Load styles the buttons, defaults to Active / Staff, loads the row
+    when EditId > 0 (title "Edit Staff Account", username box read-only) and locks everything
+    except the password boxes when PasswordOnly (title "Reset Password"). A new account needs a
+    valid, still-free username; editing leaves the password boxes optional (blank = keep the
+    current password). Validation uses Validators + errorProvider1 (name, username, role, mobile
+    contact, password rule and the confirmation match) and saving goes through
+    UserRepository.Create / Update / SetPassword.
+  - Controls\ucSettings.cs: Load styles the button, loads picAvatar with
+    IconHelper.Load("UserIconYellowishColorTransparent", 96), fills the profile card from Session
+    plus the contact number from UserRepository.GetById, shows the assembly version
+    (Assembly.GetName().Version, 3 parts) and the database name read out of the App.config
+    connection string with SqlConnectionStringBuilder. btnChangePassword_Click validates (all three
+    required, new password rule, confirmation equal, new different from current), calls
+    ChangeOwnPassword and shows the success message - or "Current password is incorrect." on the
+    box itself - then clears the boxes. "Change Password" is logged.
+  - Helpers\SmokeTest.cs: three read-only checks (GetUsers("", "All") >= 8 rows,
+    CountActiveAdmins() >= 1, GetActiveStaff() >= 7 rows).
+  - LittleEreseSystemV3.csproj was NOT edited (all files already listed).
+- Standard clean build (bin, obj and .vs deleted first): 0 errors, 0 warnings.
+  --smoketest: 35 passed, 0 failed, 0 skipped (the 3 new Staff Accounts checks all PASS:
+  GetUsers = 8 rows, CountActiveAdmins = 1, GetActiveStaff = 7 rows).
+  --preview checked for ucStaffAccounts (8 rows with green Active status, count "8 staff accounts",
+  toolbar complete and nothing truncated), StaffEditForm (no overlap, hint visible, footer complete)
+  and ucSettings (avatar loaded, name / role / username / contact filled, "Version 1.0.0",
+  "Database: LittleEresesDB"). The app was started once and closed again.
+
 ## Next
-- Step 9: the LOGIC for Staff Accounts (UserRepository list/create/update/status/password reset)
-  and Settings (own password change), then the Dashboard screen (ucDashboard with ucCalendarMonth)
-  and the remaining modules (Appointments, Clients, Billing, Commissions, Reports,
-  File Maintenance, Activity Log). ucStaffAccounts, StaffEditForm and ucSettings are still
-  layout only, so opening those pages shows the shell with an empty grid and placeholder texts.
-- POLISH items left for the owner: the lock out limits (5 tries / 30 seconds) in LoginForm and
-  the "Log out now?" wording.
+- Step 10: the Dashboard screen (ucDashboard with ucCalendarMonth) and the remaining modules
+  (Appointments, Clients, Billing, Commissions, Reports, File Maintenance, Activity Log).
+  Those pages are still layout-only shells.
+- POLISH items left for the owner: the lock out limits (5 tries / 30 seconds) in LoginForm,
+  the "Log out now?" wording, the PhoneRegex (mobile numbers only), the "-" placeholder for an
+  empty contact number in Settings and the version format (3 parts) in Settings.
 
 ## Known issues
-- None blocking. The page UserControls are still empty shells, so switching pages shows an empty
-  content area (this is expected until each page is built).
+- None blocking. The remaining page UserControls are still empty shells, so switching to them
+  shows an empty content area (this is expected until each page is built).
 - The Promotions list is empty at first because the seed data has no Promotions rows; add one with
   "Add Promotion" to see the grid, the status colors and the "15 %" / money formatting. POLISH:
   the owner may want 2-3 sample promos in Database\SeedData.sql.
 - Demo staff accounts still have the placeholder names "Aesthetician 1".."Nurse 1" (the schema
-  has no job-title column) - rename them in Staff Accounts when it is built.
+  has no job-title column) - rename them in Staff Accounts (now possible: Staff Accounts is live).
+- Demo staff accounts have no contact number yet, so the Contact column is empty until the numbers
+  are filled in through Staff Accounts / Edit.
+- Every account (New or Edit) needs a phone-shaped contact number (09XXXXXXXXX), so an account
+  without one must be given one when it is edited. POLISH: make the contact number optional if the
+  owner prefers.
 - The smoke test only constructs the forms (no Show), so it does not cover the new event handlers;
   they were checked with --preview and by starting the app.
+- ucStaffAccounts refuses to run for a Staff user on purpose (it shows a short warning), and
+  UserRepository blocks deactivating or demoting your own account and the last Active Admin, so a
+  single-Admin shop can never lock itself out.
