@@ -86,8 +86,54 @@ Update this file at the end of every task.
 - Previews checked: LoginForm (both fields identical, logo and photo loaded, nothing cut off) and
   MainForm as Admin and as Staff (correct button order, visible icon/caption gap, header complete).
 
+- Step 6 (this task): Layout only (Designer work) for the Services and Promotions module.
+  No logic, no SQL, no file or Session access: every wired event got an empty handler with
+  "// TODO(logic prompt)", waiting for the logic prompt.
+  - Controls\ucServices (.cs + .Designer.cs): pnlToolbar (Dock Top, 56 px, Surface) with
+    lblSearch / txtSearch / lblCategory / cboCategory (DropDownList) / lblStatus / cboStatus
+    (All, Active, Archived) on the left, a right-aligned lblCount ("0 services", SmallFont,
+    TextMuted) and btnAdd (primary) / btnEdit (secondary) / btnArchive (danger) / btnRefresh
+    (secondary) on the right. Below it a card pnlGrid (Dock Fill, Surface, BorderStyle
+    FixedSingle, 1 px padding) holds dgvServices (Dock Fill, Theme.StyleGrid look copied as
+    literals, AutoGenerateColumns = false). Columns: colServiceId (hidden, service_id),
+    colCategory, colService, colPrice (N2, right aligned), colDuration, colSessions, colStatus.
+    Fill weights 20/30/14/16/10/14 make the price fit at 1240 px width.
+  - Controls\ucPromotions (.cs + .Designer.cs): same toolbar, with btnToggle (danger, "Deactivate")
+    instead of Archive, cboStatus items All, Active, Inactive, Expired and lblCount
+    "0 promotions". Columns: colPromoId (hidden, promo_id), colName (fixed 220 px),
+    colType / colValue (N2, right aligned) / colStart / colEnd (MMM dd, yyyy) / colStatus
+    (fixed 90-120 px) and colConditions (DataPropertyName description, AutoSizeMode Fill, so it
+    takes the remaining width). Fixed widths were chosen so the header "Promotion" is never cut.
+  - Forms\ServiceEditForm (.cs + .Designer.cs): client 460 x 521 (the 480 x 560 in the prompt was
+    shrunk to satisfy the "dialogs at most 1000 x 640" rule of Additions (Step 3) and to fit the
+    content in one screen), FixedDialog, CenterParent, no minimize/maximize, AcceptButton btnSave,
+    CancelButton + DialogResult.Cancel on btnCancel, errorProvider1. White header with
+    lblTitle "Service" (HeadingFont) + 1 px Border line, AppBack content (cboCategory, txtName,
+    txtDescription multi-line 90 px with vertical scrollbars, txtPrice, muted lblHint "For packages,
+    enter the price of the whole package.", nudDuration 5-480 step 5 = 60, nudSessions 1-30 = 1,
+    cboStatus Active/Archived) and a white footer with btnSave (primary) and btnCancel (secondary).
+  - Forms\PromotionEditForm (.cs + .Designer.cs): client 460 x 545 (same dialog settings),
+    lblTitle "Promotion", txtName, txtConditions multi-line 90 px, cboType Percentage/Fixed,
+    txtValue, muted lblHint "Promos need full payment upfront.", dtpStart / dtpEnd (Format Short,
+    side by side), cboStatus Active/Inactive, btnSave / btnCancel.
+  - Layout fixes found in the previews: ucPromotions "Refresh" was cut at 72 px, so the toolbar
+    buttons were re-spaced (Refresh 72 px, Deactivate 84 px, Add Promotion 116 px) so nothing is
+    truncated; the Services toolbar was re-spaced the same way (button block and lblCount moved
+    left, search/category/status fields slightly narrower) so the count label no longer collides
+    with the Add button; both dialogs were re-laid out to 460 px client width.
+  - LittleEreseSystemV3.csproj was NOT edited (every file already existed and was listed).
+- Standard clean build (bin, obj and .vs deleted first): 0 errors, 0 warnings.
+  --smoketest: 29 passed, 0 failed, 0 skipped.
+  --preview checked for ucServices, ucPromotions, ServiceEditForm, PromotionEditForm (nothing
+  overlaps, no truncated text, no misaligned control).
+
 ## Next
-- Step 5: the Dashboard screen (ucDashboard with ucCalendarMonth) and then the remaining modules
+- Step 7: the logic prompt for ucServices / ucPromotions (load from ServiceRepository /
+  PromotionRepository, search + filter, Add/Edit through ServiceEditForm / PromotionEditForm,
+  Archive / Deactivate, status colors in CellFormatting, ActivityRepository.Log) and the same for
+  the four edit forms (ServiceEditForm, PromotionEditForm: EditId properties, Validators +
+  errorProvider1, save/cancel), including the up-to-3 read-only smoke test checks.
+- Step 8: the Dashboard screen (ucDashboard with ucCalendarMonth) and then the remaining modules
   (Appointments, Clients, Services, Promotions, Billing, Commissions, Reports, Staff Accounts,
   File Maintenance, Activity Log, Settings). Every page is still an empty UserControl, so the
   header has not been wired to any other admin/staff difference yet.
