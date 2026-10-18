@@ -55,12 +55,36 @@ Update this file at the end of every task.
     buttons now use Padding 16 px with ImageAlign MiddleLeft and ImageBeforeText (set in code with
     the other runtime styling), so the icons line up in one column and the captions start right
     after them.
-- Standard clean build (bin, obj and .vs deleted first): 0 errors, 0 warnings.
+- Step 5 (this task): previews are never cropped and the sidebar icons got their gap.
+  - PROJECT_RULES.md got the "Additions (Step 3) - Screen size" section (16:9 monitors, 1280x720
+    logical minimum, content area about 1240 x 600, dialogs at most 1000 x 640, previews are
+    rendered off screen so the monitor must not matter).
+  - Helpers\PreviewTool.cs: the preview now always shows the whole window.
+    * The thread asks Windows for "unaware" DPI (SetThreadDpiAwarenessContext), so a 150% monitor
+      no longer lays the screens out 50% bigger. Previews are now the real logical sizes.
+    * The window is shown off screen (Location -32000,-32000, no task bar button) and a form that
+      maximizes itself (MainForm) is put back to its normal size before the picture, so the PNG is
+      the whole window: LoginForm 932x604, MainForm 1296x759.
+    * The PNG is drawn with Control.DrawToBitmap (whole window, title bar included). If that comes
+      out blank (checked with a coarse color count) it falls back to copying the screen, and only
+      then is the window shrunk to the working area, because a screen copy cannot be bigger.
+    * The host form for a UserControl is now 1240 x 600 (the real content area). Usage
+      (--preview <ClassName> [--role Admin|Staff]) and previews\<ClassName>.png are unchanged.
+  - MainForm: SetNavIcon puts each 22 px icon on a transparent bitmap 10 px wider, so a visible gap
+    sits between the icon and the caption (WinForms draws image and text with no space of its own,
+    and widening the button padding moved both). Missing icon files still just leave a blank spot.
+  - Forms\LoginForm.Designer.cs was rewritten for this, with every control name, TabIndex and event
+    wiring kept: the login card container was restructured (new pnlCardCenter plus one small row
+    panel per line) because a TableLayoutPanel with AutoSize = true kept squashing the rows - that is
+    the real cause of the earlier "the two input boxes look different" problem (a 1 px high subtitle
+    and a 16 px high field). Every row now has a fixed height, so the two input hosts are exactly
+    340 x 34 and their text boxes exactly 322 x 18 (username) and 286 x 18 (password) at y = 7.
+    The form is 916 x 558 client (932 x 604 window), keeps its 340 px card and 2:1 side photo.
+  - The card is 426 px tall (sum of its fixed rows), so nothing is stretched and nothing is cut off.
+- Standard clean build (bin and obj deleted first): 0 errors, 0 warnings.
   --smoketest: 29 passed, 0 failed, 0 skipped.
-- Previews: LoginForm (both fields the same size, logo and spa photo loaded, nothing cut off) and
-  MainForm as Admin (11 nav buttons in the right order, Dashboard highlighted) and as Staff
-  (only Dashboard, Appointments, Clients, Services, Promotions, Billing). The app also starts
-  normally, shows the login screen and writes no error.log.
+- Previews checked: LoginForm (both fields identical, logo and photo loaded, nothing cut off) and
+  MainForm as Admin and as Staff (correct button order, visible icon/caption gap, header complete).
 
 ## Next
 - Step 5: the Dashboard screen (ucDashboard with ucCalendarMonth) and then the remaining modules

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Windows.Forms;
 using LittleEreseSystemV3.Controls;
 using LittleEreseSystemV3.Data;
@@ -18,6 +19,11 @@ namespace LittleEreseSystemV3.Forms
         // middle of the button, because a WinForms button centers text and image as one group.
         private const int ButtonTextPadding = 16;
         private const int ButtonIconPadding = 16;
+
+        // The sidebar icons, and the empty pixels added after each one so the caption is not
+        // glued to the icon (WinForms does not put any space between image and text itself).
+        private const int NavIconSize = 22;
+        private const int NavIconGap = 10;
 
         // The page keys used by Navigate. Kept as constants so a typo is a build error.
         private const string PageDashboard = "Dashboard";
@@ -390,9 +396,30 @@ namespace LittleEreseSystemV3.Forms
         /// </summary>
         private static void SetNavIcon(Button button, string iconName)
         {
-            button.Image = IconHelper.Tinted(iconName, Theme.SidebarText, 22);
+            button.Image = WithIconGap(IconHelper.Tinted(iconName, Theme.SidebarText, NavIconSize));
             button.ImageAlign = ContentAlignment.MiddleLeft;
             button.TextImageRelation = TextImageRelation.ImageBeforeText;
+        }
+
+        /// <summary>
+        /// Puts the icon on a bitmap that is NavIconGap pixels wider than the icon itself, so the
+        /// caption starts after a visible gap. WinForms draws image and text next to each other
+        /// with no space of its own, and a wider button padding would move both of them.
+        /// A null icon (a missing file) simply stays null.
+        /// </summary>
+        private static Image WithIconGap(Image icon)
+        {
+            if (icon == null) return null;
+
+            // Empty pixels on the right of the icon are transparent, so the sidebar shows through.
+            Bitmap spaced = new Bitmap(icon.Width + NavIconGap, icon.Height, PixelFormat.Format32bppArgb);
+
+            using (Graphics canvas = Graphics.FromImage(spaced))
+            {
+                canvas.DrawImage(icon, 0, 0, icon.Width, icon.Height);
+            }
+
+            return spaced;
         }
     }
 }

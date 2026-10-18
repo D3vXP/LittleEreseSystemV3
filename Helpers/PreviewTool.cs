@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -15,7 +16,9 @@ namespace LittleEreseSystemV3.Helpers
     ///     LittleEreseSystemV3.exe --preview ucDashboard --role Staff
     ///
     /// It shows one form (or one user control inside a hosting form) for under a second,
-    /// saves a PNG of it into the previews folder next to the exe and closes again.
+    /// draws the WHOLE window into a PNG in the previews folder next to the exe and closes again.
+    /// Nothing is copied off the screen in the normal case, so the picture always shows the full
+    /// size of the window and the monitor it was taken on cannot cut anything off.
     /// This exists so layout problems - overlaps, cut off text, controls in the wrong order -
     /// can be seen without clicking through the whole app by hand.
     ///
@@ -31,9 +34,24 @@ namespace LittleEreseSystemV3.Helpers
         private const int SettleMilliseconds = 800;
         private const int PumpStepMilliseconds = 20;
 
-        // The hosting form used for a UserControl (the page size the rules ask for).
-        private const int PageHostWidth = 1180;
-        private const int PageHostHeight = 720;
+        // The hosting form used for a UserControl: the content area a maximized MainForm can
+        // leave free on the smallest supported monitor (see PROJECT_RULES, "Screen size").
+        private const int PageHostWidth = 1240;
+        private const int PageHostHeight = 600;
+
+        // The window is parked out of sight while it is prepared. The picture is drawn, not
+        // photographed, so the position has no effect on the result.
+        private const int OffScreenX = -32000;
+        private const int OffScreenY = -32000;
+
+        // A monitor with 150% scaling would make every screen lay out half again as big, which
+        // would make the picture depend on the monitor it was taken on. For this one run the
+        // thread tells Windows to treat it as unscaled, so the PNG always shows the sizes the
+        // Designer shows.
+        private const int DpiAwarenessUnaware = -1;
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr SetThreadDpiAwarenessContext(IntPtr value);
 
         /// <summary>
         /// Entry point for the --preview command line switch.
@@ -50,6 +68,8 @@ namespace LittleEreseSystemV3.Helpers
                 className = ValueAfter(args, "--preview");
                 string requestedRole = ValueAfter(args, "--role");
                 if (!string.IsNullOrEmpty(requestedRole)) role = requestedRole.Trim();
+
+                UseLogicalPixels();
 
                 if (string.IsNullOrEmpty(className))
                 {
@@ -79,6 +99,23 @@ namespace LittleEreseSystemV3.Helpers
         }
 
         /// <summary>
+        /// Asks Windows to treat this thread as if the screen had no scaling, so the layout keeps
+        /// the size the Designer shows no matter which monitor the app runs on.
+        /// Older Windows versions do not have this call; there the picture is simply scaled up.
+        /// </summary>
+        private static void UseLogicalPixels()
+        {
+            try
+            {
+                SetThreadDpiAwarenessContext(new IntPtr(DpiAwarenessUnaware));
+            }
+            catch
+            {
+                // Not supported here, so the picture is taken at the monitor's scaling.
+            }
+        }
+
+        /// <summary>
         /// Shows the requested screen once and saves the PNG.
         /// Returns null when the picture was written, or the problem text when it was not.
         /// </summary>
@@ -99,19 +136,23 @@ namespace LittleEreseSystemV3.Helpers
             }
 
             Form window = null;
-            Control screen = null;
 
             try
             {
-                window = CreateWindow(type, className, role, isPage, out screen);
+                window = CreateWindow(type, className, isPage);
 
+                // Off screen and out of the task bar, so taking a preview does not disturb
+                // whatever the user is doing at that moment.
                 window.ShowInTaskbar = false;
-                window.StartPosition = FormStartPosition.CenterScreen;
+                window.StartPosition = FormStartPosition.Manual;
+                window.Location = new Point(OffScreenX, OffScreenY);
                 window.Show();
 
                 // Layout and any runtime work in the Load event need the message loop to run,
                 // so keep the window responsive for a moment before taking the picture.
                 Pump(SettleMilliseconds);
+
+                PrepareForPicture(window);
 
                 window.Refresh();
                 Pump(100);
@@ -134,28 +175,20 @@ namespace LittleEreseSystemV3.Helpers
                     try { window.Dispose(); }
                     catch { }
                 }
-                else if (screen != null)
-                {
-                    try { screen.Dispose(); }
-                    catch { }
-                }
             }
         }
 
         /// <summary>
         /// Builds the window to photograph: the form itself, or a host form with the page docked in it.
         /// </summary>
-        private static Form CreateWindow(Type type, string className, string role, bool isPage, out Control screen)
+        private static Form CreateWindow(Type type, string className, bool isPage)
         {
-            screen = null;
-
             object instance = Activator.CreateInstance(type);
 
             if (!isPage)
             {
                 Form form = instance as Form;
                 if (form == null) throw new InvalidOperationException("'" + className + "' could not be created as a Form.");
-                screen = form;
                 return form;
             }
 
@@ -167,72 +200,138 @@ namespace LittleEreseSystemV3.Helpers
             host.BackColor = Color.FromArgb(0xF7, 0xF3, 0xEA);
             host.ClientSize = new Size(PageHostWidth, PageHostHeight);
             host.MinimumSize = new Size(400, 300);
+            host.StartPosition = FormStartPosition.Manual;
+            host.Location = new Point(OffScreenX, OffScreenY);
 
             page.Dock = DockStyle.Fill;
             host.Controls.Add(page);
-            screen = page;
 
             return host;
         }
 
-        /// <summary>Saves the window's client area as previews\&lt;ClassName&gt;.png next to the exe.</summary>
+        /// <summary>
+        /// Puts the window back to the size it has when it is not filling the screen. A form whose
+        /// Load event maximizes it (MainForm) would otherwise be as tall as the monitor, and the
+        /// picture is meant to show the whole window whatever the monitor is.
+        /// </summary>
+        private static void PrepareForPicture(Form window)
+        {
+            Size normal = window.WindowState == FormWindowState.Normal ? window.Size : window.RestoreBounds.Size;
+            if (normal.Width < 1 || normal.Height < 1) return;
+
+            window.WindowState = FormWindowState.Normal;
+            window.Size = normal;
+            window.Location = new Point(OffScreenX, OffScreenY);
+            window.PerformLayout();
+
+            Pump(80);
+        }
+
+        /// <summary>
+        /// Draws the whole window (title bar and border included) into previews\&lt;ClassName&gt;.png
+        /// next to the exe, at its full size.
+        /// </summary>
         private static void Save(Form window, string className)
         {
-            string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "previews");
-            Directory.CreateDirectory(folder);
+            string path = Path.Combine(PreviewFolder(), className + ".png");
 
-            // DrawToBitmap paints the whole window, title bar and border included, so the
-            // picture is taken at the window size and then cut down to the working area.
-            // Without the cut the bottom of the screen would be missing from the file.
-            Size windowSize = window.Size;
-            if (windowSize.Width < 1 || windowSize.Height < 1) windowSize = window.ClientSize;
+            // Drawing a window can come out blank on some systems (a window that never painted
+            // itself). That is checked, and only then is the screen photographed - the single case
+            // where a preview can be smaller than the window.
+            if (DrawWindowToFile(window, path)) return;
 
-            using (Bitmap wholeWindow = new Bitmap(windowSize.Width, windowSize.Height, PixelFormat.Format32bppArgb))
+            CopyScreenToFile(window, path);
+        }
+
+        /// <summary>
+        /// Draws the window with Control.DrawToBitmap. Returns false when the result looks empty,
+        /// so the caller knows to fall back to copying the screen.
+        /// </summary>
+        private static bool DrawWindowToFile(Form window, string path)
+        {
+            try
             {
-                window.DrawToBitmap(wholeWindow, new Rectangle(0, 0, windowSize.Width, windowSize.Height));
+                Size size = window.Size;
+                if (size.Width < 1 || size.Height < 1) size = window.ClientSize;
+                if (size.Width < 1 || size.Height < 1) return false;
 
-                Rectangle area = ClientArea(window, windowSize);
-                using (Bitmap picture = wholeWindow.Clone(area, PixelFormat.Format32bppArgb))
+                using (Bitmap picture = new Bitmap(size.Width, size.Height, PixelFormat.Format32bppArgb))
                 {
-                    picture.Save(Path.Combine(folder, className + ".png"), ImageFormat.Png);
+                    window.DrawToBitmap(picture, new Rectangle(0, 0, size.Width, size.Height));
+
+                    if (IsBlank(picture)) return false;
+
+                    picture.Save(path, ImageFormat.Png);
+                    return true;
                 }
+            }
+            catch
+            {
+                return false;
             }
         }
 
         /// <summary>
-        /// Where the working area of the window sits inside the whole window (skipping the
-        /// title bar and the border). Falls back to the entire picture if it cannot be measured.
+        /// Copies the part of the screen the window occupies. Fallback for windows DrawToBitmap
+        /// cannot handle; the window is shrunk to the working area first, because anything outside
+        /// the screen would be missing from the copy anyway.
         /// </summary>
-        private static Rectangle ClientArea(Form window, Size windowSize)
+        private static void CopyScreenToFile(Form window, string path)
         {
-            int left = 0;
-            int top = 0;
+            Rectangle workingArea = Screen.FromControl(window).WorkingArea;
 
-            try
+            if (window.Width > workingArea.Width || window.Height > workingArea.Height)
             {
-                Rectangle clientOnScreen = window.RectangleToScreen(window.ClientRectangle);
-                Rectangle windowOnScreen = window.Bounds;
-                left = clientOnScreen.X - windowOnScreen.X;
-                top = clientOnScreen.Y - windowOnScreen.Y;
-            }
-            catch
-            {
-                left = 0;
-                top = 0;
+                window.Size = new Size(
+                    Math.Min(window.Width, workingArea.Width),
+                    Math.Min(window.Height, workingArea.Height));
             }
 
-            if (left < 0) left = 0;
-            if (top < 0) top = 0;
+            window.Location = new Point(workingArea.Left, workingArea.Top);
+            window.Refresh();
+            Pump(120);
 
-            int width = window.ClientSize.Width;
-            int height = window.ClientSize.Height;
+            using (Bitmap picture = new Bitmap(window.Width, window.Height, PixelFormat.Format32bppArgb))
+            {
+                using (Graphics canvas = Graphics.FromImage(picture))
+                {
+                    canvas.CopyFromScreen(window.Location, Point.Empty, window.Size);
+                }
 
-            if (width < 1 || height < 1) return new Rectangle(0, 0, windowSize.Width, windowSize.Height);
-            if (left + width > windowSize.Width) width = windowSize.Width - left;
-            if (top + height > windowSize.Height) height = windowSize.Height - top;
-            if (width < 1 || height < 1) return new Rectangle(0, 0, windowSize.Width, windowSize.Height);
+                picture.Save(path, ImageFormat.Png);
+            }
+        }
 
-            return new Rectangle(left, top, width, height);
+        /// <summary>
+        /// True when the picture holds no drawing at all, which is what a failed DrawToBitmap
+        /// looks like: one flat color or a fully transparent rectangle. The window frame alone
+        /// already gives a drawn screen several colors, so a real screen never counts as blank.
+        /// </summary>
+        private static bool IsBlank(Bitmap picture)
+        {
+            HashSet<int> colors = new HashSet<int>();
+
+            // A coarse grid is enough: a drawn screen changes color almost everywhere it matters.
+            int stepX = Math.Max(1, picture.Width / 20);
+            int stepY = Math.Max(1, picture.Height / 20);
+
+            for (int y = 0; y < picture.Height; y += stepY)
+            {
+                for (int x = 0; x < picture.Width; x += stepX)
+                {
+                    colors.Add(picture.GetPixel(x, y).ToArgb());
+                    if (colors.Count > 2) return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static string PreviewFolder()
+        {
+            string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "previews");
+            Directory.CreateDirectory(folder);
+            return folder;
         }
 
         /// <summary>Looks the class up by simple name in the two UI namespaces.</summary>
@@ -287,10 +386,7 @@ namespace LittleEreseSystemV3.Helpers
 
             try
             {
-                string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "previews");
-                Directory.CreateDirectory(folder);
-
-                File.WriteAllText(Path.Combine(folder, name + ".error.txt"), text);
+                File.WriteAllText(Path.Combine(PreviewFolder(), name + ".error.txt"), text);
             }
             catch
             {
