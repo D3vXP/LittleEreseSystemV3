@@ -176,11 +176,57 @@ Update this file at the end of every task.
   (empty until a promo is added - no promo seed data exists yet), ServiceEditForm (category "Botox"
   loaded, hint text visible) and PromotionEditForm (dates default to today / +1 month).
 
+- Step 8 (this task): Layout only (Designer work) for the Staff Accounts module and Settings.
+  No logic, no SQL, no file or Session access: every wired event got an empty handler with
+  "// TODO(logic prompt)", waiting for the logic prompt.
+  - Controls\ucStaffAccounts (.cs + .Designer.cs): same page look as ucServices. pnlToolbar
+    (Dock Top, 56 px, Surface) with lblSearch / txtSearch (140 px) / lblStatus / cboStatus
+    (All, Active, Inactive) on the left, lblCount ("0 staff accounts", SmallFont, TextMuted)
+    right after them and btnAdd (primary, "Add Staff") / btnEdit (secondary) / btnToggleStatus
+    (danger, "Deactivate") / btnResetPassword (secondary, 120 px) / btnRefresh (secondary, 72 px)
+    right aligned. Below it the card pnlGrid (Dock Fill, Surface, FixedSingle, 1 px padding) holds
+    dgvStaff (Dock Fill, Theme.StyleGrid look copied as literals, AutoGenerateColumns = false).
+    Columns: colUserId (hidden, user_id), colFullName (fill 26, full_name), colUsername (fill 18,
+    username), colRole (fill 10, role), colContact (fill 18, contact_number), colStatus (fill 12,
+    status), colCreated (fill 16, created_at, format "MMM dd, yyyy"). The button block starts at
+    x = 504 so lblCount never collides with it at 1240 px width (the same trick as ucServices).
+  - Forms\StaffEditForm (.cs + .Designer.cs): FixedDialog, CenterParent, no minimize/maximize,
+    AcceptButton btnSave, CancelButton + DialogResult.Cancel on btnCancel, errorProvider1.
+    The prompt's 480 x 620 was shrunk to a 460 px client width so it matches ServiceEditForm /
+    PromotionEditForm and the "dialogs at most 1000 x 640" rule. White header with lblTitle
+    "Staff Account" (HeadingFont) + 1 px Border line, AppBack content and a white footer with
+    btnSave (primary) and btnCancel (secondary). Fields: cboStatus (Active, Inactive),
+    txtFullName, txtUsername, cboRole (Admin, Staff), txtContact, txtPassword and
+    txtConfirmPassword (both UseSystemPasswordChar), muted lblPasswordHint "At least 8 characters
+    with a letter and a number." under them, leaving some free space above the footer.
+  - Controls\ucSettings (.cs + .Designer.cs): a centered 640 px column on AppBack, built with a
+    3-column tlpRoot (50% / 640 px / 50%) that holds a tlpColumn (one row per card, 20 px side
+    padding). Cards: pnlProfile (Surface, FixedSingle) with picAvatar 96x96 (SizeMode Zoom),
+    lblFullName (HeadingFont size 12 semibold, TextDark), lblRole (Primary), lblUsername and
+    lblContact (TextMuted); grpPassword (Surface, caption "Change Password") with lblCurrent /
+    txtCurrentPassword, lblNew / txtNewPassword, lblConfirmNew / txtConfirmNewPassword (all
+    UseSystemPasswordChar), muted lblPasswordHint and btnChangePassword (primary look, 180 px)
+    at the bottom right; pnlAbout (Surface, FixedSingle) with lblAppName "Little Erese's
+    Appointment and Billing System", lblAppVersion "Version" and lblDatabase "Database" (both
+    filled at runtime by the logic prompt). errorProvider1 sits on the UserControl.
+    POLISH: the version and database strings are placeholder text until the logic prompt.
+  - Layout fixes found in the previews: StaffEditForm had too much empty space under the title
+    (the first draft put the rows at y >= 124), so the fields were moved up to a 22 px row rhythm
+    starting at y = 60 (cboStatus) - every label/field pair is 22 px apart and the hint line sits
+    12 px under the last field, so nothing overlaps or is cut.
+  - LittleEreseSystemV3.csproj was NOT edited (every file already existed and was listed).
+- Standard clean build (bin, obj and .vs\iolys deleted first): 0 errors, 0 warnings.
+  --smoketest: 32 passed, 0 failed, 0 skipped.
+  --preview checked for ucStaffAccounts (toolbar fits, all five buttons readable, grid columns
+  visible), StaffEditForm (no overlap, hint visible, footer complete) and ucSettings (640 px
+  column centered, three cards, nothing cut off). The app was started once and closed again.
+
 ## Next
-- Step 8: the Dashboard screen (ucDashboard with ucCalendarMonth) and then the remaining modules
-  (Appointments, Clients, Services, Promotions, Billing, Commissions, Reports, Staff Accounts,
-  File Maintenance, Activity Log, Settings). Every page is still an empty UserControl, so the
-  header has not been wired to any other admin/staff difference yet.
+- Step 9: the LOGIC for Staff Accounts (UserRepository list/create/update/status/password reset)
+  and Settings (own password change), then the Dashboard screen (ucDashboard with ucCalendarMonth)
+  and the remaining modules (Appointments, Clients, Billing, Commissions, Reports,
+  File Maintenance, Activity Log). ucStaffAccounts, StaffEditForm and ucSettings are still
+  layout only, so opening those pages shows the shell with an empty grid and placeholder texts.
 - POLISH items left for the owner: the lock out limits (5 tries / 30 seconds) in LoginForm and
   the "Log out now?" wording.
 
