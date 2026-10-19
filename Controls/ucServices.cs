@@ -129,18 +129,9 @@ namespace LittleEreseSystemV3.Controls
         private void SelectService(int serviceId)
         {
             dgvServices.ClearSelection();
-            if (serviceId <= 0) return;
-
-            foreach (DataGridViewRow row in dgvServices.Rows)
-            {
-                int id = Db.Get<int>(row.Cells["colServiceId"].Value);
-                if (id == serviceId)
-                {
-                    row.Selected = true;
-                    if (row.Index >= 0) dgvServices.CurrentCell = row.Cells[0];
-                    return;
-                }
-            }
+            // Selecting through the helper keeps the current cell on a VISIBLE column - setting it to
+            // the hidden id column (Cells[0]) throws InvalidOperationException.
+            GridHelper.SelectRowById(dgvServices, "colServiceId", serviceId);
         }
 
         private void UpdateCount()
@@ -164,9 +155,7 @@ namespace LittleEreseSystemV3.Controls
 
         private int CurrentServiceId()
         {
-            DataGridViewRow row = dgvServices.CurrentRow;
-            if (row == null) return 0;
-            return Db.Get<int>(row.Cells["colServiceId"].Value);
+            return GridHelper.GetSelectedId(dgvServices, "colServiceId");
         }
 
         private string CurrentServiceName()

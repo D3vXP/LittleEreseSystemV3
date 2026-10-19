@@ -86,18 +86,9 @@ namespace LittleEreseSystemV3.Controls
         private void SelectUser(int userId)
         {
             dgvStaff.ClearSelection();
-            if (userId <= 0) return;
-
-            foreach (DataGridViewRow row in dgvStaff.Rows)
-            {
-                int id = Db.Get<int>(row.Cells["colUserId"].Value);
-                if (id == userId)
-                {
-                    row.Selected = true;
-                    if (row.Index >= 0) dgvStaff.CurrentCell = row.Cells[0];
-                    return;
-                }
-            }
+            // Selecting through the helper keeps the current cell on a VISIBLE column - setting it to
+            // the hidden id column (Cells[0]) throws InvalidOperationException.
+            GridHelper.SelectRowById(dgvStaff, "colUserId", userId);
         }
 
         private void UpdateCount()
@@ -127,9 +118,7 @@ namespace LittleEreseSystemV3.Controls
 
         private int CurrentUserId()
         {
-            DataGridViewRow row = dgvStaff.CurrentRow;
-            if (row == null) return 0;
-            return Db.Get<int>(row.Cells["colUserId"].Value);
+            return GridHelper.GetSelectedId(dgvStaff, "colUserId");
         }
 
         private string CurrentFullName()

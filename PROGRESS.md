@@ -2,7 +2,28 @@
 
 Update this file at the end of every task.
 
-## Done
+- Bug fix (this task): "Current cell cannot be set to an invisible cell" after Save in the edit forms.
+  - Helpers\GridHelper.cs (NEW FILE, registered in LittleEreseSystemV3.csproj as
+    <Compile Include="Helpers\GridHelper.cs" />): internal static class GridHelper with
+    SelectRowById(grid, idColumnName, id) (finds the row by id, selects it and puts CurrentCell in the
+    FIRST VISIBLE column, scrolls it into view inside a try/catch, returns false when the id is not
+    found or there is no visible column) and GetSelectedId(grid, idColumnName) (id of the selected or
+    current row, 0 when nothing is selected). Neither method ever throws.
+  - Controls\ucServices.cs: SelectService and CurrentServiceId now use GridHelper (was
+    dgvServices.CurrentCell = row.Cells[0], the hidden id column).
+  - Controls\ucStaffAccounts.cs: SelectUser and CurrentUserId now use GridHelper (same Cells[0] bug).
+  - Controls\ucPromotions.cs: SelectPromotion and CurrentPromoId now use GridHelper (it used
+    Cells[1], which breaks as soon as the first visible column changes).
+  - PROJECT_RULES.md: added to the Logic prompt rules: "Never set DataGridView.CurrentCell to a cell
+    of a hidden column. Re-select rows with GridHelper.SelectRowById(grid, idColumnName, id) and read
+    the selected id with GridHelper.GetSelectedId(grid, idColumnName)."
+  - Helpers\SmokeTest.cs: the two exact "Services rows = 77" checks were changed to "at least 77"
+    (like the Users check), because the owner has since added a real service through the app
+    ("BOTOX Test"), so the smoke test was failing on correct data. No other check changed.
+- Standard clean build (bin, obj and .vs deleted first): 0 errors, 0 warnings.
+  --smoketest: 35 passed, 0 failed, 0 skipped.
+  --preview checked for ucStaffAccounts (9 rows selected/highlighted, no crash), ucServices (78 rows,
+  selected row highlighted) and ucPromotions. The app was started once and closed again.
 - Project scaffold: 9 Forms, 12 UserControls (WinForms), Data and Helpers classes created empty.
 - Database script (Database/LittleEreses_Database.sql) and price list (Database/SeedData.sql) prepared.
 - Fix pack applied: WinForms UserControls, clean .csproj, App.config connection string, DesignTime helper, Db helper.

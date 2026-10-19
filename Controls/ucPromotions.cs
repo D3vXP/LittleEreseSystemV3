@@ -100,18 +100,9 @@ namespace LittleEreseSystemV3.Controls
         private void SelectPromotion(int promoId)
         {
             dgvPromotions.ClearSelection();
-            if (promoId <= 0) return;
-
-            foreach (DataGridViewRow row in dgvPromotions.Rows)
-            {
-                int id = Db.Get<int>(row.Cells["colPromoId"].Value);
-                if (id == promoId)
-                {
-                    row.Selected = true;
-                    if (row.Index >= 0) dgvPromotions.CurrentCell = row.Cells[1];
-                    return;
-                }
-            }
+            // Selecting through the helper keeps the current cell on a VISIBLE column - the old code
+            // used Cells[1], which breaks as soon as the first visible column changes.
+            GridHelper.SelectRowById(dgvPromotions, "colPromoId", promoId);
         }
 
         private void UpdateCount()
@@ -147,9 +138,7 @@ namespace LittleEreseSystemV3.Controls
 
         private int CurrentPromoId()
         {
-            DataGridViewRow row = dgvPromotions.CurrentRow;
-            if (row == null) return 0;
-            return Db.Get<int>(row.Cells["colPromoId"].Value);
+            return GridHelper.GetSelectedId(dgvPromotions, "colPromoId");
         }
 
         private string CurrentPromoName()

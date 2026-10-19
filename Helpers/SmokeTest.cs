@@ -19,7 +19,9 @@ namespace LittleEreseSystemV3.Helpers
     internal static class SmokeTest
     {
         private const int ExpectedTables = 17;
-        private const int ExpectedServices = 77;
+        // The seed data has 77 services, but the owner adds more through the app, so only the
+        // seeded minimum is checked (like the Users count below).
+        private const int ExpectedMinServices = 77;
         private const int ExpectedMinUsers = 8;
         // The seeder creates 1 admin + 7 staff, so at least this many Active technicians must exist.
         private const int ExpectedMinActiveStaff = 7;
@@ -129,7 +131,18 @@ namespace LittleEreseSystemV3.Helpers
             else Fail("Db.CanConnect - " + error);
 
             CheckCount("Base tables", "SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped = 0", ExpectedTables);
-            CheckCount("Services rows", "SELECT COUNT(*) FROM Services", ExpectedServices);
+
+            // Services grows while the owner uses the app, so only the minimum is checked.
+            try
+            {
+                int services = Convert.ToInt32(Db.Scalar("SELECT COUNT(*) FROM Services"));
+                if (services >= ExpectedMinServices) Pass("Services rows = " + services + " (expected at least " + ExpectedMinServices + ")");
+                else Fail("Services rows = " + services + " (expected at least " + ExpectedMinServices + ")");
+            }
+            catch (Exception ex)
+            {
+                Fail("Services rows", ex);
+            }
 
             // Users grows while the owner uses the app, so only the minimum is checked.
             try
@@ -206,8 +219,8 @@ namespace LittleEreseSystemV3.Helpers
             {
                 DataTable services = ServiceRepository.GetServices("", 0, "Active");
                 string message = "ServiceRepository.GetServices(\"\", 0, \"Active\") rows = " +
-                    services.Rows.Count + " (expected 77)";
-                if (services.Rows.Count == ExpectedServices) Pass(message);
+                    services.Rows.Count + " (expected at least " + ExpectedMinServices + ")";
+                if (services.Rows.Count >= ExpectedMinServices) Pass(message);
                 else Fail(message);
             }
             catch (Exception ex)

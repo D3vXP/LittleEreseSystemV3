@@ -73,6 +73,7 @@ Close any running copy of the app. Delete only bin and obj (also .vs if it is no
 - Add // POLISH: comments where I may want to adjust text, limits or rules.
 - Extend Helpers\SmokeTest.cs with up to 3 READ-ONLY checks for the repository methods you add.
 - Finish with the standard clean build and update PROGRESS.md.
+- Never set DataGridView.CurrentCell to a cell of a hidden column. Re-select rows with GridHelper.SelectRowById(grid, idColumnName, id) and read the selected id with GridHelper.GetSelectedId(grid, idColumnName).
 ### Roles
 - Admin: everything.
 - Staff: Dashboard, Appointments, Clients (view/add/edit), Services and Promotions (view only; Promotions shows only Active ones valid today), Billing, Settings (own password).
