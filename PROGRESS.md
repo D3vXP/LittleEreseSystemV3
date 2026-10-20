@@ -2,6 +2,40 @@
 
 Update this file at the end of every task.
 
+- Bug fix (this task): truncated toolbar labels, wrong field order in StaffEditForm and
+  unreadable status colors on selected rows.
+  - STEP 1 (truncated "Searc"): in the toolbars of ucServices, ucPromotions and ucStaffAccounts the
+    labels lblSearch / lblCategory / lblStatus and lblCount now use AutoSize = true (the fixed
+    48 px width was cutting the last letter of "Search"), and the neighbours were re-spaced so no
+    control overlaps: lblSearch x 16, txtSearch x 72 (110 px), lblCategory x 190 / cboCategory x 260
+    (110 px), lblStatus x 378 / cboStatus x 432 (services) or x 244 (promotions) or x 274
+    (staff accounts). lblCount is AutoSize and right-aligned near the button block (591 / 534 / 406).
+  - STEP 2 (StaffEditForm order): the content panel was re-laid out so the visual top-to-bottom
+    order equals the TabIndex order - Full name (Tab 0/1), Username (2/3), Role (4/5),
+    Contact number (6/7), Password (8/9), Confirm password (10/11), the muted password hint (12),
+    Status (13/14), then the footer Cancel / Save buttons. The empty gap under the title is gone
+    (the first row now starts at y = 16) and the dialog is still 620 px tall (max 640). Every
+    control name and event wiring is unchanged; PasswordOnly mode still looks right (it locks the
+    other controls in code, so only the two password boxes stay usable).
+  - STEP 3 (selected row readability): in the CellFormatting handlers of ucServices, ucPromotions
+    and ucStaffAccounts the Status cell now uses the grid's selection foreground (White) when the
+    row is selected instead of the status color, so the text stays readable on the highlight.
+  - STEP 4 (duration header): ucServices column header "Duration (min)" is now "Duration"
+    (the cells still show "30 min").
+  - STEP 5: PROJECT_RULES.md - added to the Layout prompt rules: "Toolbar and form labels use
+    AutoSize = true; no text may be truncated in the previews. In dialogs, visual top-to-bottom
+    order must equal TabIndex order. Status colors do not apply to selected grid rows."
+  - STEP 6: Helpers\SmokeTest.cs - every EXACT count check is now an "at least" check:
+    Services >= 77 (expectedMinServices already existed) and GetServices("", 0, "Active") >= 77.
+    No other check changed.
+  - LittleEreseSystemV3.csproj was NOT edited (no new file in this task; GridHelper.cs was already
+    registered in the previous task).
+- Standard clean build (bin, obj and .vs deleted first): 0 errors, 0 warnings.
+  --smoketest: 35 passed, 0 failed, 0 skipped.
+  --preview checked (1 fix round): ucServices (Search label complete, "Duration" header, 77
+  services, selected row readable), ucPromotions (labels complete, 1 promotion), ucStaffAccounts
+  (labels complete, 9 staff accounts) and StaffEditForm (fields in the requested order, no gap
+  under the title, hint visible, footer complete). The app was started once and closed again.
 - Bug fix (this task): "Current cell cannot be set to an invisible cell" after Save in the edit forms.
   - Helpers\GridHelper.cs (NEW FILE, registered in LittleEreseSystemV3.csproj as
     <Compile Include="Helpers\GridHelper.cs" />): internal static class GridHelper with

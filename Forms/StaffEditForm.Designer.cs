@@ -87,69 +87,69 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.lblPasswordHint.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblPasswordHint.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblPasswordHint.Location = new System.Drawing.Point(16, 425);
+            this.lblPasswordHint.AutoSize = true;
+            this.lblPasswordHint.Location = new System.Drawing.Point(16, 422);
             this.lblPasswordHint.Name = "lblPasswordHint";
-            this.lblPasswordHint.Size = new System.Drawing.Size(428, 16);
-            this.lblPasswordHint.TabIndex = 14;
+            this.lblPasswordHint.TabIndex = 12;
             this.lblPasswordHint.Text = "At least 8 characters with a letter and a number.";
             this.lblPasswordHint.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // txtConfirmPassword
             // 
             this.txtConfirmPassword.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtConfirmPassword.Location = new System.Drawing.Point(16, 394);
+            this.txtConfirmPassword.Location = new System.Drawing.Point(16, 388);
             this.txtConfirmPassword.Name = "txtConfirmPassword";
             this.txtConfirmPassword.Size = new System.Drawing.Size(200, 25);
-            this.txtConfirmPassword.TabIndex = 13;
+            this.txtConfirmPassword.TabIndex = 11;
             this.txtConfirmPassword.UseSystemPasswordChar = true;
             // 
             // lblConfirm
             // 
             this.lblConfirm.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblConfirm.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblConfirm.Location = new System.Drawing.Point(16, 372);
+            this.lblConfirm.AutoSize = true;
+            this.lblConfirm.Location = new System.Drawing.Point(16, 366);
             this.lblConfirm.Name = "lblConfirm";
-            this.lblConfirm.Size = new System.Drawing.Size(200, 18);
-            this.lblConfirm.TabIndex = 12;
+            this.lblConfirm.TabIndex = 10;
             this.lblConfirm.Text = "Confirm password";
             this.lblConfirm.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // txtPassword
             // 
             this.txtPassword.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtPassword.Location = new System.Drawing.Point(16, 342);
+            this.txtPassword.Location = new System.Drawing.Point(16, 318);
             this.txtPassword.Name = "txtPassword";
             this.txtPassword.Size = new System.Drawing.Size(200, 25);
-            this.txtPassword.TabIndex = 11;
+            this.txtPassword.TabIndex = 9;
             this.txtPassword.UseSystemPasswordChar = true;
             // 
             // lblPassword
             // 
             this.lblPassword.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblPassword.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblPassword.Location = new System.Drawing.Point(16, 320);
+            this.lblPassword.AutoSize = true;
+            this.lblPassword.Location = new System.Drawing.Point(16, 296);
             this.lblPassword.Name = "lblPassword";
-            this.lblPassword.Size = new System.Drawing.Size(200, 18);
-            this.lblPassword.TabIndex = 10;
+            this.lblPassword.TabIndex = 8;
             this.lblPassword.Text = "Password";
             this.lblPassword.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // txtContact
             // 
             this.txtContact.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtContact.Location = new System.Drawing.Point(16, 290);
+            this.txtContact.Location = new System.Drawing.Point(16, 248);
             this.txtContact.Name = "txtContact";
             this.txtContact.Size = new System.Drawing.Size(200, 25);
-            this.txtContact.TabIndex = 9;
+            this.txtContact.TabIndex = 7;
             // 
             // lblContact
             // 
             this.lblContact.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblContact.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblContact.Location = new System.Drawing.Point(16, 268);
+            this.lblContact.AutoSize = true;
+            this.lblContact.Location = new System.Drawing.Point(16, 226);
             this.lblContact.Name = "lblContact";
-            this.lblContact.Size = new System.Drawing.Size(200, 18);
-            this.lblContact.TabIndex = 8;
+            this.lblContact.TabIndex = 6;
             this.lblContact.Text = "Contact number";
             this.lblContact.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
@@ -161,57 +161,57 @@ namespace LittleEreseSystemV3.Forms
             this.cboRole.Items.AddRange(new object[] {
             "Admin",
             "Staff"});
-            this.cboRole.Location = new System.Drawing.Point(16, 238);
+            this.cboRole.Location = new System.Drawing.Point(16, 178);
             this.cboRole.Name = "cboRole";
             this.cboRole.Size = new System.Drawing.Size(160, 25);
-            this.cboRole.TabIndex = 7;
+            this.cboRole.TabIndex = 5;
             // 
             // lblRole
             // 
             this.lblRole.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblRole.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblRole.Location = new System.Drawing.Point(16, 216);
+            this.lblRole.AutoSize = true;
+            this.lblRole.Location = new System.Drawing.Point(16, 156);
             this.lblRole.Name = "lblRole";
-            this.lblRole.Size = new System.Drawing.Size(200, 18);
-            this.lblRole.TabIndex = 6;
+            this.lblRole.TabIndex = 4;
             this.lblRole.Text = "Role";
             this.lblRole.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // txtUsername
             // 
             this.txtUsername.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtUsername.Location = new System.Drawing.Point(16, 186);
+            this.txtUsername.Location = new System.Drawing.Point(16, 108);
             this.txtUsername.Name = "txtUsername";
             this.txtUsername.Size = new System.Drawing.Size(200, 25);
-            this.txtUsername.TabIndex = 5;
+            this.txtUsername.TabIndex = 3;
             // 
             // lblUsername
             // 
             this.lblUsername.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblUsername.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblUsername.Location = new System.Drawing.Point(16, 164);
+            this.lblUsername.AutoSize = true;
+            this.lblUsername.Location = new System.Drawing.Point(16, 86);
             this.lblUsername.Name = "lblUsername";
-            this.lblUsername.Size = new System.Drawing.Size(200, 18);
-            this.lblUsername.TabIndex = 4;
+            this.lblUsername.TabIndex = 2;
             this.lblUsername.Text = "Username";
             this.lblUsername.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // txtFullName
             // 
             this.txtFullName.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtFullName.Location = new System.Drawing.Point(16, 134);
+            this.txtFullName.Location = new System.Drawing.Point(16, 38);
             this.txtFullName.Name = "txtFullName";
             this.txtFullName.Size = new System.Drawing.Size(428, 25);
-            this.txtFullName.TabIndex = 3;
+            this.txtFullName.TabIndex = 1;
             // 
             // lblFullName
             // 
             this.lblFullName.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblFullName.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblFullName.Location = new System.Drawing.Point(16, 112);
+            this.lblFullName.AutoSize = true;
+            this.lblFullName.Location = new System.Drawing.Point(16, 16);
             this.lblFullName.Name = "lblFullName";
-            this.lblFullName.Size = new System.Drawing.Size(200, 18);
-            this.lblFullName.TabIndex = 2;
+            this.lblFullName.TabIndex = 0;
             this.lblFullName.Text = "Full name";
             this.lblFullName.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
@@ -223,19 +223,19 @@ namespace LittleEreseSystemV3.Forms
             this.cboStatus.Items.AddRange(new object[] {
             "Active",
             "Inactive"});
-            this.cboStatus.Location = new System.Drawing.Point(16, 82);
+            this.cboStatus.Location = new System.Drawing.Point(16, 474);
             this.cboStatus.Name = "cboStatus";
             this.cboStatus.Size = new System.Drawing.Size(160, 25);
-            this.cboStatus.TabIndex = 1;
+            this.cboStatus.TabIndex = 14;
             // 
             // lblStatus
             // 
             this.lblStatus.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblStatus.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblStatus.Location = new System.Drawing.Point(16, 60);
+            this.lblStatus.AutoSize = true;
+            this.lblStatus.Location = new System.Drawing.Point(16, 452);
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(200, 18);
-            this.lblStatus.TabIndex = 0;
+            this.lblStatus.TabIndex = 13;
             this.lblStatus.Text = "Status";
             this.lblStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 

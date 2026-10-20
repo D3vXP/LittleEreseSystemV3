@@ -163,9 +163,9 @@ namespace LittleEreseSystemV3.Controls
             this.lblCount.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblCount.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblCount.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblCount.Location = new System.Drawing.Point(548, 19);
+            this.lblCount.AutoSize = true;
+            this.lblCount.Location = new System.Drawing.Point(591, 20);
             this.lblCount.Name = "lblCount";
-            this.lblCount.Size = new System.Drawing.Size(100, 20);
             this.lblCount.TabIndex = 6;
             this.lblCount.Text = "0 services";
             this.lblCount.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
@@ -179,7 +179,7 @@ namespace LittleEreseSystemV3.Controls
             "All",
             "Active",
             "Archived"});
-            this.cboStatus.Location = new System.Drawing.Point(436, 16);
+            this.cboStatus.Location = new System.Drawing.Point(432, 16);
             this.cboStatus.Name = "cboStatus";
             this.cboStatus.Size = new System.Drawing.Size(100, 25);
             this.cboStatus.TabIndex = 5;
@@ -189,9 +189,9 @@ namespace LittleEreseSystemV3.Controls
             // 
             this.lblStatus.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblStatus.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.lblStatus.Location = new System.Drawing.Point(388, 16);
+            this.lblStatus.AutoSize = true;
+            this.lblStatus.Location = new System.Drawing.Point(378, 19);
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(48, 24);
             this.lblStatus.TabIndex = 4;
             this.lblStatus.Text = "Status";
             this.lblStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -203,7 +203,7 @@ namespace LittleEreseSystemV3.Controls
             this.cboCategory.FormattingEnabled = true;
             this.cboCategory.Location = new System.Drawing.Point(260, 16);
             this.cboCategory.Name = "cboCategory";
-            this.cboCategory.Size = new System.Drawing.Size(120, 25);
+            this.cboCategory.Size = new System.Drawing.Size(110, 25);
             this.cboCategory.TabIndex = 3;
             this.cboCategory.SelectedIndexChanged += new System.EventHandler(this.cboCategory_SelectedIndexChanged);
             // 
@@ -211,9 +211,9 @@ namespace LittleEreseSystemV3.Controls
             // 
             this.lblCategory.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblCategory.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.lblCategory.Location = new System.Drawing.Point(192, 16);
+            this.lblCategory.AutoSize = true;
+            this.lblCategory.Location = new System.Drawing.Point(190, 19);
             this.lblCategory.Name = "lblCategory";
-            this.lblCategory.Size = new System.Drawing.Size(68, 24);
             this.lblCategory.TabIndex = 2;
             this.lblCategory.Text = "Category";
             this.lblCategory.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -221,9 +221,9 @@ namespace LittleEreseSystemV3.Controls
             // txtSearch
             // 
             this.txtSearch.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtSearch.Location = new System.Drawing.Point(64, 16);
+            this.txtSearch.Location = new System.Drawing.Point(72, 16);
             this.txtSearch.Name = "txtSearch";
-            this.txtSearch.Size = new System.Drawing.Size(120, 25);
+            this.txtSearch.Size = new System.Drawing.Size(110, 25);
             this.txtSearch.TabIndex = 1;
             this.txtSearch.TextChanged += new System.EventHandler(this.txtSearch_TextChanged);
             // 
@@ -231,9 +231,9 @@ namespace LittleEreseSystemV3.Controls
             // 
             this.lblSearch.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblSearch.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.lblSearch.Location = new System.Drawing.Point(16, 16);
+            this.lblSearch.AutoSize = true;
+            this.lblSearch.Location = new System.Drawing.Point(16, 19);
             this.lblSearch.Name = "lblSearch";
-            this.lblSearch.Size = new System.Drawing.Size(48, 24);
             this.lblSearch.TabIndex = 0;
             this.lblSearch.Text = "Search";
             this.lblSearch.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -354,7 +354,7 @@ namespace LittleEreseSystemV3.Controls
             this.colDuration.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
             this.colDuration.DataPropertyName = "duration_minutes";
             this.colDuration.FillWeight = 16F;
-            this.colDuration.HeaderText = "Duration (min)";
+            this.colDuration.HeaderText = "Duration";
             this.colDuration.Name = "colDuration";
             this.colDuration.ReadOnly = true;
             // 

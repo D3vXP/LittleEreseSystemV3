@@ -62,6 +62,7 @@ Close any running copy of the app. Delete only bin and obj (also .vs if it is no
 - Do not set Image properties in the Designer (images load at runtime). Use literal Color.FromArgb values equal to Theme colors, and give buttons/grids the same look as Theme.StylePrimaryButton / StyleSecondaryButton / StyleDangerButton / StyleGrid so the Designer preview matches runtime.
 - Use Dock, Anchor, TableLayoutPanel and FlowLayoutPanel so screens work at 1366x768. Pages (UserControls) have BackColor AppBack and a default size of 1000x640; the MainForm docks them to Fill.
 - After building, run bin\Debug\LittleEreseSystemV3.exe --preview <ClassName>, open previews\<ClassName>.png, and fix overlaps, truncated text and misaligned controls (maximum 2 fix rounds).
+- Toolbar and form labels use AutoSize = true; no text may be truncated in the previews. In dialogs, visual top-to-bottom order must equal TabIndex order. Status colors do not apply to selected grid rows.
 ### Logic prompts (code-behind and repositories)
 - Do not restructure the Designer layout. Small Designer fixes (a missing control or column) are allowed and must be mentioned in the report.
 - Query column aliases must match the DataPropertyName values in the Designer exactly.

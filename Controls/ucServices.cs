@@ -267,8 +267,9 @@ namespace LittleEreseSystemV3.Controls
             if (column == "colStatus")
             {
                 // Status colors come from Theme so every screen uses the same green / red / gray.
+                // A selected row keeps white text on its highlight, so the status color would be unreadable.
                 e.CellStyle.ForeColor = Theme.StatusColor(e.Value.ToString());
-                e.CellStyle.SelectionForeColor = e.CellStyle.ForeColor;
+                e.CellStyle.SelectionForeColor = System.Drawing.Color.White;
             }
             else if (column == "colDuration")
             {
