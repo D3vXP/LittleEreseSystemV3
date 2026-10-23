@@ -277,6 +277,46 @@ namespace LittleEreseSystemV3.Helpers
             {
                 Fail("UserRepository.GetActiveStaff", ex);
             }
+
+            // The three read-only promotion-to-services checks. Nothing is written or changed here.
+            CheckComputeDiscount("Percentage", 15m, 1000m, 150.00m);
+            CheckComputeDiscount("Fixed", 500m, 300m, 300.00m);
+            CheckNoServiceLinks();
+        }
+
+        /// <summary>The ONE discount formula lives in PromotionRepository.ComputeDiscount.</summary>
+        private static void CheckComputeDiscount(string type, decimal value, decimal subtotal, decimal expected)
+        {
+            string label = "PromotionRepository.ComputeDiscount(\"" + type + "\", " +
+                value.ToString("0.00") + ", " + subtotal.ToString("0.00") + ")";
+            try
+            {
+                decimal actual = PromotionRepository.ComputeDiscount(type, value, subtotal);
+                string message = label + " = " + actual.ToString("0.00") +
+                    " (expected " + expected.ToString("0.00") + ")";
+                if (actual == expected) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>A new promotion (id 0) has no linked services, so the list must be empty.</summary>
+        private static void CheckNoServiceLinks()
+        {
+            const string label = "PromotionRepository.GetServiceIds(0) returns an empty list";
+            try
+            {
+                List<int> ids = PromotionRepository.GetServiceIds(0);
+                if (ids != null && ids.Count == 0) Pass(label);
+                else Fail(label + " (got " + (ids == null ? "null" : ids.Count + " ids") + ")");
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
         }
 
         private static void Pass(string name)

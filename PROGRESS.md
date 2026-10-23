@@ -2,6 +2,66 @@
 
 Update this file at the end of every task.
 
+- Step 11 (this task): the LOGIC for promotion-to-services (repository + the two screens + schema
+  docs). No SQL was run by me: the PromotionServices table already existed in LittleEresesDB.
+  - Data\PromotionRepository.cs: every old method still works (RefreshExpired, GetPromotions,
+    GetById, GetActiveValid, PromoNameExists, Add, Update, SetStatus). Added:
+    * ComputeDiscount(discountType, value, eligibleSubtotal) - the ONLY discount formula.
+      Percentage = ROUND(subtotal x value / 100, 2); Fixed = MIN(value, subtotal); never negative
+      and never above the subtotal.
+    * GetServiceIds(promoId) - the linked service ids; empty list = applies to all (promoId 0 =
+      empty).
+    * GetPickList(promoId) - every Active service with service_id, service_name, category_name,
+      price, is_selected (true when linked to promoId), ordered by category then name.
+    * SavePromotion(...) - add/update the promotion AND replace its links in ONE transaction built
+      privately in this class with its own SqlConnection + SqlTransaction (no other transaction
+      helper). The unique-name check also runs inside that transaction; duplicate ids are skipped
+      so the UNIQUE constraint is never hit. Add/Update keep their signatures and still work.
+    * CalculateDiscount(promoId, lines, out message) - 0 + a readable message when the promo is
+      not Active, not valid today, or has linked services that none of the lines match; otherwise
+      the linked lines (or all lines when nothing is linked) are summed and ComputeDiscount runs.
+    * GetPromotions / GetActiveValid now also return applies_to ("All services", or the first 3
+      service names + " +N more"), built in C# (no STRING_AGG) by a private helper.
+  - Forms\PromotionEditForm.cs: a HashSet<int> of ticked service ids (ticks survive the search and
+    the category filter). Load fills cboServiceCategory ("All categories" + categories), loads
+    GetPickList(EditId) (0 for a new promo), chkApplyAll is ticked when a new promo or an existing
+    promo has no links. Ticked = the picker, search and category are disabled, the preview shows
+    "Applies to every service on the bill." and the totals block is hidden. Ticking a row goes
+    through CurrentCellDirtyStateChanged (CommitEdit) -> CellValueChanged, which updates the set,
+    lblSelectedCount and the preview. The preview recalculates on every selection / type / value
+    change through ComputeDiscount: Percentage shows regular, promo price = price - ROUND(price x
+    value / 100, 2) and the saving per service; Fixed leaves the per-service promo columns empty
+    and shows the totals, with "A fixed discount is taken off once per appointment." (the promo
+    price is filled in the row when exactly one service is selected). Money uses the peso format
+    (set in the Load event, the Designer keeps N2 only). New validation: at least one service when
+    chkApplyAll is unticked, and a Fixed value may not exceed the regular total of the selected
+    services. Save calls SavePromotion (one transaction) and logs "Add Promotion" / "Edit
+    Promotion" with the number of linked services. A duplicate name from the repository is shown
+    with Messages.Warn, not as a database error.
+  - Controls\ucPromotions.cs: SelectionChanged (and every reload) fills lblPromoSummary. With
+    linked services: "Applies to: A, B, C. Regular total P1 -> promo total P2 (save P3)" for a
+    Percentage, or "P3 off the combined P1 of: A, B, C" for Fixed. With no links: "Applies to every
+    service. 15 % off the whole bill." / "Applies to every service. PHP 100.00 off the whole bill.".
+    Staff see the same summary; no selection clears it. The money comes from ComputeDiscount, so
+    the formula is still in one place.
+  - Database\LittleEreses_Database.sql: the CREATE TABLE PromotionServices was added right after
+    Promotions (the same definition as the guarded script: two foreign keys + UNIQUE (promo_id,
+    service_id)) and the header comment now says 18 tables.
+  - Database\Migration_01_PromotionServices.sql (NEW FILE, already covered by the existing
+    <None Include="Database\*.sql" /> in the .csproj): the guarded script
+    (IF OBJECT_ID('dbo.PromotionServices') IS NULL BEGIN CREATE TABLE ... END). Text only, not run.
+  - README.md: the setup step now mentions the migration for a database created before this
+    feature and the 18 tables. PROGRESS.md: this entry.
+  - Helpers\SmokeTest.cs: the three new read-only checks (ComputeDiscount Percentage 15 / 1000 =
+    150.00, Fixed 500 / 300 = 300.00, GetServiceIds(0) is empty). ExpectedTables was already 18.
+  - LittleEreseSystemV3.csproj was NOT edited.
+- Standard clean build (bin and obj deleted first): 0 errors, 0 warnings.
+  --smoketest: 38 passed, 0 failed, 0 skipped (the 3 new promotion checks all PASS).
+  --preview checked for PromotionEditForm (two columns, picker locked while "Apply to all services"
+  is ticked, preview note "Applies to every service on the bill.", footer visible) and ucPromotions
+  ("Applies to" column filled, summary strip "Applies to every service. 15 % off the whole bill.").
+  No layout fix was needed. The app was started once and closed again.
+
 - Step 10 (this task): Layout only (Designer work) for the promotion-to-services feature.
   No logic, no SQL, no file or Session access: every wired event got an empty handler with
   "// TODO(logic prompt)", waiting for the logic prompt.
@@ -386,10 +446,10 @@ Update this file at the end of every task.
   "Database: LittleEresesDB"). The app was started once and closed again.
 
 ## Next
-- Next for Promotions: the logic prompt for PromotionServices - the promotion edit dialog has to
-  load the service list (search + category + checkboxes), save into PromotionServices when
-  chkApplyAll is unticked, calculate the price preview, and the Billing screen must call
-  PromotionRepository.CalculateDiscount (the rule is already written in PROJECT_RULES.md).
+- Promotions are complete (services pick list, price preview, one-transaction save, applies_to and
+  the summary strip). What is left for the owner: the Billing / Appointments screens must call
+  PromotionRepository.CalculateDiscount(promoId, lines, out message) when a promo is applied, and
+  save the full payment upfront (Payments row of type Final, Billing.payment_status 'Paid').
 - Step 10: the Dashboard screen (ucDashboard with ucCalendarMonth) and the remaining modules
   (Appointments, Clients, Billing, Commissions, Reports, File Maintenance, Activity Log).
   Those pages are still layout-only shells.
@@ -398,6 +458,9 @@ Update this file at the end of every task.
   empty contact number in Settings and the version format (3 parts) in Settings.
 
 ## Known issues
+- The summary strip and the price preview show the FULL service price (Services.price) of the
+  linked services, because a promotion is not tied to one appointment there. When Billing applies a
+  promo it must use PromotionRepository.CalculateDiscount on the real appointment lines instead.
 - None blocking. The remaining page UserControls are still empty shells, so switching to them
   shows an empty content area (this is expected until each page is built).
 - The Promotions list is empty at first because the seed data has no Promotions rows; add one with

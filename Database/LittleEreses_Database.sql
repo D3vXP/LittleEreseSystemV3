@@ -1,7 +1,7 @@
 /* =====================================================================
    Appointment and Billing System for Little Erese's Aesthetics and Spa
    Database: LittleEresesDB   |   Target: Microsoft SQL Server (SSMS)
-   17 tables
+   18 tables
    ===================================================================== */
 
 IF DB_ID('LittleEresesDB') IS NULL
@@ -58,6 +58,16 @@ CREATE TABLE Promotions (
     status          VARCHAR(20) NOT NULL DEFAULT 'Active'
                     CHECK (status IN ('Active','Inactive','Expired')),
     CONSTRAINT CK_Promotions_Dates CHECK (end_date >= start_date)
+);
+
+/* A promotion may be linked to specific services. No link means "applies to the whole bill". */
+CREATE TABLE PromotionServices (
+    promo_service_id INT IDENTITY(1,1) PRIMARY KEY,
+    promo_id         INT NOT NULL,
+    service_id       INT NOT NULL,
+    CONSTRAINT FK_PS_Promotion FOREIGN KEY (promo_id)   REFERENCES Promotions(promo_id),
+    CONSTRAINT FK_PS_Service   FOREIGN KEY (service_id) REFERENCES Services(service_id),
+    CONSTRAINT UQ_PS UNIQUE (promo_id, service_id)
 );
 
 /* ---------------------------------------------------------------------
