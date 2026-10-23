@@ -2,6 +2,67 @@
 
 Update this file at the end of every task.
 
+- Step 14 (this task): the LOGIC for the Clients module (repository + page + the two dialogs).
+  The Designer layout was not restructured; two small runtime fixes are listed at the end.
+  - Data\ClientRepository.cs (was an empty class): Search(text, consent) returns client_id,
+    full_name ("Last, First"), contact_number, birth_date, gender, consent_text ('Signed' /
+    'Pending' from consent_status) and last_visit (MAX appointment_date of a Completed
+    appointment, NULL when there is none); text matches first name, last name, "Last, First" or
+    the contact number; consent is All | Signed | Not signed. GetById (full row for the card),
+    GetForCombo() (client_id + display_name "Last, First - contact", for the booking screen
+    later), Add (returns the new client_id), Update (stamps updated_at), ContactExists(contact,
+    excludeId), GetPackages(clientId) (package_id, service_name, sessions_label "3 / 8",
+    expiry_date, status; client 0 = empty table), AddPackage(clientId, serviceId, totalSessions,
+    purchaseDate, DateTime? expiry) (returns the new package_id, status 'Active'),
+    HasActivePackage(clientId, serviceId) and ExpireOldPackages() (Active + expiry_date < today
+    -> 'Expired', returns the row count). Every optional text box is stored as NULL, never as "".
+    Clients are never deleted.
+  - Controls\ucClients.cs: Load styles both grids and the four buttons with Theme, starts the
+    consent filter on "All", calls ExpireOldPackages() and then loads the grid. Selecting a row
+    fills the card from GetById: name ("Last, First"), contact, birth date + age, address +
+    gender, the consent badge (green "Consent signed" / red "Consent form not signed"), the three
+    read-only notes boxes and the packages grid. No selection (or a row that is no longer there)
+    clears the card and switches off Edit / Add Package. Search, the consent filter and Refresh
+    reload (a _loading flag stops the events from firing twice); Add and Edit open ClientEditForm
+    with EditId set and re-select the saved row through GridHelper.SelectRowById; a double click
+    is Edit. Add Package opens PackageForm with ClientId set and re-reads the card afterwards so
+    the new package shows immediately. CellFormatting: the consent cell is Success (Signed) or
+    Warning (Pending), the package Status cell uses Theme.StatusColor; both keep white text on a
+    selected row. Staff may add and edit (no delete exists); Add / Edit / Add Package are logged.
+  - Forms\ClientEditForm.cs: public EditId (0 = new) and SavedClientId for the caller. Load
+    styles the buttons, clears the gender pick and the birth date tick, loads the row when
+    EditId > 0 (title becomes "Edit Client") and refreshes the age. dtpBirthDate_ValueChanged
+    updates lblAge ("Age: -" while the tick is off). Save validates with Validators +
+    errorProvider1 (first and last name via IsValidName, contact via IsValidPhone, birth date not
+    in the future and not more than 120 years ago when it is ticked, gender chosen) and asks
+    Messages.Confirm("A client with this contact number already exists. Save anyway?") when
+    ContactExists is true. Add / Update go through the repository and log "Add" / "Edit".
+  - Forms\PackageForm.cs: public ClientId and SavedPackageId. Load shows the client name, fills
+    cboService from ServiceRepository.GetActiveForBooking() with "Service - price" (services with
+    default_total_sessions > 1 first, all Active services as a fallback when none is flagged as a
+    package - POLISH comment left), and sets the purchase date to today with the expiry tick off.
+    cboService_SelectedIndexChanged sets nudTotalSessions to the service's default_total_sessions
+    and updates lblPriceValue (peso format). Save validates (a client is chosen, a service is
+    chosen, a ticked expiry date must be after the purchase date), asks
+    Messages.Confirm("This client already has an active package for this service. Add another?")
+    when HasActivePackage is true, saves through AddPackage and logs "Add Package".
+  - Helpers\SmokeTest.cs: the three read-only checks Search("", "All"), GetForCombo() and
+    GetPackages(0) returns an empty table. Nothing is written.
+  - Runtime fixes found in the previews (2 rounds, Designer files untouched):
+    (1) in ClientEditForm the birth date picker showed a date although it was meant to be empty -
+    the value is now set BEFORE the tick is cleared (assigning Value ticks an unchecked picker),
+    and lblAge now shows "Age: -"; (2) the same order was applied to the PackageForm expiry picker
+    (it is still unchecked in the preview, as intended). The Designer files were NOT edited.
+  - LittleEreseSystemV3.csproj was NOT edited (no new file in this task).
+- Standard clean build (bin, obj and .vs deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 41 passed, 0 failed, 0 skipped (the 3 new Clients checks all PASS).
+  --preview checked for ucClients (toolbar, count "0 clients", the 7-column grid and the details
+  card with the "Select a client" placeholder, the gray "No client selected" badge and the
+  packages grid - nothing overlapping or truncated), ClientEditForm (empty birth date with
+  "Age: -", no truncation, footer complete) and PackageForm (client "-", the service list with
+  prices, the package price, 8 sessions and the unchecked expiry box). The app was started once
+  and closed again (no error.log).
+
 - Step 13 (this task): Layout only (Designer work) for the Clients page and its two dialogs.
   No logic, no SQL, no file or Session access: every wired event got an empty handler with
   "// TODO(logic prompt)", waiting for the logic prompt.
@@ -543,9 +604,10 @@ Update this file at the end of every task.
   "Database: LittleEresesDB"). The app was started once and closed again.
 
 ## Next
-- The Clients page and its two dialogs are layout-only (ucClients, ClientEditForm, PackageForm).
-  Next: their logic prompt (ClientRepository / package rules), then the Billing / Appointments
-  modules that open these dialogs.
+- The Clients module is COMPLETE (ucClients, ClientEditForm, PackageForm + ClientRepository).
+  Next: the Billing / Appointments modules, which reuse ClientRepository.GetForCombo() to pick the
+  guest and ClientRepository.HasActivePackage / AddPackage for the package rules (the package price
+  is charged on the first session, later sessions of that package are 0.00).
 - Promotions are complete (services pick list, price preview, one-transaction save, applies_to and
   the summary strip). What is left for the owner: the Billing / Appointments screens must call
   PromotionRepository.CalculateDiscount(promoId, lines, out message) when a promo is applied, and
@@ -557,8 +619,17 @@ Update this file at the end of every task.
 - POLISH items left for the owner: the lock out limits (5 tries / 30 seconds) in LoginForm,
   the "Log out now?" wording, the PhoneRegex (mobile numbers only), the "-" placeholder for an
   empty contact number in Settings and the version format (3 parts) in Settings.
+- POLISH item from the Clients logic: PackageForm lists the services whose
+  default_total_sessions is greater than 1 first and only falls back to every Active service when
+  none is flagged as a package. Confirm with the owner which services may be sold as packages.
 
 ## Known issues
+- The Clients grid has no rows yet because Database\SeedData.sql has no Clients rows, so the
+  details card shows its placeholder ("Select a client") until the first client is added with
+  "Add Client". This is expected, not a bug.
+- "Last Visit" is empty for every client for the same reason (it needs a Completed appointment).
+- A client with a birth date but no gender chosen cannot be saved (gender is required by the
+  validation), so old rows without a gender must be completed when they are edited.
 - The summary strip and the price preview show the FULL service price (Services.price) of the
   linked services, because a promotion is not tied to one appointment there. When Billing applies a
   promo it must use PromotionRepository.CalculateDiscount on the real appointment lines instead.

@@ -282,6 +282,57 @@ namespace LittleEreseSystemV3.Helpers
             CheckComputeDiscount("Percentage", 15m, 1000m, 150.00m);
             CheckComputeDiscount("Fixed", 500m, 300m, 300.00m);
             CheckNoServiceLinks();
+
+            // The three read-only Clients checks (Step 14). Nothing is written or changed here.
+            CheckClientSearch();
+            CheckClientCombo();
+            CheckEmptyPackageList();
+        }
+
+        /// <summary>Search("", "All") must list the clients without an error.</summary>
+        private static void CheckClientSearch()
+        {
+            const string label = "ClientRepository.Search(\"\", \"All\")";
+            try
+            {
+                DataTable clients = ClientRepository.Search("", "All");
+                Pass(label + " rows = " + clients.Rows.Count);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>The booking screen later needs the client drop-down list.</summary>
+        private static void CheckClientCombo()
+        {
+            const string label = "ClientRepository.GetForCombo()";
+            try
+            {
+                DataTable clients = ClientRepository.GetForCombo();
+                Pass(label + " rows = " + clients.Rows.Count);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>Client id 0 means "nothing selected", so the package list must be empty (not null).</summary>
+        private static void CheckEmptyPackageList()
+        {
+            const string label = "ClientRepository.GetPackages(0) returns an empty table";
+            try
+            {
+                DataTable packages = ClientRepository.GetPackages(0);
+                if (packages != null && packages.Rows.Count == 0) Pass(label);
+                else Fail(label + " (got " + (packages == null ? "null" : packages.Rows.Count + " rows") + ")");
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
         }
 
         /// <summary>The ONE discount formula lives in PromotionRepository.ComputeDiscount.</summary>
