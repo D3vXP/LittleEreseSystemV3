@@ -195,5 +195,40 @@ namespace LittleEreseSystemV3.Forms
             DialogResult = DialogResult.Cancel;
             Close();
         }
+
+        private void chkApplyAll_CheckedChanged(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
+
+        private void txtServiceSearch_TextChanged(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
+
+        private void cboServiceCategory_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
+
+        private void dgvServicePick_CurrentCellDirtyStateChanged(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
+
+        private void dgvServicePick_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        {
+            // TODO(logic prompt)
+        }
+
+        private void cboType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
+
+        private void txtValue_TextChanged(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
     }
 }

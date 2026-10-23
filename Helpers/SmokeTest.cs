@@ -18,7 +18,8 @@ namespace LittleEreseSystemV3.Helpers
     /// </summary>
     internal static class SmokeTest
     {
-        private const int ExpectedTables = 17;
+        // The schema now has 18 tables (PromotionServices was added to link a promo to services).
+        private const int ExpectedTables = 18;
         // The seed data has 77 services, but the owner adds more through the app, so only the
         // seeded minimum is checked (like the Users count below).
         private const int ExpectedMinServices = 77;

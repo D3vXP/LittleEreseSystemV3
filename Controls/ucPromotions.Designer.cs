@@ -43,6 +43,8 @@ namespace LittleEreseSystemV3.Controls
             this.txtSearch = new System.Windows.Forms.TextBox();
             this.lblSearch = new System.Windows.Forms.Label();
             this.pnlGrid = new System.Windows.Forms.Panel();
+            this.pnlSummary = new System.Windows.Forms.Panel();
+            this.lblPromoSummary = new System.Windows.Forms.Label();
             this.dgvPromotions = new System.Windows.Forms.DataGridView();
             this.colPromoId = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colName = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -51,6 +53,7 @@ namespace LittleEreseSystemV3.Controls
             this.colStart = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colEnd = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colAppliesTo = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colConditions = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.pnlToolbar.SuspendLayout();
             this.pnlGrid.SuspendLayout();
@@ -225,6 +228,30 @@ namespace LittleEreseSystemV3.Controls
             this.pnlGrid.Padding = new System.Windows.Forms.Padding(1);
             this.pnlGrid.Size = new System.Drawing.Size(1000, 584);
             this.pnlGrid.TabIndex = 1;
+            //
+            // pnlSummary
+            //
+            this.pnlSummary.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(227)))), ((int)(((byte)(218)))), ((int)(((byte)(198)))));
+            this.pnlSummary.Controls.Add(this.lblPromoSummary);
+            this.pnlSummary.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.pnlSummary.Location = new System.Drawing.Point(0, 584);
+            this.pnlSummary.Name = "pnlSummary";
+            this.pnlSummary.Padding = new System.Windows.Forms.Padding(0, 1, 0, 0);
+            this.pnlSummary.Size = new System.Drawing.Size(1000, 56);
+            this.pnlSummary.TabIndex = 2;
+            //
+            // lblPromoSummary
+            //
+            this.lblPromoSummary.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            this.lblPromoSummary.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblPromoSummary.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblPromoSummary.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
+            this.lblPromoSummary.Location = new System.Drawing.Point(0, 1);
+            this.lblPromoSummary.Name = "lblPromoSummary";
+            this.lblPromoSummary.Padding = new System.Windows.Forms.Padding(16, 8, 16, 8);
+            this.lblPromoSummary.Size = new System.Drawing.Size(1000, 55);
+            this.lblPromoSummary.TabIndex = 0;
+            this.lblPromoSummary.Text = "No promotion selected";
             // 
             // dgvPromotions
             // 
@@ -255,6 +282,7 @@ namespace LittleEreseSystemV3.Controls
             this.colStart,
             this.colEnd,
             this.colStatus,
+            this.colAppliesTo,
             this.colConditions});
             dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle2.BackColor = System.Drawing.Color.White;
@@ -355,6 +383,15 @@ namespace LittleEreseSystemV3.Controls
             this.colStatus.ReadOnly = true;
             this.colStatus.Width = 90;
             // 
+            // colAppliesTo
+            // 
+            this.colAppliesTo.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
+            this.colAppliesTo.DataPropertyName = "applies_to";
+            this.colAppliesTo.HeaderText = "Applies to";
+            this.colAppliesTo.Name = "colAppliesTo";
+            this.colAppliesTo.ReadOnly = true;
+            this.colAppliesTo.Width = 130;
+            // 
             // colConditions
             // 
             this.colConditions.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
@@ -369,12 +406,14 @@ namespace LittleEreseSystemV3.Controls
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.Controls.Add(this.pnlGrid);
+            this.Controls.Add(this.pnlSummary);
             this.Controls.Add(this.pnlToolbar);
             this.Name = "ucPromotions";
             this.Size = new System.Drawing.Size(1000, 640);
             this.Load += new System.EventHandler(this.ucPromotions_Load);
             this.pnlToolbar.ResumeLayout(false);
             this.pnlGrid.ResumeLayout(false);
+            this.pnlSummary.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvPromotions)).EndInit();
             this.ResumeLayout(false);
 
@@ -393,6 +432,8 @@ namespace LittleEreseSystemV3.Controls
         private System.Windows.Forms.Button btnRefresh;
         private System.Windows.Forms.Label lblCount;
         private System.Windows.Forms.Panel pnlGrid;
+        private System.Windows.Forms.Panel pnlSummary;
+        private System.Windows.Forms.Label lblPromoSummary;
         private System.Windows.Forms.DataGridView dgvPromotions;
         private System.Windows.Forms.DataGridViewTextBoxColumn colPromoId;
         private System.Windows.Forms.DataGridViewTextBoxColumn colName;
@@ -401,6 +442,7 @@ namespace LittleEreseSystemV3.Controls
         private System.Windows.Forms.DataGridViewTextBoxColumn colStart;
         private System.Windows.Forms.DataGridViewTextBoxColumn colEnd;
         private System.Windows.Forms.DataGridViewTextBoxColumn colStatus;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colAppliesTo;
         private System.Windows.Forms.DataGridViewTextBoxColumn colConditions;
     }
 }

@@ -2,6 +2,65 @@
 
 Update this file at the end of every task.
 
+- Step 10 (this task): Layout only (Designer work) for the promotion-to-services feature.
+  No logic, no SQL, no file or Session access: every wired event got an empty handler with
+  "// TODO(logic prompt)", waiting for the logic prompt.
+  - PROJECT_RULES.md: the "- Promos:" business rule was REPLACED with the new text (a promo may be
+    linked to services through PromotionServices; no linked services = whole bill; with linked
+    services only those appointment lines are eligible and the appointment must contain at least one
+    of them; Percentage = eligible subtotal x value / 100; Fixed = value taken off ONCE per
+    appointment and never above the eligible subtotal; ALWAYS compute the discount with
+    PromotionRepository.CalculateDiscount; full payment upfront, Payments row of type Final,
+    Billing.payment_status 'Paid'). One sentence was added to the Database value lists section:
+    "Table PromotionServices (promo_service_id, promo_id, service_id) links a promotion to the
+    services it applies to."
+  - Forms\PromotionEditForm (.Designer.cs + .cs): the dialog is now 980 x 640 client (FixedDialog,
+    CenterParent, AcceptButton btnSave, CancelButton btnCancel, errorProvider1 kept). The client was
+    460 x 545 before; the prompt's 980 x 640 is inside the "dialogs at most 1000 x 640" rule.
+    pnlHeader / pnlFooter are unchanged in look. pnlContent (16 px padding, AutoScroll just in case)
+    holds the new tlpMain (2 columns 42% / 58%, the 16 px gap is the left margin of the right
+    column). Every existing control name, event and field order was kept.
+    LEFT (tlpLeft, one control per row, TabIndex order = visual order): lblName + txtName,
+    lblConditions + txtConditions (70 px), lblType + cboType, lblValue + txtValue, lblHint
+    "Promos need full payment upfront.", lblStart + dtpStart, lblEnd + dtpEnd, lblStatus + cboStatus.
+    RIGHT (tlpRight, 56% / 44%): grpServices "Services in this promotion" with tlpServices -
+    chkApplyAll "Apply to all services (no specific services)", lblServiceSearch + txtServiceSearch,
+    lblServiceCategory + cboServiceCategory (DropDownList), dgvServicePick (AutoGenerateColumns =
+    false; colPickCheck a DataGridViewCheckBoxColumn with an empty header, width 40, the ONLY
+    editable column, DataPropertyName is_selected; colPickServiceId hidden / service_id;
+    colPickService "Service" / service_name; colPickCategory "Category" / category_name;
+    colPickPrice "Price" / price, N2, right aligned), lblSelectedCount "0 services selected" (muted);
+    grpPreview "Price preview" with dgvPreview (colPrevService "Service" / service_name,
+    colPrevRegular "Regular price" / regular_price, colPrevPromo "Promo price" / promo_price,
+    colPrevSaving "You save" / saving, all N2 and read only) and the totals block lblRegularTitle +
+    lblRegularTotal, lblDropTitle + lblDropTotal (Success green), lblPromoTitle + lblPromoTotal
+    (BoldFont) and lblPreviewNote (muted, wraps).
+    New empty handlers in the .cs (each with "// TODO(logic prompt)"):
+    chkApplyAll_CheckedChanged, txtServiceSearch_TextChanged,
+    cboServiceCategory_SelectedIndexChanged, dgvServicePick_CurrentCellDirtyStateChanged,
+    dgvServicePick_CellValueChanged, cboType_SelectedIndexChanged, txtValue_TextChanged.
+    btnSave and btnCancel keep their working logic - no existing behaviour was touched.
+    Small Designer details: both grids get the Theme.StyleGrid look as literals
+    (PrimaryDark header, PrimaryLight selection, Border grid lines).
+  - Controls\ucPromotions (.Designer.cs): new column colAppliesTo "Applies to" / applies_to (130 px)
+    between colStatus and colConditions; colConditions still AutoSizeMode.Fill (the remaining width).
+    New summary strip pnlSummary (Dock Bottom, 56 px, Surface with a Border top line, 16 px side
+    padding) with lblPromoSummary (Dock Fill, BodyFont, wraps - placeholder text "No promotion
+    selected" until the logic prompt). Nothing else was changed; the .cs file was not touched.
+  - Helpers\SmokeTest.cs: ExpectedTables 17 -> 18, because the database now really has 18 tables
+    (PromotionServices exists in LittleEresesDB, verified with sys.tables). Without this the smoke
+    test failed on correct data. Nothing else changed there.
+  - LittleEreseSystemV3.csproj was NOT edited (no new file in this task).
+  - Fix rounds from the previews (2 used): (1) the left column was 15 px taller than the row, so
+    cboStatus was pushed under the footer - the label top margins went from 10 px to 8 px, which
+    brought the whole column inside 980 x 640; (2) in dgvPreview the headers "Regular price" /
+    "Promo price" were cut, so the three money columns were widened to 112 / 104 / 88 px
+    (the Service column fills the rest).
+- Standard clean build (bin, obj and .vs deleted first): 0 errors, 0 warnings.
+  --smoketest: 35 passed, 0 failed, 0 skipped.
+  --preview checked for PromotionEditForm (two columns, both cards complete, no truncated label,
+  nothing under the footer, 980 x 640) and ucPromotions (new "Applies to" column visible, summary
+  strip at the bottom, toolbar unchanged). The app was started once and closed again.
 - Bug fix (this task): truncated toolbar labels, wrong field order in StaffEditForm and
   unreadable status colors on selected rows.
   - STEP 1 (truncated "Searc"): in the toolbars of ucServices, ucPromotions and ucStaffAccounts the
@@ -327,6 +386,10 @@ Update this file at the end of every task.
   "Database: LittleEresesDB"). The app was started once and closed again.
 
 ## Next
+- Next for Promotions: the logic prompt for PromotionServices - the promotion edit dialog has to
+  load the service list (search + category + checkboxes), save into PromotionServices when
+  chkApplyAll is unticked, calculate the price preview, and the Billing screen must call
+  PromotionRepository.CalculateDiscount (the rule is already written in PROJECT_RULES.md).
 - Step 10: the Dashboard screen (ucDashboard with ucCalendarMonth) and the remaining modules
   (Appointments, Clients, Billing, Commissions, Reports, File Maintenance, Activity Log).
   Those pages are still layout-only shells.
