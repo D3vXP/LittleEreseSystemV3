@@ -2,6 +2,88 @@
 
 Update this file at the end of every task.
 
+
+- Step 15 (this task): Layout only (Designer work) for the Appointments page and the booking dialog.
+  No logic, no SQL, no file or Session access: every wired event got an empty handler with
+  "// TODO(logic prompt)", waiting for the logic prompt. Both files were empty shells before.
+  - Controls\ucAppointments (.Designer.cs + .cs): AppBack page, 1000 x 640. pnlToolbar (Dock Top,
+    92 px, Surface, two rows built with tlpToolbar) -
+    row 1 flpNav (left): btnPrevDay + btnNextDay (glyph buttons, Font "Segoe MDL2 Assets" 12 pt,
+    Text \uE76B / \uE76C, 34 x 30, secondary look), dtpDate (Format Short, 130 px),
+    btnToday "Today", lblStatus + cboStatus (All, Upcoming, Ongoing, Completed, Cancelled,
+    132 px), lblSearch "Client" + txtSearch (160 px, client name);
+    row 2: flpButtons (btnNew "New Appointment" primary, btnStart "Start Service",
+    btnReschedule "Reschedule", btnCancelAppointment "Cancel Appointment" danger, btnRefresh,
+    all secondary except New and Cancel Appointment) and, right aligned in the same row,
+    lblSummary (SmallFont, TextMuted, "0 appointments - 0 massage").
+    Below it splitMain (Dock Fill, Orientation Horizontal, SplitterDistance 328 = about 60% of
+    the 548 px body, Panel1MinSize 180, Panel2MinSize 150).
+    Panel1: the card pnlGrid (Surface, FixedSingle, 1 px padding) with dgvAppointments (Dock Fill,
+    Theme.StyleGrid look copied as literals, AutoGenerateColumns = false). Columns: colAppointmentId
+    (hidden, appointment_id), colTime "Time" / time_range, colClient "Client" / client_name,
+    colServices "Services" / services, colTech "Technician" / staff_names, colRoom "Room" /
+    room_names, colSource "Source" / booking_source, colStatus "Status" / status, colPayment
+    "Payment" / payment_status (Fill weights 13/17/27/16/11/9/11/11).
+    Panel2: the details card pnlDetails (Surface, FixedSingle, 16 px padding) with tlpDetails
+    (2 columns: 356 px fixed + rest) holding tlpDetailInfo (lblDetailClient BoldFont,
+    lblDetailSchedule, lblDetailPayment, spanned over both rows), dgvDetailServices
+    (colDetailService "Service" / service_name; colDetailQty "Qty" / quantity, centered;
+    colDetailPrice "Price" / price N2; colDetailStaff "Technician" / staff_name;
+    colDetailStatus "Status" / status) and below it tlpNotes (lblNotesTitle "Notes" +
+    txtDetailNotes read-only multiline).
+    Events wired: Load, btnPrevDay_Click, btnNextDay_Click, btnToday_Click, dtpDate_ValueChanged,
+    cboStatus_SelectedIndexChanged, txtSearch_TextChanged, btnNew_Click, btnStart_Click,
+    btnReschedule_Click, btnCancelAppointment_Click, btnRefresh_Click,
+    dgvAppointments_SelectionChanged, dgvAppointments_CellFormatting,
+    dgvAppointments_CellDoubleClick, dgvDetailServices_CellFormatting.
+  - Forms\AppointmentForm (.Designer.cs + .cs): FixedDialog, CenterParent, no minimize/maximize,
+    AcceptButton btnSave, CancelButton + DialogResult.Cancel on btnCancel, errorProvider1,
+    white header (lblTitle "New Appointment" HeadingFont) + 1 px Border line, white footer and the
+    AppBack content inside pnlScroll (AutoScroll = true). Client 980 x 640: the prompt's
+    1040 x 720 was shrunk to satisfy the "dialogs at most 1000 x 640, taller content goes into a
+    scrollable panel" rule of Additions (Step 3), and everything that does not fit on a
+    1366 x 768 screen is reached with the scrollbar.
+    Content (tlpContent, one full-width row per block, visual order = TabIndex order):
+    flpClient (lblClient + cboClient 340 px with AutoCompleteMode SuggestAppend /
+    AutoCompleteSource ListItems + btnNewClient "+ New"), lblClientInfo (muted: consent status and
+    medical alerts), flpSchedule (lblDate + dtpDate, lblTime + cboTime DropDownList, lblSource +
+    cboSource Walk-in / Messenger / Text / Phone, lblEndTime "Ends 11:30 AM"), lblSlotInfo
+    (warning colored, 2 lines: availability), lblCategoryFilter + cboCategoryFilter,
+    dgvCatalog (colCatServiceId hidden / service_id; colCatName "Service" / service_name;
+    colCatPrice "Price" / price N2; colCatDuration "Min" / duration_minutes),
+    btnAddService "Add >" (primary) + btnRemoveService "Remove", dgvSelected
+    (colSelServiceId hidden / service_id; colSelName "Service" / service_name; colSelQty "Qty" /
+    quantity; colSelPrice "Price" / price N2; colSelDuration "Min" / duration_minutes;
+    colSelPackage "Package" / package_label; colSelTechnician a DataGridViewComboBoxColumn
+    "Technician" / technician_id) - only Qty and Technician are editable,
+    lblPromo + cboPromo (DropDownList), lblPromoNote (muted, 2 lines), lblSubtotal, lblDiscount,
+    lblTotal (BoldFont), lblRequired (Success green: the amount required now),
+    grpPayment "Payment now" (lblPayMethod + cboPayMethod Cash / GCash / Bank Transfer,
+    lblPayReference + txtPayReference, lblPayAmount + txtPayAmount,
+    chkPayVerified "I verified this payment in the GCash / bank app", muted lblPayNote),
+    lblNotes + txtNotes (multiline, 78 px) and the footer btns (btnSave "Book Appointment" primary,
+    btnCancel "Close" secondary).
+    Events wired: Load, btnSave_Click, btnCancel_Click, btnNewClient_Click, btnAddService_Click,
+    btnRemoveService_Click, cboClient_SelectedIndexChanged, dtpDate_ValueChanged,
+    cboTime_SelectedIndexChanged, cboSource_SelectedIndexChanged,
+    cboCategoryFilter_SelectedIndexChanged, cboPromo_SelectedIndexChanged,
+    cboPayMethod_SelectedIndexChanged, dgvCatalog_CellDoubleClick, dgvSelected_CellValueChanged,
+    dgvSelected_CurrentCellDirtyStateChanged.
+  - Fix rounds from the previews (2 used): (1) on the page the toolbar TabIndex values 8/9 skipped
+    numbers between the two rows - they are now 1 and 2, and lblTotal was 11 pt in the dialog
+    (taller than its 26 px row), so it went back to BoldFont 10 pt; (2) "Book Appointment" was cut
+    in the footer, so the footer buttons moved left and btnSave was widened to 132 px.
+  - LittleEreseSystemV3.csproj was NOT edited (all four files already existed and were listed).
+- Standard clean build (bin, obj and .vs deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 41 passed, 0 failed, 0 skipped.
+  --preview checked for ucAppointments (two toolbar rows with the glyph buttons, date picker,
+  Today, the status and client filters and the "0 appointments - 0 massage" summary, the 9-column
+  day grid and the details card with "Select an appointment", Schedule, Payment, the 5-column
+  service grid and Notes - nothing overlapping or truncated) and AppointmentForm (client row,
+  schedule row with "Ends 11:30 AM", the two service grids, promo, totals, Payment now group,
+  Notes and the complete footer, scrollbar present for 768 px screens).
+  The app was started once and closed again (no error.log).
+
 - Step 14 (this task): the LOGIC for the Clients module (repository + page + the two dialogs).
   The Designer layout was not restructured; two small runtime fixes are listed at the end.
   - Data\ClientRepository.cs (was an empty class): Search(text, consent) returns client_id,
@@ -612,9 +694,14 @@ Update this file at the end of every task.
   the summary strip). What is left for the owner: the Billing / Appointments screens must call
   PromotionRepository.CalculateDiscount(promoId, lines, out message) when a promo is applied, and
   save the full payment upfront (Payments row of type Final, Billing.payment_status 'Paid').
+- The Appointments module now HAS its layout (ucAppointments + AppointmentForm) but no logic yet,
+  so the day grid is empty, the details card shows its placeholder ("Select an appointment") and
+  the booking dialog shows its placeholders. Next for it: the logic prompt (AppointmentRepository,
+  the day list, the details card, booking / reschedule / cancel, the promo discount through
+  PromotionRepository.CalculateDiscount and the downpayment rule).
 - The Dashboard screen (ucDashboard with ucCalendarMonth) and the remaining modules
-  (Appointments, Billing, Commissions, Reports, File Maintenance, Activity Log) still need their
-  layout prompts; ucClients has a layout now but no logic yet, so it shows an empty grid and the
+  (Billing, Commissions, Reports, File Maintenance, Activity Log) still need their layout prompts;
+  ucClients has a layout now but no logic yet, so it shows an empty grid and the
   placeholder details card ("Select a client").
 - POLISH items left for the owner: the lock out limits (5 tries / 30 seconds) in LoginForm,
   the "Log out now?" wording, the PhoneRegex (mobile numbers only), the "-" placeholder for an
