@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -15,6 +15,26 @@ namespace LittleEreseSystemV3.Forms
         public ClientEditForm()
         {
             InitializeComponent();
+        }
+
+        private void ClientEditForm_Load(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
+
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
+
+        private void dtpBirthDate_ValueChanged(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
         }
     }
 }

@@ -2,6 +2,46 @@
 
 Update this file at the end of every task.
 
+- Step 12 (this task): Layout only (Designer work) for the Clients and Packages dialogs.
+  No logic, no SQL, no file or Session access: every wired event got an empty handler with
+  "// TODO(logic prompt)", waiting for the logic prompt.
+  - Forms\ClientEditForm (.Designer.cs + .cs): the dialog is now 560 x 640 client (the prompt's
+    560 x 760 was shrunk to satisfy the "dialogs at most 1000 x 640" rule of Additions (Step 3)),
+    FixedDialog, CenterParent, no minimize/maximize, AcceptButton btnSave, CancelButton +
+    DialogResult.Cancel on btnCancel, errorProvider1. White header with lblTitle "Client"
+    (HeadingFont) + 1 px Border line, AppBack content and a white footer with btnSave (primary)
+    and btnCancel (secondary). pnlContent has AutoScroll = true, so the fields that do not fit
+    on a 768 px screen can be reached with the scrollbar. Fields, top to bottom = TabIndex order:
+    lblFirstName + txtFirstName, lblLastName + txtLastName, lblBirthDate + dtpBirthDate
+    (ShowCheckBox true, Format Short) with lblAge ("Age: -") to its right, lblGender + cboGender
+    (DropDownList, Female / Male / Other), lblContact + txtContact, lblAddress + txtAddress,
+    lblAllergies + txtAllergies (multiline 60 px, vertical scrollbar), lblMedicalHistory +
+    txtMedicalHistory (multiline 60 px) and lblTreatmentHistory ("Treatments received in the last
+    6 months") + txtTreatmentHistory (multiline 60 px), then chkConsentSigned
+    "Consent / waiver form signed (paper form)". Events wired: Load, btnSave_Click,
+    btnCancel_Click, dtpBirthDate_ValueChanged.
+  - Forms\PackageForm (.Designer.cs + .cs): client 460 x 440 (as in the prompt), same dialog
+    settings. lblTitle "Add Package", lblClient + lblClientName (read-only text, bold, "-" until
+    the logic prompt), lblService + cboService (DropDownList), lblPrice + lblPriceValue (bold,
+    "-"), lblSessions + nudTotalSessions (Min 1, Max 30, value 1), lblPurchase + dtpPurchaseDate,
+    lblExpiry + dtpExpiryDate (ShowCheckBox true, Checked = false in the Designer so the preview
+    shows the unchecked state) and the muted lblHint "The package price is charged on the first
+    session." above the footer. Events wired: Load, btnSave_Click, btnCancel_Click,
+    cboService_SelectedIndexChanged.
+  - Fix rounds from the previews (2 used): (1) the smoke test failed with "Unable to cast
+    DateTimePicker to ISupportInitialize" - the Designer called BeginInit/EndInit on the two
+    DateTimePicker controls, which do not implement ISupportInitialize; those four lines were
+    removed (NumericUpDown keeps its BeginInit/EndInit). (2) In ClientEditForm the 528 px wide
+    fields and labels overlapped the AutoScroll vertical scrollbar, so they were narrowed to
+    520 px (and lblAge to 304 px); the "Treatments received in the last 6 months" label is now
+    fully visible at 560 x 640.
+  - LittleEreseSystemV3.csproj was NOT edited (both files already existed and were listed).
+- Standard clean build (bin, obj and .vs deleted first): 0 errors, 0 warnings.
+  --smoketest: 38 passed, 0 failed, 0 skipped.
+  --preview checked for ClientEditForm (scrollable content, no overlap, "Age: -" beside the birth
+  date, nothing truncated) and PackageForm (all rows inside 460 x 440, unchecked expiry box,
+  hint and footer visible). The app was started once and closed again.
+
 - Step 11 (this task): the LOGIC for promotion-to-services (repository + the two screens + schema
   docs). No SQL was run by me: the PromotionServices table already existed in LittleEresesDB.
   - Data\PromotionRepository.cs: every old method still works (RefreshExpired, GetPromotions,
@@ -446,6 +486,9 @@ Update this file at the end of every task.
   "Database: LittleEresesDB"). The app was started once and closed again.
 
 ## Next
+- Clients and Packages dialogs are layout-only (ClientEditForm, PackageForm). Next: their logic
+  prompt (ClientRepository / package rules), then the Clients page (ucClients) and the Billing /
+  Appointments modules that open these dialogs.
 - Promotions are complete (services pick list, price preview, one-transaction save, applies_to and
   the summary strip). What is left for the owner: the Billing / Appointments screens must call
   PromotionRepository.CalculateDiscount(promoId, lines, out message) when a promo is applied, and
