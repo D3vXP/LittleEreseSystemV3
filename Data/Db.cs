@@ -76,6 +76,90 @@ namespace LittleEreseSystemV3.Data
             }
         }
 
+        // ---------------------------------------------------------------------
+        // Transaction helpers
+        // WHY: booking one appointment writes rows in six tables. If the app stops in the
+        // middle (power cut, bad data, an error near the end) the appointment would be left
+        // half saved. These helpers let a repository do all of it as ONE unit of work.
+        // ---------------------------------------------------------------------
+
+        /// <summary>
+        /// Opens a connection, begins a transaction, runs the work, commits it, and rolls the
+        /// whole thing back when anything inside throws. The exception is rethrown, so the
+        /// caller can still show the user a message.
+        /// Usage:
+        ///     Db.InTransaction(delegate (SqlConnection connection, SqlTransaction transaction)
+        ///     {
+        ///         Db.Execute(connection, transaction, "INSERT INTO ...", Db.P("@x", 1));
+        ///     });
+        /// </summary>
+        public static void InTransaction(Action<SqlConnection, SqlTransaction> work)
+        {
+            if (work == null) return;
+
+            using (SqlConnection connection = CreateConnection())
+            {
+                connection.Open();
+
+                using (SqlTransaction transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        work(connection, transaction);
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        // The rollback itself can fail (the connection may already be gone).
+                        // The original error is the one the user needs to see, so it is rethrown.
+                        try { transaction.Rollback(); }
+                        catch { /* ignored on purpose */ }
+                        throw;
+                    }
+                }
+            }
+        }
+
+        /// <summary>Runs a SELECT inside an already open transaction (see InTransaction).</summary>
+        public static DataTable Query(SqlConnection connection, SqlTransaction transaction, string sql, params SqlParameter[] parameters)
+        {
+            // A connection of null means "no transaction here", so the normal helper is used.
+            if (connection == null) return Query(sql, parameters);
+
+            using (SqlCommand command = new SqlCommand(sql, connection, transaction))
+            using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+            {
+                if (parameters != null) command.Parameters.AddRange(parameters);
+                DataTable table = new DataTable();
+                adapter.Fill(table);
+                return table;
+            }
+        }
+
+        /// <summary>Runs INSERT / UPDATE / DELETE inside an already open transaction.</summary>
+        public static int Execute(SqlConnection connection, SqlTransaction transaction, string sql, params SqlParameter[] parameters)
+        {
+            if (connection == null) return Execute(sql, parameters);
+
+            using (SqlCommand command = new SqlCommand(sql, connection, transaction))
+            {
+                if (parameters != null) command.Parameters.AddRange(parameters);
+                return command.ExecuteNonQuery();
+            }
+        }
+
+        /// <summary>Runs a single-value query inside an already open transaction.</summary>
+        public static object Scalar(SqlConnection connection, SqlTransaction transaction, string sql, params SqlParameter[] parameters)
+        {
+            if (connection == null) return Scalar(sql, parameters);
+
+            using (SqlCommand command = new SqlCommand(sql, connection, transaction))
+            {
+                if (parameters != null) command.Parameters.AddRange(parameters);
+                return command.ExecuteScalar();
+            }
+        }
+
         /// <summary>
         /// Reads a value safely. NULL / DBNull returns the fallback instead of throwing InvalidCastException.
         /// Example: int id = Db.Get&lt;int&gt;(row["client_id"]);

@@ -2,6 +2,125 @@
 
 Update this file at the end of every task.
 
+- Step 16 (this task): the LOGIC for the Appointments module (transaction helpers, repositories,
+  the day page and the booking / reschedule / cancel dialog). The Designer layout was NOT
+  restructured; no small Designer fix was needed.
+  - Data\Db.cs (additive only, no existing signature changed): InTransaction(work) opens a
+    connection, begins a transaction, runs the work, commits it, rolls it back and rethrows when
+    anything inside throws; plus Query / Execute / Scalar overloads that take
+    (SqlConnection, SqlTransaction, sql, params) and fall back to the normal helper when the
+    connection is null. WHY: booking writes rows in six tables and must never be left half saved.
+  - Data\BillingRepository.cs (was an empty class): CreateBilling(conn, tx, ...) (returns the new
+    billing_id), AddPayment(conn, tx, ...) (Payments row + the bill is re-balanced),
+    GetByAppointment (bill + promo name + the paid total) and RefreshBalance(conn, tx, billingId),
+    which is the ONE place the rule "balance = total - every payment that was not rejected" and the
+    Unpaid / Partial / Paid status are written down.
+  - Data\AppointmentRepository.cs (was an empty class): the booking rules as constants
+    (30 per day, 10 massage per day, 3 days notice, massage categories start with "Massage",
+    aesthetic 10:00 AM - 8:00 PM, massage 1:00 PM - 10:00 PM).
+    READ: GetByDate(date, status, search) (appointment_id, time_range, client_name, services
+    "Name x2", staff_names "Unassigned", room_names, booking_source, status, payment_status; the
+    comma lists are built in C# so the app does not need STRING_AGG), GetServiceLines,
+    GetById, GetTimeSlots (24 slots, 10:00 AM to 9:30 PM), GetRooms, GetRoomsForCategory,
+    GetLinesForBooking (the lines in the shape Create expects), GetDayCounts (the toolbar strip),
+    TryGetPackagePlan (which package row a booking will use), TotalDuration, Subtotal and
+    RequiredNow. RequiredNow is the ONE place the money rule lives: a promotion is paid in FULL
+    whatever the source, otherwise Messenger / Text / Phone pay 50% of the subtotal and a walk-in
+    without a promotion pays 0 now.
+    VALIDATION: ValidateBooking(...) returns a List<string> of readable problems: client chosen,
+    at least one service, the date not in the past (today only while the start time is ahead),
+    every service inside its category's opening hours and the end time too, the daily capacity
+    (30 / 10 massage, ignoring the appointment being rescheduled), a fitting room for every line
+    (auto-assigned from RoomServiceCategories, capacity aware), no overlapping service for a
+    requested technician, the upfront amount / reference / verified tick for GCash and bank
+    payments, and a promotion that is valid AND applies to at least one selected service
+    (always through PromotionRepository.CalculateDiscount).
+    WRITE (each in ONE transaction): Create (Appointments + AppointmentServices with the package
+    rules - a new ClientPackages row when needed, the whole package price on session 1 and 0.00 on
+    later sessions - AppointmentStaff 'Assigned', AppointmentRooms 'Reserved', Billing, the
+    upfront Payments row (Downpayment, or Final for a promo; Verified only with the tick), the
+    'Created' history row and the ActivityLog entry, and it returns the new appointment_id);
+    Reschedule (re-validates itself out of the way, applies the 3-day Admin rule, updates the date
+    and the times, re-assigns the rooms, keeps the deposit 'Held' and writes the 'Rescheduled'
+    history row with the old date, the old time and the reason); Cancel (3-day Admin rule,
+    'Cancelled' + cancelled_at, services 'Cancelled', rooms 'Released', the money forfeited
+    (downpayment_status 'Forfeited', or payment_status 'Forfeited' for a prepaid promo), a package
+    opened for this booking with no completed session set to 'Expired', and the 'Cancelled' history
+    row with the reason); SetStatus ('Upcoming' -> 'Ongoing' only on the appointment's own day,
+    with a 'Status Change' history row).
+  - Controls\ucAppointments.cs: Load styles the two grids and the five buttons with Theme, starts
+    the status filter on "All" and the date on today (or on the public StartDate the caller set)
+    and loads the day. The date buttons and Today move the date; the status filter and the client
+    search reload (a _loading flag stops the events from firing twice). Selecting a row fills the
+    card (client + status, "MMM dd, yyyy - time range (source)", the payment line
+    "Paid X of Y - Balance Z" with the promo and its discount when there is one, the notes and the
+    service lines) and enables the buttons by status: Start only for an Upcoming appointment TODAY,
+    Reschedule / Cancel only for Upcoming. CellFormatting colors Status and Payment with
+    Theme.StatusColor (and keeps white on a selected row), and the detail grid colors its Status.
+    btnNew opens AppointmentForm; Reschedule opens the same form with RescheduleId set and moves
+    the page to the new day afterwards; Cancel warns first ("the money paid upfront is forfeited"),
+    warns again inside the 3-day window and asks for the reason with AppointmentForm.AskReason;
+    a Staff user is stopped by Messages.Warn inside that window. lblSummary shows
+    "N appointments - N massage". A double click on a row does nothing (the details are already
+    there and a booking must never move by accident). Staff may do everything on this page.
+  - Forms\AppointmentForm.cs: Load fills cboClient (ClientRepository.GetForCombo), cboTime
+    (GetTimeSlots), cboSource, cboCategoryFilter ("All categories" + the real ones, the catalog is
+    filtered in memory), dgvCatalog (GetActiveForBooking), cboPromo ("No promo" + GetActiveValid
+    with the discount in the caption), the technician combo column (GetActiveStaff + a blank
+    "Any available") and cboPayMethod, and sets dtpDate.MinDate to today. btnNewClient opens
+    ClientEditForm and selects the new client. Adding a service appends a line with quantity 1, its
+    duration and the package label ("Session 2 of 3", "New package (1 of 3)") and price from
+    AppointmentRepository.TryGetPackagePlan (a new package charges the whole price, a later session
+    of an existing package is 0.00); a service already in the list only gets +1 quantity when it is
+    not a package (a package is refused with a short message, because it has one price and a fixed
+    number of sessions). Remove deletes the selected line (looked up by service id, because the
+    grid shows a sorted view). Every change recalculates the end time ("Ends 3:00 PM (60 min)"),
+    the subtotal, the discount (PromotionRepository.CalculateDiscount; lblPromoNote names the
+    eligible services or shows why the promo gives nothing), the total, the amount required now and
+    fills txtPayAmount with it; it also runs the live availability check into lblSlotInfo (green
+    "This slot is free: ...", amber first problem, muted for the two "your turn" messages). A
+    letter typed into Qty is put back to 1 (CellValueChanged, with a DataError handler so no raw
+    .NET dialog appears). grpPayment is disabled when nothing is required and always disabled in
+    reschedule mode; GCash / Bank Transfer enable the reference box and the verified tick and cash
+    clears them. Save validates through errorProvider1 (client, at least one service, a numeric
+    amount), then shows EVERY problem from ValidateBooking in one Messages.Warn, then Create +
+    a success message + DialogResult.OK. Reschedule mode loads the appointment, shows its promo,
+    opens on its own date and locks everything except dtpDate and cboTime, retitles to
+    "Reschedule Appointment" / "Save Changes" and asks for a reason (AskReason) when an Admin moves
+    it inside the 3-day window. AskReason is a small modal built in code (as the prompt asked),
+    with a multiline box, OK and Cancel.
+  - Helpers\SmokeTest.cs: the three read-only checks (GetByDate(today, "All", "") runs,
+    GetTimeSlots() returns exactly 24 slots, ValidateBooking without a client reports a problem).
+    Nothing is written.
+  - Self-test (temporary, REMOVED again - no --apptest switch is left in Program.cs or SmokeTest):
+    round 1 created a walk-in appointment 10 days ahead at 2:00 PM for an existing demo client with
+    one non-package service, checked the Billing row (5000.00 / Unpaid / None), the 'Created'
+    history row, the day list ("2:00 PM - 2:30 PM | Cunanan, Jhon Rey | Traptox | Unassigned | - |
+    Unpaid"), rescheduled it 2 days later at 3:30 PM (date and times moved, 1 'Rescheduled' row,
+    still 'Upcoming'), saw "Start Service" correctly refused for a future day, cancelled it and
+    checked 'Cancelled' on the appointment and the service plus 1 'Cancelled' history row: PASS.
+    Round 2 checked the money rules: walk-in required now 0.00, Messenger 2500.00, a Messenger
+    booking with nothing paid was refused, its bill read downpayment 2500.00 / Held / Partial with
+    one 'Downpayment' payment, GCash without a reference and a tick was refused, and the promo
+    booking (15% of 5000 = 750 off, 4250 total) read 'Applied' / 'Paid' / balance 0.00 with one
+    'Final' payment 'Verified': PASS. Round 3 drove the real dialog without saving (78 catalog rows,
+    24 slots, the client's consent + allergy alert, Add produced "Barbie Arms Botox | qty 1 |
+    5000.00 | 30 min", "Ends 2:30 PM (30 min)", "This slot is free", the promo note explained that
+    the promo applies to other services, and a second Add only raised the quantity to 2 with
+    "Ends 3:00 PM"): PASS.
+    Every row the self-test created was deleted again (Appointments, Billing, Payments,
+    AppointmentHistory, AppointmentRooms, AppointmentStaff, AppointmentServices) and the two
+    ActivityLog rows it wrote were removed too. The database now has 0 appointments, 0 billing rows,
+    0 payments, 0 history rows, 0 rooms, 0 appointment services. Nothing was left behind.
+  - LittleEreseSystemV3.csproj was NOT edited (no new file in this task; Db, BillingRepository and
+    AppointmentRepository already existed and were listed).
+- Standard clean build (bin, obj and .vs deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 44 passed, 0 failed, 0 skipped (the 3 new Appointment checks all PASS).
+  --preview checked again for ucAppointments (the toolbar, the 9-column day grid reading
+  "0 appointments - 0 massage" and the details card with "Select an appointment") and
+  AppointmentForm (client row, schedule, the catalog with prices, the selected-services grid, the
+  totals, the Payment group and the footer, nothing overlapping or truncated).
+  The app was started once and closed again (no error.log).
 
 - Step 15 (this task): Layout only (Designer work) for the Appointments page and the booking dialog.
   No logic, no SQL, no file or Session access: every wired event got an empty handler with
@@ -694,11 +813,16 @@ Update this file at the end of every task.
   the summary strip). What is left for the owner: the Billing / Appointments screens must call
   PromotionRepository.CalculateDiscount(promoId, lines, out message) when a promo is applied, and
   save the full payment upfront (Payments row of type Final, Billing.payment_status 'Paid').
-- The Appointments module now HAS its layout (ucAppointments + AppointmentForm) but no logic yet,
-  so the day grid is empty, the details card shows its placeholder ("Select an appointment") and
-  the booking dialog shows its placeholders. Next for it: the logic prompt (AppointmentRepository,
-  the day list, the details card, booking / reschedule / cancel, the promo discount through
-  PromotionRepository.CalculateDiscount and the downpayment rule).
+- The Appointments module is COMPLETE for booking, rescheduling, cancelling and "Start Service"
+  (AppointmentRepository + the transaction helpers in Db, ucAppointments, AppointmentForm). The
+  promo discount and the full-payment-upfront rule are wired through
+  PromotionRepository.CalculateDiscount, so the Appointments side of the promotions TODO above is
+  done; the same helpers are ready for the Billing screen
+  (BillingRepository.GetByAppointment + RefreshBalance).
+- The Billing screen still needs its own prompt: BillingRepository currently only creates a bill and
+  records a payment INSIDE a booking transaction, so it still needs the read methods of the Billing
+  page, the PaymentForm logic and the Completing-a-service step (AppointmentServices 'Completed',
+  the package session counter, the commission rows when a line is completed at billing).
 - The Dashboard screen (ucDashboard with ucCalendarMonth) and the remaining modules
   (Billing, Commissions, Reports, File Maintenance, Activity Log) still need their layout prompts;
   ucClients has a layout now but no logic yet, so it shows an empty grid and the
@@ -711,6 +835,17 @@ Update this file at the end of every task.
   none is flagged as a package. Confirm with the owner which services may be sold as packages.
 
 ## Known issues
+- The booking dialog cannot assign a room yet because RoomServiceCategories is EMPTY in the current
+  database: every category has no room linked, so BuildRoomPlan silently assigns none (a POLISH
+  comment says why). The owner must link the rooms of the shop to the categories in File
+  Maintenance before the room rule and the "Room" column can show anything. Nothing else in the
+  booking is affected (the self-test ran with no rooms and the appointment was created, cancelled
+  and listed correctly).
+- An appointment can only be started ("Start Service") on its own day, so a booking made for a
+  future date shows the button switched off - that is the rule, not a bug.
+- There is no way to move an appointment from 'Ongoing' to 'Completed' yet: that happens at
+  Billing (the next module), which also completes the service lines, the package sessions and the
+  commissions.
 - The Clients grid has no rows yet because Database\SeedData.sql has no Clients rows, so the
   details card shows its placeholder ("Select a client") until the first client is added with
   "Add Client". This is expected, not a bug.

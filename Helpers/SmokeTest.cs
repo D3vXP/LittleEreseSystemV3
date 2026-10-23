@@ -287,6 +287,74 @@ namespace LittleEreseSystemV3.Helpers
             CheckClientSearch();
             CheckClientCombo();
             CheckEmptyPackageList();
+
+            // The three read-only Appointment checks (Step 16). Nothing is written or changed here.
+            CheckAppointmentDayList();
+            CheckTimeSlots();
+            CheckBookingWithoutClient();
+        }
+
+        /// <summary>GetByDate must list a day (usually empty) without an error.</summary>
+        private static void CheckAppointmentDayList()
+        {
+            const string label = "AppointmentRepository.GetByDate(today, \"All\", \"\")";
+            try
+            {
+                DataTable day = AppointmentRepository.GetByDate(DateTime.Today, "All", "");
+                Pass(label + " rows = " + day.Rows.Count);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>The booking screen offers a start time every 30 minutes from 10:00 AM to 9:30 PM.</summary>
+        private static void CheckTimeSlots()
+        {
+            const string label = "AppointmentRepository.GetTimeSlots() returns 24 slots";
+            try
+            {
+                List<TimeSpan> slots = AppointmentRepository.GetTimeSlots();
+                string message = label + " (got " + slots.Count + ")";
+
+                if (slots.Count == 24) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>A booking without a client must be refused with a readable problem.</summary>
+        private static void CheckBookingWithoutClient()
+        {
+            const string label = "AppointmentRepository.ValidateBooking without a client reports a problem";
+            try
+            {
+                // An empty service list: the missing client and the missing services are both
+                // reported, which is exactly what the desk sees on a fresh dialog.
+                DataTable lines = new DataTable();
+                lines.Columns.Add("service_id", typeof(int));
+                lines.Columns.Add("quantity", typeof(int));
+                lines.Columns.Add("price", typeof(decimal));
+                lines.Columns.Add("duration_minutes", typeof(int));
+                lines.Columns.Add("technician_id", typeof(int));
+
+                List<string> problems = AppointmentRepository.ValidateBooking(0, 0,
+                    DateTime.Today.AddDays(1), new TimeSpan(14, 0, 0), "Walk-in", lines, 0,
+                    0m, "Cash", string.Empty, false);
+
+                string message = label + " (got " + problems.Count + " problem(s))";
+
+                if (problems.Count > 0) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
         }
 
         /// <summary>Search("", "All") must list the clients without an error.</summary>
@@ -304,7 +372,7 @@ namespace LittleEreseSystemV3.Helpers
             }
         }
 
-        /// <summary>The booking screen later needs the client drop-down list.</summary>
+        /// <summary>The booking screen needs the client drop-down list.</summary>
         private static void CheckClientCombo()
         {
             const string label = "ClientRepository.GetForCombo()";
