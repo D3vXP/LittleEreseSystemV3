@@ -2,6 +2,63 @@
 
 Update this file at the end of every task.
 
+- Step 13 (this task): Layout only (Designer work) for the Clients page and its two dialogs.
+  No logic, no SQL, no file or Session access: every wired event got an empty handler with
+  "// TODO(logic prompt)", waiting for the logic prompt.
+  - Controls\ucClients (.Designer.cs + .cs): the page is now a SplitContainer splitMain
+    (Orientation Vertical, Panel1MinSize 400, Panel2MinSize 320, SplitterDistance 619 = about 62%
+    of the 1000 px design width) on the AppBack background.
+    LEFT panel (Panel1): pnlToolbar (Dock Top, 92 px, Surface, two rows built with tlpToolbar) -
+    row 1 holds flpFilters (lblSearch + txtSearch 140 px, lblConsent + cboConsent 102 px with
+    items All / Signed / Not signed) and the right-aligned lblCount ("0 clients", SmallFont,
+    TextMuted); row 2 holds the right-aligned flpButtons (btnAdd "Add Client" primary,
+    btnEdit "Edit" secondary, btnRefresh "Refresh" secondary). Below it the card pnlGrid
+    (Dock Fill, Surface, FixedSingle, 1 px padding) with dgvClients (Dock Fill, Theme.StyleGrid
+    look copied as literals, AutoGenerateColumns = false). Columns: colClientId (hidden,
+    client_id), colName "Client" / full_name, colContact "Contact" / contact_number,
+    colBirth "Birth Date" / birth_date (MMM dd, yyyy), colGender "Gender" / gender,
+    colConsent "Consent" / consent_text, colLastVisit "Last Visit" / last_visit (MMM dd, yyyy).
+    RIGHT panel (Panel2): the scrollable details card pnlDetails (Dock Fill, Surface, FixedSingle,
+    AutoScroll, 16 px padding) holding the white tlpDetails (Dock Top, AutoSize) - lblDetailName
+    (HeadingFont, placeholder "Select a client"), lblDetailContact, lblDetailBirth (birth date and
+    age), lblDetailAddress, the badge-like lblDetailConsent (Semibold 9 pt, TextMuted, 10/4 px
+    padding), lblAllergiesTitle "Allergies" + txtDetailAllergies (read-only, multiline),
+    lblMedicalTitle "Medical history" + txtDetailMedical (read-only, multiline),
+    lblTreatmentTitle "Treatment history (last 6 months)" + txtDetailTreatment (read-only,
+    multiline), lblPackagesTitle "Packages" + dgvPackages (colPackageId hidden / package_id,
+    colPackageService "Service" / service_name, colPackageSessions "Sessions" / sessions_label,
+    colPackageExpiry "Expires" / expiry_date, colPackageStatus "Status" / status) and the
+    right-aligned btnAddPackage "Add Package" (secondary).
+    Events wired: Load, btnAdd_Click, btnEdit_Click, btnRefresh_Click, btnAddPackage_Click,
+    txtSearch_TextChanged, cboConsent_SelectedIndexChanged, dgvClients_CellDoubleClick,
+    dgvClients_SelectionChanged, dgvClients_CellFormatting, dgvPackages_CellFormatting.
+  - Forms\ClientEditForm (.Designer.cs): the existing dialog was kept (560 x 640 client,
+    FixedDialog, CenterParent, AcceptButton btnSave, CancelButton + DialogResult.Cancel on
+    btnCancel, errorProvider1, white header + footer, AutoScroll content). Only the vertical
+    rhythm was tightened so the whole form fits 768 px screens without scrolling: the fields now
+    run from y = 31 (txtFirstName) to y = 424 (lblTreatmentHistory), the three multiline boxes are
+    46 px tall and chkConsentSigned sits at y = 492 above the footer. Every control name, TabIndex,
+    event wiring and the "Age: -" label beside the birth date are unchanged.
+  - Forms\PackageForm (.Designer.cs): unchanged in this task (460 x 440, same dialog settings,
+    lblClient + lblClientName, lblService + cboService (DropDownList), lblPrice + lblPriceValue,
+    lblSessions + nudTotalSessions (1..30), lblPurchase + dtpPurchaseDate, lblExpiry +
+    dtpExpiryDate (ShowCheckBox, unchecked), the muted lblHint and the footer). The preview was
+    taken again to confirm it is still correct.
+  - Fix rounds from the previews (2 used): (1) the toolbar controls were measured against the real
+    619 px left panel - the four filter controls plus the count label and the three buttons cannot
+    fit on one 619 px line without overlapping, so the buttons were moved to a second toolbar row
+    (the toolbar is 92 px tall now) and the details card was re-laid out to start at 16,16 with
+    48 px text boxes; (2) the ClientEditForm fields still ran past the footer, so the whole form
+    was re-spaced (see above) and the AppBack details panel got a 1 px border so it reads as a card.
+  - LittleEreseSystemV3.csproj was NOT edited (all four files already existed and were listed).
+- Standard clean build (bin, obj and .vs deleted first): 0 errors, 0 warnings.
+  --smoketest: 38 passed, 0 failed, 0 skipped.
+  --preview checked for ucClients (split 62/38, toolbar and count on one card, 7 grid columns,
+  details card complete with the packages grid and "Add Package", nothing overlapping or
+  truncated), ClientEditForm (all fields plus the consent tick above the footer, nothing hidden
+  under the scrollbar) and PackageForm (unchanged, unchecked expiry box, hint and footer visible).
+  The app was started once and closed again.
+
 - Step 12 (this task): Layout only (Designer work) for the Clients and Packages dialogs.
   No logic, no SQL, no file or Session access: every wired event got an empty handler with
   "// TODO(logic prompt)", waiting for the logic prompt.
@@ -486,16 +543,17 @@ Update this file at the end of every task.
   "Database: LittleEresesDB"). The app was started once and closed again.
 
 ## Next
-- Clients and Packages dialogs are layout-only (ClientEditForm, PackageForm). Next: their logic
-  prompt (ClientRepository / package rules), then the Clients page (ucClients) and the Billing /
-  Appointments modules that open these dialogs.
+- The Clients page and its two dialogs are layout-only (ucClients, ClientEditForm, PackageForm).
+  Next: their logic prompt (ClientRepository / package rules), then the Billing / Appointments
+  modules that open these dialogs.
 - Promotions are complete (services pick list, price preview, one-transaction save, applies_to and
   the summary strip). What is left for the owner: the Billing / Appointments screens must call
   PromotionRepository.CalculateDiscount(promoId, lines, out message) when a promo is applied, and
   save the full payment upfront (Payments row of type Final, Billing.payment_status 'Paid').
-- Step 10: the Dashboard screen (ucDashboard with ucCalendarMonth) and the remaining modules
-  (Appointments, Clients, Billing, Commissions, Reports, File Maintenance, Activity Log).
-  Those pages are still layout-only shells.
+- The Dashboard screen (ucDashboard with ucCalendarMonth) and the remaining modules
+  (Appointments, Billing, Commissions, Reports, File Maintenance, Activity Log) still need their
+  layout prompts; ucClients has a layout now but no logic yet, so it shows an empty grid and the
+  placeholder details card ("Select a client").
 - POLISH items left for the owner: the lock out limits (5 tries / 30 seconds) in LoginForm,
   the "Log out now?" wording, the PhoneRegex (mobile numbers only), the "-" placeholder for an
   empty contact number in Settings and the version format (3 parts) in Settings.

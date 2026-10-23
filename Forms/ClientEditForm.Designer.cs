@@ -129,7 +129,7 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.chkConsentSigned.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.chkConsentSigned.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.chkConsentSigned.Location = new System.Drawing.Point(16, 588);
+            this.chkConsentSigned.Location = new System.Drawing.Point(16, 492);
             this.chkConsentSigned.Name = "chkConsentSigned";
             this.chkConsentSigned.Size = new System.Drawing.Size(520, 24);
             this.chkConsentSigned.TabIndex = 19;
@@ -139,18 +139,18 @@ namespace LittleEreseSystemV3.Forms
             // txtTreatmentHistory
             // 
             this.txtTreatmentHistory.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtTreatmentHistory.Location = new System.Drawing.Point(16, 520);
+            this.txtTreatmentHistory.Location = new System.Drawing.Point(16, 442);
             this.txtTreatmentHistory.Multiline = true;
             this.txtTreatmentHistory.Name = "txtTreatmentHistory";
             this.txtTreatmentHistory.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtTreatmentHistory.Size = new System.Drawing.Size(520, 60);
+            this.txtTreatmentHistory.Size = new System.Drawing.Size(520, 46);
             this.txtTreatmentHistory.TabIndex = 18;
             // 
             // lblTreatmentHistory
             // 
             this.lblTreatmentHistory.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblTreatmentHistory.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblTreatmentHistory.Location = new System.Drawing.Point(16, 500);
+            this.lblTreatmentHistory.Location = new System.Drawing.Point(16, 424);
             this.lblTreatmentHistory.Name = "lblTreatmentHistory";
             this.lblTreatmentHistory.Size = new System.Drawing.Size(520, 18);
             this.lblTreatmentHistory.TabIndex = 17;
@@ -160,18 +160,18 @@ namespace LittleEreseSystemV3.Forms
             // txtMedicalHistory
             // 
             this.txtMedicalHistory.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtMedicalHistory.Location = new System.Drawing.Point(16, 432);
+            this.txtMedicalHistory.Location = new System.Drawing.Point(16, 374);
             this.txtMedicalHistory.Multiline = true;
             this.txtMedicalHistory.Name = "txtMedicalHistory";
             this.txtMedicalHistory.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtMedicalHistory.Size = new System.Drawing.Size(520, 60);
+            this.txtMedicalHistory.Size = new System.Drawing.Size(520, 46);
             this.txtMedicalHistory.TabIndex = 16;
             // 
             // lblMedicalHistory
             // 
             this.lblMedicalHistory.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblMedicalHistory.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblMedicalHistory.Location = new System.Drawing.Point(16, 412);
+            this.lblMedicalHistory.Location = new System.Drawing.Point(16, 356);
             this.lblMedicalHistory.Name = "lblMedicalHistory";
             this.lblMedicalHistory.Size = new System.Drawing.Size(520, 18);
             this.lblMedicalHistory.TabIndex = 15;
@@ -181,18 +181,18 @@ namespace LittleEreseSystemV3.Forms
             // txtAllergies
             // 
             this.txtAllergies.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtAllergies.Location = new System.Drawing.Point(16, 344);
+            this.txtAllergies.Location = new System.Drawing.Point(16, 306);
             this.txtAllergies.Multiline = true;
             this.txtAllergies.Name = "txtAllergies";
             this.txtAllergies.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtAllergies.Size = new System.Drawing.Size(520, 60);
+            this.txtAllergies.Size = new System.Drawing.Size(520, 46);
             this.txtAllergies.TabIndex = 14;
             // 
             // lblAllergies
             // 
             this.lblAllergies.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblAllergies.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblAllergies.Location = new System.Drawing.Point(16, 324);
+            this.lblAllergies.Location = new System.Drawing.Point(16, 288);
             this.lblAllergies.Name = "lblAllergies";
             this.lblAllergies.Size = new System.Drawing.Size(520, 18);
             this.lblAllergies.TabIndex = 13;
@@ -202,7 +202,7 @@ namespace LittleEreseSystemV3.Forms
             // txtAddress
             // 
             this.txtAddress.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtAddress.Location = new System.Drawing.Point(16, 292);
+            this.txtAddress.Location = new System.Drawing.Point(16, 261);
             this.txtAddress.Name = "txtAddress";
             this.txtAddress.Size = new System.Drawing.Size(520, 25);
             this.txtAddress.TabIndex = 12;
@@ -211,7 +211,7 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.lblAddress.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblAddress.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblAddress.Location = new System.Drawing.Point(16, 272);
+            this.lblAddress.Location = new System.Drawing.Point(16, 242);
             this.lblAddress.Name = "lblAddress";
             this.lblAddress.Size = new System.Drawing.Size(520, 18);
             this.lblAddress.TabIndex = 11;
@@ -221,7 +221,7 @@ namespace LittleEreseSystemV3.Forms
             // txtContact
             // 
             this.txtContact.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtContact.Location = new System.Drawing.Point(16, 240);
+            this.txtContact.Location = new System.Drawing.Point(16, 215);
             this.txtContact.Name = "txtContact";
             this.txtContact.Size = new System.Drawing.Size(240, 25);
             this.txtContact.TabIndex = 10;
@@ -230,7 +230,7 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.lblContact.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblContact.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblContact.Location = new System.Drawing.Point(16, 220);
+            this.lblContact.Location = new System.Drawing.Point(16, 196);
             this.lblContact.Name = "lblContact";
             this.lblContact.Size = new System.Drawing.Size(520, 18);
             this.lblContact.TabIndex = 9;
@@ -246,7 +246,7 @@ namespace LittleEreseSystemV3.Forms
             "Female",
             "Male",
             "Other"});
-            this.cboGender.Location = new System.Drawing.Point(16, 188);
+            this.cboGender.Location = new System.Drawing.Point(16, 169);
             this.cboGender.Name = "cboGender";
             this.cboGender.Size = new System.Drawing.Size(160, 25);
             this.cboGender.TabIndex = 8;
@@ -255,7 +255,7 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.lblGender.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblGender.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblGender.Location = new System.Drawing.Point(16, 168);
+            this.lblGender.Location = new System.Drawing.Point(16, 150);
             this.lblGender.Name = "lblGender";
             this.lblGender.Size = new System.Drawing.Size(520, 18);
             this.lblGender.TabIndex = 7;
@@ -266,7 +266,7 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.lblAge.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblAge.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblAge.Location = new System.Drawing.Point(232, 142);
+            this.lblAge.Location = new System.Drawing.Point(232, 129);
             this.lblAge.Name = "lblAge";
             this.lblAge.Size = new System.Drawing.Size(304, 18);
             this.lblAge.TabIndex = 6;
@@ -277,7 +277,7 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.dtpBirthDate.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.dtpBirthDate.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-            this.dtpBirthDate.Location = new System.Drawing.Point(16, 136);
+            this.dtpBirthDate.Location = new System.Drawing.Point(16, 123);
             this.dtpBirthDate.Name = "dtpBirthDate";
             this.dtpBirthDate.ShowCheckBox = true;
             this.dtpBirthDate.Size = new System.Drawing.Size(200, 25);
@@ -288,7 +288,7 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.lblBirthDate.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblBirthDate.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblBirthDate.Location = new System.Drawing.Point(16, 116);
+            this.lblBirthDate.Location = new System.Drawing.Point(16, 104);
             this.lblBirthDate.Name = "lblBirthDate";
             this.lblBirthDate.Size = new System.Drawing.Size(520, 18);
             this.lblBirthDate.TabIndex = 4;
@@ -298,7 +298,7 @@ namespace LittleEreseSystemV3.Forms
             // txtLastName
             // 
             this.txtLastName.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtLastName.Location = new System.Drawing.Point(16, 84);
+            this.txtLastName.Location = new System.Drawing.Point(16, 77);
             this.txtLastName.Name = "txtLastName";
             this.txtLastName.Size = new System.Drawing.Size(240, 25);
             this.txtLastName.TabIndex = 3;
@@ -307,7 +307,7 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.lblLastName.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblLastName.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblLastName.Location = new System.Drawing.Point(16, 64);
+            this.lblLastName.Location = new System.Drawing.Point(16, 58);
             this.lblLastName.Name = "lblLastName";
             this.lblLastName.Size = new System.Drawing.Size(520, 18);
             this.lblLastName.TabIndex = 2;
@@ -317,7 +317,7 @@ namespace LittleEreseSystemV3.Forms
             // txtFirstName
             // 
             this.txtFirstName.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtFirstName.Location = new System.Drawing.Point(16, 32);
+            this.txtFirstName.Location = new System.Drawing.Point(16, 31);
             this.txtFirstName.Name = "txtFirstName";
             this.txtFirstName.Size = new System.Drawing.Size(240, 25);
             this.txtFirstName.TabIndex = 1;
