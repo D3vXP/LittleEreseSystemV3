@@ -196,6 +196,7 @@
     <Compile Include="Helpers\IconHelper.cs" />
     <Compile Include="Helpers\Messages.cs" />
     <Compile Include="Helpers\PasswordHasher.cs" />
+    <Compile Include="Helpers\ReceiptPrinter.cs" />
     <Compile Include="Helpers\PreviewTool.cs" />
     <Compile Include="Helpers\Session.cs" />
     <Compile Include="Helpers\SmokeTest.cs" />

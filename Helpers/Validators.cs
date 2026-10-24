@@ -101,6 +101,22 @@ namespace LittleEreseSystemV3.Helpers
             return amount > 0m && amount <= 100m;
         }
 
+        /// <summary>
+        /// A GCash / bank transfer reference is quoted over the phone, so it is limited to letters
+        /// and digits and 6 to 30 characters (the longest bank reference seen so far is 20).
+        /// </summary>
+        // POLISH: widen the length range or allow "-" if a bank starts using longer or dashed
+        // POLISH: reference numbers; the payment screens use this one rule.
+        public static bool IsValidReference(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return false;
+
+            string text = value.Trim();
+            if (text.Length < 6 || text.Length > 30) return false;
+
+            return Regex.IsMatch(text, @"^[A-Za-z0-9]+$");
+        }
+
         /// <summary>Attaches the red error icon and tooltip to a control.</summary>
         public static void SetError(ErrorProvider provider, Control control, string message)
         {

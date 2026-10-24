@@ -1,10 +1,31 @@
 using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Drawing;
 using System.Windows.Forms;
+using LittleEreseSystemV3.Data;
+using LittleEreseSystemV3.Forms;
+using LittleEreseSystemV3.Helpers;
 
 namespace LittleEreseSystemV3.Controls
 {
+    /// <summary>
+    /// Billing page: the day's queue on the left, the bill of the selected appointment on the
+    /// right (Checkout tab) and the list of payments already taken (Transactions tab).
+    /// Every money rule lives in BillingRepository; this screen only decides what is shown and
+    /// which buttons are allowed.
+    /// </summary>
     public partial class ucBilling : UserControl
     {
+        // Money in the project format: peso sign + #,##0.00.
+        private const string MoneyFormat = "\u20B1#,##0.00";
+
+        // The bill of the selected appointment (see BillingRepository.GetBillHeader), or null.
+        private DataRow _bill;
+
+        // True while the screen fills its own controls, so the change events do not run twice.
+        private bool _loading;
+
         public ucBilling()
         {
             InitializeComponent();
@@ -12,72 +33,658 @@ namespace LittleEreseSystemV3.Controls
 
         private void ucBilling_Load(object sender, EventArgs e)
         {
-            // TODO(logic prompt)
+            if (DesignTime.IsDesignMode) return;
+
+            Theme.StyleGrid(dgvQueue);
+            Theme.StyleGrid(dgvBillLines);
+            Theme.StyleGrid(dgvTransactions);
+
+            // The bill grid is the one place where the attending staff can be changed, so the
+            // grid itself stays editable and only that column is writable (the rest is ReadOnly).
+            dgvBillLines.ReadOnly = false;
+
+            // A staff id that is no longer Active is not in the drop-down list any more, and the
+            // grid would otherwise answer with its own raw .NET error dialog.
+            dgvBillLines.DataError += delegate { };
+
+            Theme.StyleSecondaryButton(btnQueueToday);
+            Theme.StyleSecondaryButton(btnRefresh);
+            Theme.StylePrimaryButton(btnCollect);
+            Theme.StyleSecondaryButton(btnPrintReceipt);
+            Theme.StylePrimaryButton(btnSearch);
+            Theme.StyleSecondaryButton(btnReprint);
+
+            // The Designer only says "N2"; at runtime money shows the peso sign as everywhere else.
+            colQueueBalance.DefaultCellStyle.Format = MoneyFormat;
+            colLinePrice.DefaultCellStyle.Format = MoneyFormat;
+            colTranTotal.DefaultCellStyle.Format = MoneyFormat;
+            colTranPaid.DefaultCellStyle.Format = MoneyFormat;
+
+            _loading = true;
+            try
+            {
+                dtpQueueDate.Value = DateTime.Today;
+
+                // Staff only see today's payments; an Admin starts on the whole month.
+                if (Session.IsAdmin)
+                {
+                    dtpFrom.Value = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                    dtpTo.Value = DateTime.Today;
+                }
+                else
+                {
+                    dtpFrom.Value = DateTime.Today;
+                    dtpTo.Value = DateTime.Today;
+                    dtpFrom.Enabled = false;
+                    dtpTo.Enabled = false;
+                }
+
+                cboMethod.SelectedIndex = 0;   // "All"
+                LoadStaffColumn();
+                LoadPromoCombo();
+            }
+            finally
+            {
+                _loading = false;
+            }
+
+            LoadQueue(0);
+            LoadTransactions();
         }
 
-        private void dtpQueueDate_ValueChanged(object sender, EventArgs e)
+        // ---------------------------------------------------------------- combo boxes
+
+        /// <summary>
+        /// The attending staff list of the bill grid: "Select staff" (id 0) plus every Active
+        /// technician. Built once, because the same list serves every line.
+        /// </summary>
+        private void LoadStaffColumn()
         {
-            // TODO(logic prompt)
+            try
+            {
+                DataTable staff = UserRepository.GetActiveStaff();
+
+                DataTable items = new DataTable();
+                items.Columns.Add("user_id", typeof(int));
+                items.Columns.Add("full_name", typeof(string));
+                items.Rows.Add(0, "Select staff");
+
+                foreach (DataRow row in staff.Rows)
+                {
+                    items.Rows.Add(Db.Get<int>(row["user_id"]), Db.Get<string>(row["full_name"]));
+                }
+
+                colLineTech.DataSource = items;
+                colLineTech.DisplayMember = "full_name";
+                colLineTech.ValueMember = "user_id";
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+            }
         }
 
-        private void btnQueueToday_Click(object sender, EventArgs e)
+        /// <summary>
+        /// The promotion list: "No promo" (id 0) plus every promotion that is Active and valid
+        /// today. The caption already says what the promotion gives, so the desk does not have to
+        /// open another screen.
+        /// </summary>
+        private void LoadPromoCombo()
         {
-            // TODO(logic prompt)
+            _loading = true;
+            try
+            {
+                DataTable items = new DataTable();
+                items.Columns.Add("promo_id", typeof(int));
+                items.Columns.Add("display_name", typeof(string));
+                items.Rows.Add(0, "No promo");
+
+                foreach (DataRow row in PromotionRepository.GetActiveValid().Rows)
+                {
+                    int promoId = Db.Get<int>(row["promo_id"]);
+                    string type = Db.Get<string>(row["discount_type"], "Percentage");
+                    decimal value = Db.Get<decimal>(row["discount_value"]);
+
+                    string caption = Db.Get<string>(row["promo_name"]) + " - " +
+                        (string.Equals(type, "Percentage", StringComparison.OrdinalIgnoreCase)
+                            ? value.ToString("0.##") + " % off"
+                            : value.ToString(MoneyFormat) + " off");
+
+                    items.Rows.Add(promoId, caption);
+                }
+
+                cboPromo.DataSource = items;
+                cboPromo.DisplayMember = "display_name";
+                cboPromo.ValueMember = "promo_id";
+                cboPromo.SelectedIndex = 0;
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+            }
+            finally
+            {
+                _loading = false;
+            }
         }
 
-        private void btnRefresh_Click(object sender, EventArgs e)
+        private int SelectedPromoId()
         {
-            // TODO(logic prompt)
+            if (cboPromo.SelectedValue == null) return 0;
+            return Db.Get<int>(cboPromo.SelectedValue);
         }
 
-        private void dgvQueue_SelectionChanged(object sender, EventArgs e)
+        /// <summary>Points the promotion box at one promotion id (0 = "No promo").</summary>
+        private void SelectPromo(int promoId)
         {
-            // TODO(logic prompt)
+            _loading = true;
+            try
+            {
+                cboPromo.SelectedValue = promoId;
+                // A promotion that is no longer valid today is not in the list, so the box falls
+                // back to "No promo"; the note under it still names the promotion of the bill.
+                if (Db.Get<int>(cboPromo.SelectedValue) != promoId) cboPromo.SelectedIndex = 0;
+            }
+            finally
+            {
+                _loading = false;
+            }
         }
 
-        private void dgvQueue_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        // ---------------------------------------------------------------- the queue
+
+        /// <summary>
+        /// Reloads the queue of the chosen day. keepAppointmentId is selected again afterwards
+        /// (0 = the first row), so a row does not jump away after a payment.
+        /// </summary>
+        private void LoadQueue(int keepAppointmentId)
         {
-            // TODO(logic prompt)
+            int appointmentId = 0;
+
+            _loading = true;
+            try
+            {
+                try
+                {
+                    dgvQueue.DataSource = BillingRepository.GetQueue(dtpQueueDate.Value.Date);
+                }
+                catch (Exception ex)
+                {
+                    Messages.DbError(ex);
+                    return;
+                }
+
+                dgvQueue.ClearSelection();
+
+                if (keepAppointmentId > 0)
+                {
+                    GridHelper.SelectRowById(dgvQueue, "colQueueAppointmentId", keepAppointmentId);
+                    appointmentId = keepAppointmentId;
+                }
+
+                if (appointmentId <= 0 && dgvQueue.Rows.Count > 0)
+                {
+                    dgvQueue.Rows[0].Selected = true;
+                    appointmentId = Db.Get<int>(dgvQueue.Rows[0].Cells["colQueueAppointmentId"].Value);
+                }
+            }
+            finally
+            {
+                _loading = false;
+            }
+
+            lblQueueCount.Text = dgvQueue.Rows.Count + " in the queue";
+
+            if (appointmentId > 0) ShowBill(appointmentId);
+            else ClearBill();
         }
 
-        private void cboPromo_SelectedIndexChanged(object sender, EventArgs e)
+        private int CurrentAppointmentId()
         {
-            // TODO(logic prompt)
+            return GridHelper.GetSelectedId(dgvQueue, "colQueueAppointmentId");
         }
 
-        private void dgvBillLines_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        // ---------------------------------------------------------------- the bill card
+
+        /// <summary>Fills the bill card with the bill of one appointment (0 clears it).</summary>
+        private void ShowBill(int appointmentId)
         {
-            // TODO(logic prompt)
+            if (appointmentId <= 0)
+            {
+                ClearBill();
+                return;
+            }
+
+            DataRow header;
+            try
+            {
+                header = BillingRepository.GetBillHeader(appointmentId);
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+                return;
+            }
+
+            if (header == null)
+            {
+                ClearBill();
+                return;
+            }
+
+            _bill = header;
+
+            string status = Db.Get<string>(header["appointment_status"]);
+
+            lblBillClient.Text = Db.Get<string>(header["client_name"], "-");
+
+            lblBillSchedule.Text = "Schedule: " +
+                Db.Get<DateTime>(header["appointment_date"]).ToString("MMM dd, yyyy") + "   " +
+                Clock(ReadTime(header["start_time"])) + " - " + Clock(ReadTime(header["end_time"])) +
+                "   (" + status + ")";
+
+            _loading = true;
+            try
+            {
+                try
+                {
+                    dgvBillLines.DataSource = BillingRepository.GetBillLines(appointmentId);
+                }
+                catch (Exception ex)
+                {
+                    Messages.DbError(ex);
+                    return;
+                }
+
+                SelectPromo(Db.Get<int>(header["promo_id"]));
+            }
+            finally
+            {
+                _loading = false;
+            }
+
+            ShowTotals(header);
+            UpdateControls(header);
         }
 
-        private void dgvBillLines_CurrentCellDirtyStateChanged(object sender, EventArgs e)
+        /// <summary>The five money rows under the lines.</summary>
+        private void ShowTotals(DataRow header)
         {
-            // TODO(logic prompt)
+            lblSubtotal.Text = Db.Get<decimal>(header["subtotal"]).ToString(MoneyFormat);
+            lblDiscount.Text = Db.Get<decimal>(header["discount_amount"]).ToString(MoneyFormat);
+            lblPaid.Text = Db.Get<decimal>(header["paid_so_far"]).ToString(MoneyFormat);
+            lblTotal.Text = Db.Get<decimal>(header["total_amount"]).ToString(MoneyFormat);
+            lblBalance.Text = Db.Get<decimal>(header["balance_due"]).ToString(MoneyFormat);
         }
+
+        /// <summary>
+        /// The promo note and the two buttons. A promotion may only be chosen while the bill has
+        /// none, nothing has been paid and the appointment is not finished: a promotion is paid in
+        /// full, so it can never be added on top of an installment.
+        /// </summary>
+        private void UpdateControls(DataRow header)
+        {
+            int promoId = Db.Get<int>(header["promo_id"]);
+            decimal paid = Db.Get<decimal>(header["paid_so_far"]);
+            string status = Db.Get<string>(header["appointment_status"]);
+
+            bool completed = string.Equals(status, "Completed", StringComparison.OrdinalIgnoreCase);
+            bool cancelled = string.Equals(status, "Cancelled", StringComparison.OrdinalIgnoreCase);
+
+            cboPromo.Enabled = promoId <= 0 && paid <= 0m && !completed && !cancelled;
+            dgvBillLines.ReadOnly = completed || cancelled;
+
+            if (promoId > 0)
+            {
+                lblPromoNote.Text = "Promotion: " + Db.Get<string>(header["promo_name"], "-") +
+                    ", -" + Db.Get<decimal>(header["discount_amount"]).ToString(MoneyFormat) +
+                    ". A promotion is always paid in full.";
+            }
+            else if (paid > 0m)
+            {
+                lblPromoNote.Text = "No promo. A promo can no longer be added because money was already paid.";
+            }
+            else if (completed || cancelled)
+            {
+                lblPromoNote.Text = "No promo. This appointment is " + status.ToLowerInvariant() + ".";
+            }
+            else
+            {
+                lblPromoNote.Text = "No promo applied. Applying one recalculates the total and needs full payment.";
+            }
+
+            btnCollect.Enabled = !completed && !cancelled;
+            btnPrintReceipt.Enabled = true;
+        }
+
+        /// <summary>Empties the bill card and switches off both buttons.</summary>
+        private void ClearBill()
+        {
+            _bill = null;
+
+            lblBillClient.Text = "Select an appointment";
+            lblBillSchedule.Text = "Schedule: -";
+            lblPromoNote.Text = "No promo applied.";
+
+            _loading = true;
+            try
+            {
+                dgvBillLines.DataSource = null;
+                cboPromo.Enabled = false;
+                SelectPromo(0);
+            }
+            finally
+            {
+                _loading = false;
+            }
+
+            lblSubtotal.Text = 0m.ToString(MoneyFormat);
+            lblDiscount.Text = 0m.ToString(MoneyFormat);
+            lblPaid.Text = 0m.ToString(MoneyFormat);
+            lblTotal.Text = 0m.ToString(MoneyFormat);
+            lblBalance.Text = 0m.ToString(MoneyFormat);
+
+            btnCollect.Enabled = false;
+            btnPrintReceipt.Enabled = false;
+        }
+
+        // ---------------------------------------------------------------- checkout actions
 
         private void btnCollect_Click(object sender, EventArgs e)
         {
-            // TODO(logic prompt)
+            int appointmentId = CurrentAppointmentId();
+            if (appointmentId <= 0 || _bill == null) return;
+
+            string status = Db.Get<string>(_bill["appointment_status"]);
+            if (string.Equals(status, "Completed", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(status, "Cancelled", StringComparison.OrdinalIgnoreCase))
+            {
+                Messages.Warn("This appointment is already " + status.ToLowerInvariant() + ".");
+                return;
+            }
+
+            if (Db.Get<DateTime>(_bill["appointment_date"]).Date > DateTime.Today)
+            {
+                Messages.Warn("This appointment is on a future date, so it cannot be checked out yet.");
+                return;
+            }
+
+            // Every service line needs the person who performed it: the commission and the
+            // treatment history are written for that person.
+            Dictionary<int, int> technicians = new Dictionary<int, int>();
+            int missing = 0;
+
+            foreach (DataGridViewRow row in dgvBillLines.Rows)
+            {
+                if (row.IsNewRow) continue;
+
+                int lineId = Db.Get<int>(row.Cells["colLineId"].Value);
+                int technicianId = Db.Get<int>(row.Cells["colLineTech"].Value);
+
+                if (lineId <= 0) continue;
+
+                if (technicianId <= 0) missing++;
+                else technicians[lineId] = technicianId;
+            }
+
+            if (missing > 0)
+            {
+                Messages.Warn("Choose the attending staff member for every service line first " +
+                    "(" + missing + " line(s) still say 'Select staff').");
+                return;
+            }
+
+            decimal balance = Db.Get<decimal>(_bill["balance_due"]);
+            string clientName = Db.Get<string>(_bill["client_name"], "-");
+
+            string method = string.Empty;
+            string reference = string.Empty;
+            bool verified = false;
+            decimal tendered = 0m;
+
+            if (balance > 0m)
+            {
+                using (PaymentForm form = new PaymentForm())
+                {
+                    form.AmountDue = balance;
+                    form.ClientName = clientName;
+
+                    if (form.ShowDialog(this) != DialogResult.OK) return;
+
+                    method = form.Method;
+                    reference = form.Reference;
+                    verified = form.Verified;
+                    tendered = form.Tendered;
+                }
+            }
+            else
+            {
+                if (!Messages.Confirm("Nothing is left to pay for " + clientName +
+                    ". Complete this appointment?"))
+                {
+                    return;
+                }
+            }
+
+            int billingId;
+            try
+            {
+                billingId = BillingRepository.Checkout(appointmentId, technicians, method, reference, verified, tendered);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // The repository spells out the rule it could not apply, so it is a warning.
+                Messages.Warn(ex.Message);
+                return;
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+                return;
+            }
+
+            string done = "The appointment of " + clientName + " is completed.";
+            if (string.Equals(method, "Cash", StringComparison.OrdinalIgnoreCase) && tendered > balance)
+            {
+                done += " Change: " + (tendered - balance).ToString(MoneyFormat) + ".";
+            }
+
+            Messages.Info(done);
+
+            LoadQueue(appointmentId);
+
+            if (Messages.Confirm("Print the receipt now?"))
+            {
+                ReceiptPrinter.Print(billingId, true);
+            }
         }
 
         private void btnPrintReceipt_Click(object sender, EventArgs e)
         {
-            // TODO(logic prompt)
+            if (_bill == null) return;
+            ReceiptPrinter.Print(Db.Get<int>(_bill["billing_id"]), true);
+        }
+
+        private void dgvBillLines_CurrentCellDirtyStateChanged(object sender, EventArgs e)
+        {
+            // The staff drop-down only reports a change once the edit is committed.
+            if (dgvBillLines.IsCurrentCellDirty)
+            {
+                dgvBillLines.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            }
+        }
+
+        private void dgvBillLines_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        {
+            if (_loading || e.RowIndex < 0) return;
+
+            // Choosing a different staff member changes who earns the commission, but not the
+            // money of the bill, so the totals do not need to be recalculated here.
+        }
+
+        // ---------------------------------------------------------------- promo
+
+        private void cboPromo_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_loading || _bill == null) return;
+
+            int previousId = Db.Get<int>(_bill["promo_id"]);
+            int selectedId = SelectedPromoId();
+
+            if (selectedId == previousId) return;
+
+            int appointmentId = Db.Get<int>(_bill["appointment_id"]);
+
+            string message;
+            try
+            {
+                message = BillingRepository.ApplyPromo(appointmentId, selectedId);
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+                SelectPromo(previousId);
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(message))
+            {
+                Messages.Warn(message);
+                SelectPromo(previousId);
+                return;
+            }
+
+            Messages.Info("The promotion was applied. The whole total is now due.");
+            ShowBill(appointmentId);
+        }
+
+        // ---------------------------------------------------------------- queue and transactions
+
+        private void dtpQueueDate_ValueChanged(object sender, EventArgs e)
+        {
+            if (_loading) return;
+            LoadQueue(0);
+        }
+
+        private void btnQueueToday_Click(object sender, EventArgs e)
+        {
+            _loading = true;
+            try { dtpQueueDate.Value = DateTime.Today; }
+            finally { _loading = false; }
+
+            LoadQueue(0);
+        }
+
+        private void btnRefresh_Click(object sender, EventArgs e)
+        {
+            LoadQueue(CurrentAppointmentId());
+        }
+
+        private void dgvQueue_SelectionChanged(object sender, EventArgs e)
+        {
+            if (_loading) return;
+
+            int appointmentId = CurrentAppointmentId();
+            if (appointmentId > 0) ShowBill(appointmentId);
+            else ClearBill();
+        }
+
+        private void dgvQueue_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.Value == null) return;
+
+            string column = dgvQueue.Columns[e.ColumnIndex].Name;
+            if (column != "colQueueStatus" && column != "colQueuePayment") return;
+
+            e.CellStyle.ForeColor = Theme.StatusColor(e.Value.ToString());
+            // A selected row keeps white text on its highlight, where the colour is unreadable.
+            e.CellStyle.SelectionForeColor = Color.White;
+        }
+
+        /// <summary>
+        /// Loads the payments of the chosen range. Staff are locked to today (the dates are
+        /// disabled), an Admin may search any month.
+        /// </summary>
+        private void LoadTransactions()
+        {
+            string method = cboMethod.SelectedItem == null ? "All" : cboMethod.SelectedItem.ToString();
+
+            try
+            {
+                dgvTransactions.DataSource = BillingRepository.GetTransactions(
+                    dtpFrom.Value.Date, dtpTo.Value.Date, txtSearch.Text, method);
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+                return;
+            }
+
+            dgvTransactions.ClearSelection();
+
+            decimal total = 0m;
+            foreach (DataGridViewRow row in dgvTransactions.Rows)
+            {
+                if (row.IsNewRow) continue;
+                total += Db.Get<decimal>(row.Cells["colTranPaid"].Value);
+            }
+
+            lblTotals.Text = dgvTransactions.Rows.Count +
+                (dgvTransactions.Rows.Count == 1 ? " transaction - " : " transactions - ") +
+                total.ToString(MoneyFormat);
         }
 
         private void btnSearch_Click(object sender, EventArgs e)
         {
-            // TODO(logic prompt)
+            if (dtpFrom.Value.Date > dtpTo.Value.Date)
+            {
+                Messages.Warn("The 'From' date must be before the 'To' date.");
+                return;
+            }
+
+            LoadTransactions();
         }
 
         private void btnReprint_Click(object sender, EventArgs e)
         {
-            // TODO(logic prompt)
+            int billingId = GridHelper.GetSelectedId(dgvTransactions, "colTranBillingId");
+            if (billingId <= 0)
+            {
+                Messages.Warn("Select the payment whose receipt you want to print.");
+                return;
+            }
+
+            ReceiptPrinter.Print(billingId, true);
         }
 
         private void dgvTransactions_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
-            // TODO(logic prompt)
+            if (e.RowIndex < 0 || e.Value == null) return;
+
+            if (dgvTransactions.Columns[e.ColumnIndex].Name != "colTranStatus") return;
+
+            e.CellStyle.ForeColor = Theme.StatusColor(e.Value.ToString());
+            e.CellStyle.SelectionForeColor = Color.White;
+        }
+
+        // ---------------------------------------------------------------- small helpers
+
+        /// <summary>A time column read back safely whatever the provider hands over.</summary>
+        private static TimeSpan ReadTime(object value)
+        {
+            if (value == null || value == DBNull.Value) return TimeSpan.Zero;
+            if (value is TimeSpan) return (TimeSpan)value;
+            if (value is DateTime) return ((DateTime)value).TimeOfDay;
+
+            TimeSpan parsed;
+            if (TimeSpan.TryParse(value.ToString(), out parsed)) return parsed;
+            return TimeSpan.Zero;
+        }
+
+        /// <summary>"10:00 AM" for a time value, so every line reads the same way.</summary>
+        private static string Clock(TimeSpan value)
+        {
+            return DateTime.Today.Add(value).ToString("h:mm tt");
         }
     }
 }

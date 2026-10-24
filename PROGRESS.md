@@ -2,7 +2,111 @@
 
 Update this file at the end of every task.
 
-- Step 17 (this task): Layout only (Designer work) for the Billing page and the payment dialog.
+- Step 18 (this task): the LOGIC for the Billing module (repository, receipt printer, the page and
+  the payment dialog). The Designer layouts were NOT restructured; the only Designer touch was
+  temporarily setting tabBilling.SelectedIndex = 1 to take the Transactions preview, which is back
+  to 0.
+  - Data\BillingRepository.cs (the Step 16 methods are unchanged; everything below is new):
+    READ: GetQueue(date) (appointment_id, time_range, client_name, services "Name x2", status,
+    payment_status, balance_due; the non-cancelled appointments of that day, past days allowed on
+    purpose), GetBillHeader(appointmentId) (client_name, appointment_date, start_time, end_time,
+    appointment_status, billing_id, promo_id, promo_name, subtotal, discount_amount,
+    total_amount, paid_so_far = every payment that is not 'Rejected', balance_due,
+    payment_status; null when there is no bill), GetBillLines(appointmentId)
+    (appointment_service_id, service_name, quantity, price, session_label "2 / 8" or empty,
+    technician_id 0 when none was requested, line_status), GetTransactions(from, to, search,
+    method) (billing_id, payment_date = the latest payment, client_name, services, total_amount,
+    amount_paid = the sum of the non-rejected payments, payment_method of the latest payment,
+    reference_number, staff_names, payment_status; only bills with at least one non-rejected
+    payment; "All" = every method; the whole "to" day belongs to the range) and
+    GetReceiptData(billingId) (the header fields repeated on every service line plus
+    staff_names; empty table when the bill has no lines). Every comma list is built in C# with ONE
+    query per list (no STRING_AGG), as in AppointmentRepository.
+    ApplyPromo(appointmentId, promoId) returns an empty text or a readable sentence. It is refused
+    when the bill already has a promo, when anything was paid (a promo is never an installment) or
+    when the appointment is completed; the discount ALWAYS comes from
+    PromotionRepository.CalculateDiscount, and discount / total / balance are written in one
+    transaction. It logs "Apply Promo".
+    Checkout(appointmentId, technicianByLine, method, reference, verified, tendered) returns the
+    billing_id and does everything in ONE Db.InTransaction. It validates first (not Cancelled /
+    Completed, date today or earlier, a technician on every line, and while balance > 0 a method,
+    a reference + the tick for GCash / Bank Transfer, tendered >= balance for Cash), then
+    (a) a 'Final' Payments row ('Verified') when money is still due, (b) the bill reads
+    balance 0 / 'Paid' / downpayment 'Held' -> 'Applied', (c) AppointmentStaff per line (user_id
+    replaced by the real technician, 'Completed', inserted when the line had none),
+    (d) AppointmentServices 'Completed', (e) Appointments 'Completed', (f)
+    ClientPackages.sessions_completed + 1 and 'Completed' at total_sessions, (g) one Commissions
+    row per line (10 %, the proportional discount share taken off, package lines use
+    price / total_sessions per the business rules, payout 'Unpaid', payment_id = the new payment or
+    NULL), (h) the clients.treatment_history line "MMM dd, yyyy - Service name (Staff full name)"
+    appended, (i) an AppointmentHistory 'Status Change' row and (j) ActivityLog "Checkout".
+  - Helpers\ReceiptPrinter.cs (NEW FILE, registered in LittleEreseSystemV3.csproj as
+    <Compile Include="Helpers\ReceiptPrinter.cs" />): internal static Print(billingId, preview)
+    draws an 80 mm style receipt (Consolas, 280 printer units wide) with the business name and
+    address, "OFFICIAL RECEIPT" + OR-yyyyMMdd-<billing_id>, the date, the client, each service line
+    (name, "qty x price", amount), subtotal, discount, paid upfront, total, the method with its
+    reference, the attending staff and "Thank you for trusting Little Erese's.". It shows a
+    PrintPreviewDialog when preview is true and prints otherwise, and it never throws (Messages +
+    Db.Describe on failure). POLISH marks on the header text.
+  - Helpers\Validators.cs: added IsValidReference (letters and digits, 6 to 30 characters) with a
+    // POLISH note. No existing rule changed.
+  - Controls\ucBilling.cs: Load styles the three grids and the six buttons, dtpQueueDate = today,
+    the Transactions range = this month (Admin) or today and locked (Staff), cboMethod "All", the
+    technician column = "Select staff" + UserRepository.GetActiveStaff() and cboPromo = "No promo"
+    + PromotionRepository.GetActiveValid() with the discount in the caption. A DataError handler
+    keeps the staff drop-down from showing a raw .NET dialog.
+    Selecting a queue row loads the bill (client, "Schedule: date  start - end (status)", the lines
+    with the requested technician preselected, the five totals) and sets the buttons: the promo box
+    only while the bill has no promo, nothing was paid and the appointment is not finished; the
+    lines grid is locked once the appointment is completed / cancelled.
+    cboPromo_SelectedIndexChanged calls ApplyPromo, warns with the message when it is refused and
+    restores the previous choice. btnCollect validates the appointment and every line's staff,
+    opens PaymentForm when a balance is left (or asks Messages.Confirm when nothing is due), calls
+    Checkout, shows the change for cash, reloads the queue and the bill and offers the receipt with
+    ReceiptPrinter.Print(billingId, true). btnPrintReceipt prints the selected bill.
+    dgvQueue_CellFormatting colors Status and Payment with Theme.StatusColor (white on a selected
+    row). Staff cannot search a range (the two pickers are disabled), btnSearch validates the range,
+    lblTotals shows "<n> transactions - <sum of amount_paid>", btnReprint prints the selected row's
+    receipt and dgvTransactions_CellFormatting colors the Status cell.
+  - Forms\PaymentForm.cs: public AmountDue / ClientName in, Method / Reference / Verified /
+    Tendered out. Load styles the two buttons, shows the name and the amount, picks Cash and fills
+    the change row. Cash enables the tendered box; GCash / Bank Transfer enable the reference box
+    and the tick and clear the other one. txtTendered_TextChanged keeps lblChange at "never
+    negative". btnConfirm validates through Validators + errorProvider1 (cash needs a number
+    >= AmountDue, GCash / bank need a valid reference and the tick) and then sets DialogResult.OK;
+    btnCancel returns Cancel.
+  - Helpers\SmokeTest.cs: the three read-only Billing checks (GetQueue(today) runs,
+    GetTransactions(first day of month, today, "", "All") runs, GetBillHeader(0) returns no row).
+    Nothing is written.
+  - Self-test (temporary, REMOVED again - no --billingtest switch and no BillingSelfTest.cs are
+    left in Program.cs or the .csproj): booked one walk-in appointment today for the first demo
+    client with one normal service (Traptox, 5,000.00) and checked it out as Cash. Every check
+    PASSED: Billing = balance 0.00 / Paid, one Payments row 'Final' / Cash / 5,000.00 / 'Verified',
+    AppointmentServices 'Completed', Appointments 'Completed', Commissions = 500.00 (10 %) / rate
+    10.00 / 'Unpaid' for the technician, and Clients.treatment_history gained
+    "Oct 24, 2026 - Traptox (Aesthetician 1)". Every row was deleted again (Commissions, Payments,
+    Billing, AppointmentHistory, AppointmentStaff, AppointmentRooms, AppointmentServices,
+    Appointments, the treatment_history line and the ActivityLog rows) and the cleanup check
+    reported nothing left behind; the database is back to 0 appointments.
+  - Assumptions: a refund / rejected-payment screen is not part of this step (the Payments history
+    stays as it is); Checkout stores the final payment as 'Verified' because the counter only
+    confirms money it has seen (the tick is still required for GCash / the bank); the receipt shows
+    the current date, which is what the counter hands to the client.
+  - LittleEreseSystemV3.csproj WAS edited: one line added,
+    <Compile Include="Helpers\ReceiptPrinter.cs" /> (the temporary self-test file was added and
+    removed again).
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 47 passed, 0 failed, 0 skipped.
+  --preview checked for ucBilling (Checkout: the queue date / Today / Refresh and "0 in the queue",
+  the 7-column queue grid and the bill card with "Select an appointment", the 7-column lines grid,
+  the promo row, the five totals and the two buttons; Transactions, previewed by temporarily
+  selecting tab 1: From / To / Client / Method, Search + Print Receipt,
+  "0 transactions - P0.00" and the 9-column payments grid - nothing overlapping or truncated) and
+  PaymentForm (the name, the amount due, the method, reference, tendered, change, the verification
+  tick, the note and the footer, all inside 460 x 560). The app was started once and closed again
+  (no error.log).
+
+- Step 17: Layout only (Designer work) for the Billing page and the payment dialog.
   No logic, no SQL, no file or Session access: every wired event got an empty handler with
   "// TODO(logic prompt)", waiting for the logic prompt. Both files were empty shells before.
   - Controls\ucBilling (.Designer.cs + .cs): AppBack page, 1000 x 640, holding tabBilling

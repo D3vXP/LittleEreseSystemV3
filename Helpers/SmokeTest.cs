@@ -292,6 +292,58 @@ namespace LittleEreseSystemV3.Helpers
             CheckAppointmentDayList();
             CheckTimeSlots();
             CheckBookingWithoutClient();
+
+            // The three read-only Billing checks (Step 18). Nothing is written or changed here.
+            CheckBillingQueue();
+            CheckBillingTransactions();
+            CheckBillingHeaderWithoutBill();
+        }
+
+        /// <summary>GetQueue(today) must list a day (usually empty) without an error.</summary>
+        private static void CheckBillingQueue()
+        {
+            const string label = "BillingRepository.GetQueue(today)";
+            try
+            {
+                DataTable queue = BillingRepository.GetQueue(DateTime.Today);
+                Pass(label + " rows = " + queue.Rows.Count);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>The Transactions tab starts on the current month.</summary>
+        private static void CheckBillingTransactions()
+        {
+            const string label = "BillingRepository.GetTransactions(first day of month, today, \"\", \"All\")";
+            try
+            {
+                DateTime from = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                DataTable payments = BillingRepository.GetTransactions(from, DateTime.Today, "", "All");
+                Pass(label + " rows = " + payments.Rows.Count);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>An appointment id that does not exist has no bill, and that must not throw.</summary>
+        private static void CheckBillingHeaderWithoutBill()
+        {
+            const string label = "BillingRepository.GetBillHeader(0) returns no row";
+            try
+            {
+                DataRow header = BillingRepository.GetBillHeader(0);
+                if (header == null) Pass(label);
+                else Fail(label + " (got a row)");
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
         }
 
         /// <summary>GetByDate must list a day (usually empty) without an error.</summary>
