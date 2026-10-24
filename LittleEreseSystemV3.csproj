@@ -192,12 +192,14 @@
       <DependentUpon>StaffEditForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Helpers\DesignTime.cs" />
+    <Compile Include="Helpers\CsvExporter.cs" />
     <Compile Include="Helpers\GridHelper.cs" />
+    <Compile Include="Helpers\GridPrinter.cs" />
     <Compile Include="Helpers\IconHelper.cs" />
     <Compile Include="Helpers\Messages.cs" />
     <Compile Include="Helpers\PasswordHasher.cs" />
-    <Compile Include="Helpers\ReceiptPrinter.cs" />
     <Compile Include="Helpers\PreviewTool.cs" />
+    <Compile Include="Helpers\ReceiptPrinter.cs" />
     <Compile Include="Helpers\Session.cs" />
     <Compile Include="Helpers\SmokeTest.cs" />
     <Compile Include="Helpers\Theme.cs" />

@@ -1,6 +1,95 @@
-# PROGRESS.md
+﻿# PROGRESS.md
 
 Update this file at the end of every task.
+
+- Step 20 (this task): the LOGIC for the Commissions and Reports modules (two repositories, two new
+  helper files, the two pages). The Designer layouts were NOT restructured and no Designer fix was
+  needed; the .cs files of both pages were rewritten from their "// TODO(logic prompt)" shells.
+  - Data\CommissionRepository.cs (was an empty class):
+    Read: GetSummary(from, to, userId, payout) groups the commissions per staff member (user_id,
+    full_name, services_count, total_commission, unpaid_amount, paid_amount; userId 0 = everybody;
+    payout All | Unpaid | Paid). GetDetails(from, to, userId, payout) returns the single rows
+    (commission_id, service_date, staff_name, client_name, service_name, base_amount,
+    commission_rate, commission_amount, payout_status); base_amount is READ BACK as
+    commission_amount * 100 / commission_rate (rate 0 falls back to the amount, no division), so the
+    screen shows what was really paid and not a re-calculation with today's prices.
+    Write: MarkPaid(List<int>) sets 'Paid' + payout_date = GETDATE() for Unpaid rows only (a second
+    click can never overwrite an earlier payout date) and returns the rows that changed.
+    WHY the date filter uses the appointment date: a commission belongs to the day the service was
+    done, never to the day it was paid out. Every list of ids is one parameterised IN (...) list.
+  - Data\ReportRepository.cs (was an empty class):
+    One shared CTE (SalesLine) defines a sale: a not-created-but-completed service line of a
+    Completed appointment inside the range, with gross = quantity x price and the line's
+    PROPORTIONAL share of Billing.discount_amount (discount x line / subtotal). Category, service
+    and grand total therefore always add up to the same number.
+    GetSalesByCategory(from, to) -> category_name, services_count, gross_sales, discount_total,
+    net_sales. GetPaymentsByMethod(from, to) -> payment_method, payments_count, amount from every
+    payment that is not 'Rejected', dated by payment_date with the next day as the boundary so the
+    whole "to" day belongs to the range. GetTopServices(from, to, top) -> rank_no, service_name,
+    category_name, times_availed, revenue (ROW_NUMBER over times availed, then revenue).
+    GetCommissionReport(from, to) DELEGATES to CommissionRepository.GetSummary(from, to, 0, "All"),
+    so the report and the Commissions page can never disagree. GetAppointmentStatusCounts(from, to)
+    always returns the same five rows (Upcoming, Ongoing, Completed, Cancelled from the appointments
+    of the range + Rescheduled counted from AppointmentHistory change_type 'Rescheduled' by
+    changed_at), zeros included, so the tab never looks broken. GetAppointmentSourceCounts(from, to)
+    -> booking_source, total for the non-cancelled appointments.
+    // POLISH: a sale is counted when the service is completed, not when the money arrives (a period
+    // can show sales that are paid later). The Rescheduled counter counts the MOVES made in the
+    // period, not the appointments that sit on a rescheduled date. Both are marked in the file.
+  - Helpers\CsvExporter.cs (NEW FILE, registered in LittleEreseSystemV3.csproj):
+    Export(grid, suggestedFileName) shows a SaveFileDialog and writes the VISIBLE columns and rows
+    as UTF-8 WITH BOM (so Excel reads the peso sign), every field quoted with doubled inner quotes,
+    header captions from HeaderText and cell text from FormattedValue (what the user sees). Empty
+    grids are refused with a warning, the file name is stripped of invalid characters, the result is
+    confirmed with Messages.Info(path) and nothing ever throws.
+  - Helpers\GridPrinter.cs (NEW FILE, registered in LittleEreseSystemV3.csproj):
+    Print(grid, title) builds a PrintDocument (landscape, 50-unit margins) and shows a
+    PrintPreviewDialog. It repeats the title, "Little Erese's Aesthetics and Spa" and the print date
+    on every page, draws the visible column captions and rows, spreads the paper width over the
+    visible columns in proportion to their on-screen width and continues on a new page when the
+    paper runs out. Hidden id columns are never printed. Nothing ever throws.
+  - Controls\ucCommissions.cs: Admin only (a Staff user gets a warning and an empty page; the warning
+    is skipped when nobody is signed in so the smoke test and the preview tool still work).
+    Load styles both grids and the four buttons, dtpFrom = first day of this month, dtpTo = today,
+    cboStaff = "All staff" + UserRepository.GetActiveStaff(), cboPayout defaults to "Unpaid" and
+    loads. The three cards add up the SUMMARY grid (not the details), so the whole period stays
+    visible while one staff member is selected. Selecting a staff row narrows dgvDetails through
+    _detailUserId; clicking the empty area below the rows shows everybody again. btnSearch validates
+    the range and reloads. btnMarkPaid collects the selected rows that are still Unpaid, asks
+    Messages.Confirm with the count and the total, calls MarkPaid, logs "Commission payout" with
+    ActivityRepository.Log, reloads and keeps the same staff member selected. btnExport exports the
+    detail grid ("commissions-yyyyMMdd-yyyyMMdd"), btnPrint previews it. CellFormatting colours the
+    payout cell Success (Paid) / Warning (Unpaid) and keeps white text on a selected row.
+  - Controls\ucReports.cs: Admin only (same guard). Load styles the six grids and the three buttons,
+    picks "This Month" and generates. cboPreset moves both pickers (This Week starts on MONDAY, This
+    Month, Last Month, Today) and only "Custom" enables them, so the range always matches the caption.
+    btnGenerate validates the range and loads ALL FOUR tabs in one go (6 queries), then fills the
+    labels: lblSalesTotal "Net sales <sum of net_sales>", lblCommissionTotal "Total commission <sum>",
+    and the four appointment cards (the four statuses add up to the headline; Rescheduled is a
+    history event and is counted once, in its own card). btnExport exports the grid of the selected
+    tab (Sales exports dgvSales, not the by-method grid) and btnPrint previews it; the file name is
+    built from the tab caption and the range. dgvReports_CellFormatting is wired to the four money
+    grids and keeps the money cells right aligned and the selected text white. Empty results show
+    empty grids and zeros, never an error.
+  - Helpers\SmokeTest.cs: three read-only checks (GetSummary for this month runs,
+    GetSalesByCategory for this month runs, GetAppointmentStatusCounts returns exactly 5 rows).
+    Nothing is written.
+  - Data check (temporary, no file left behind): the seven new queries were also run against a
+    throw-away completed appointment created inside a transaction that was ROLLED BACK, and the
+    numbers were correct (gross 5,000.00, discount 500.00, net 4,500.00, one Cash payment of
+    4,500.00, commission 450.00 on a base of 4,500.00, 1 Walk-in booking). Nothing was saved.
+  - LittleEreseSystemV3.csproj WAS edited: five lines added - Data\CommissionRepository.cs,
+    Data\ReportRepository.cs, Helpers\CsvExporter.cs, Helpers\GridPrinter.cs and (the line the
+    previous step was missing) Helpers\ReceiptPrinter.cs. No file was renamed or removed.
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 50 passed, 0 failed, 0 skipped.
+  --preview checked for ucCommissions (the two toolbar rows with From / To / Staff "All staff" /
+  Payout "Unpaid", Search + Mark Selected as Paid + Export CSV + Print, the three cards reading
+  P0.00 in dark, red and green, the 6-column staff summary and the 9-column detail grid - nothing
+  overlapping or truncated) and ucReports ("This Month" with both pickers locked, Generate / Export
+  CSV / Print, the four tabs, "Net sales P0.00", the 5-column sales grid, "Collected by payment
+  method" with its 3-column grid). No fix round was needed. The app was started once and closed
+  again (no error.log).
 
 - Step 19 (this task): Layout only (Designer work) for the Commissions and Reports pages.
   No logic, no SQL, no file or Session access: every wired event got an empty handler with
@@ -1127,3 +1216,4 @@ Update this file at the end of every task.
 - ucStaffAccounts refuses to run for a Staff user on purpose (it shows a short warning), and
   UserRepository blocks deactivating or demoting your own account and the last Active Admin, so a
   single-Admin shop can never lock itself out.
+

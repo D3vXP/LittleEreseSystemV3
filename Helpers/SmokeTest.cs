@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -297,6 +297,11 @@ namespace LittleEreseSystemV3.Helpers
             CheckBillingQueue();
             CheckBillingTransactions();
             CheckBillingHeaderWithoutBill();
+
+            // The three read-only Commission / Report checks (Step 20). Nothing is written here.
+            CheckCommissionSummary();
+            CheckReportSalesByCategory();
+            CheckReportAppointmentStatusCounts();
         }
 
         /// <summary>GetQueue(today) must list a day (usually empty) without an error.</summary>
@@ -339,6 +344,60 @@ namespace LittleEreseSystemV3.Helpers
                 DataRow header = BillingRepository.GetBillHeader(0);
                 if (header == null) Pass(label);
                 else Fail(label + " (got a row)");
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>The Commissions page opens on this month; the query must run without an error.</summary>
+        private static void CheckCommissionSummary()
+        {
+            const string label = "CommissionRepository.GetSummary(this month, all staff, all payouts)";
+            try
+            {
+                DateTime from = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                DataTable summary = CommissionRepository.GetSummary(from, DateTime.Today, 0, "All");
+                Pass(label + " rows = " + summary.Rows.Count);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>The Sales tab of the Reports page.</summary>
+        private static void CheckReportSalesByCategory()
+        {
+            const string label = "ReportRepository.GetSalesByCategory(this month)";
+            try
+            {
+                DateTime from = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                DataTable sales = ReportRepository.GetSalesByCategory(from, DateTime.Today);
+                Pass(label + " rows = " + sales.Rows.Count);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// The Appointments tab always shows the same five rows (zeros included), so the grid never
+        /// looks broken on a quiet month.
+        /// </summary>
+        private static void CheckReportAppointmentStatusCounts()
+        {
+            const string label = "ReportRepository.GetAppointmentStatusCounts(this month) returns 5 rows";
+            try
+            {
+                DateTime from = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                DataTable counts = ReportRepository.GetAppointmentStatusCounts(from, DateTime.Today);
+                string message = label + " (got " + counts.Rows.Count + ")";
+
+                if (counts.Rows.Count == 5) Pass(message);
+                else Fail(message);
             }
             catch (Exception ex)
             {
