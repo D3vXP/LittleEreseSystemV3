@@ -2,6 +2,83 @@
 
 Update this file at the end of every task.
 
+- Step 19 (this task): Layout only (Designer work) for the Commissions and Reports pages.
+  No logic, no SQL, no file or Session access: every wired event got an empty handler with
+  "// TODO(logic prompt)", waiting for the logic prompt. Both files were empty shells before.
+  - Controls\ucCommissions (.Designer.cs + .cs): AppBack page, 1000 x 640, Admin only.
+    pnlToolbar (Dock Top, 92 px, Surface, FixedSingle) holds tlpToolbar with two rows:
+    row 1 flpFilters (lblFrom + dtpFrom, lblTo + dtpTo, lblStaff + cboStaff DropDownList 180 px,
+    lblPayout + cboPayout with All / Unpaid / Paid; every label AutoSize), row 2 flpButtons
+    (btnSearch primary, btnMarkPaid "Mark Selected as Paid" primary, btnExport "Export CSV" and
+    btnPrint "Print" secondary).
+    pnlSummary (Dock Top, 96 px, AppBack, 12/8 padding) holds tlpSummary with three equal cards:
+    pnlTotalEarned / pnlUnpaid / pnlPaid, each a white FixedSingle panel with a muted 9 pt title
+    (lblTotalEarnedTitle "Total commission earned", lblUnpaidTitle "Unpaid", lblPaidTitle "Paid")
+    above a 16 pt Semibold value (lblTotalEarned dark, lblUnpaid red, lblPaid green).
+    splitMain (Dock Fill, Orientation Horizontal, SplitterDistance 196 = about 43 % of the 452 px,
+    Panel1MinSize 130, Panel2MinSize 160). Top card pnlSummaryGrid with dgvSummary
+    (Theme.StyleGrid look as literals, AutoGenerateColumns = false): colSumUserId (hidden,
+    user_id), colSumStaff "Staff" / full_name, colSumCount "Services" / services_count (centered),
+    colSumTotal "Total commission" / total_commission (N2, right), colSumUnpaid "Unpaid" /
+    unpaid_amount (N2, right), colSumPaid "Paid" / paid_amount (N2, right).
+    Bottom card pnlDetailsGrid with dgvDetails (MultiSelect = true): colDetCommissionId (hidden,
+    commission_id), colDetDate "Date" / service_date (MMM dd, yyyy), colDetStaff "Staff" /
+    staff_name, colDetClient "Client" / client_name, colDetService "Service" / service_name,
+    colDetBase "Service amount" / base_amount (N2, right), colDetRate "Rate %" / commission_rate
+    (N2, right), colDetAmount "Commission" / commission_amount (N2, right), colDetStatus "Payout" /
+    payout_status.
+    Events wired: Load, btnSearch_Click, btnMarkPaid_Click, btnExport_Click, btnPrint_Click,
+    dgvSummary_SelectionChanged, dgvDetails_CellFormatting.
+  - Controls\ucReports (.Designer.cs + .cs): AppBack page, 1000 x 640, Admin only.
+    pnlFilter (Dock Top, 74 px, Surface, FixedSingle) with the AutoSize flpFilter: lblPreset
+    "Period" + cboPreset (Today / This Week / This Month / Last Month / Custom), lblFrom + dtpFrom,
+    lblTo + dtpTo, btnGenerate "Generate" (primary), btnExport "Export CSV" and btnPrint "Print"
+    (secondary).
+    tabReports (Dock Fill) with four tabs (every tab is AppBack with 10/8 padding):
+    tabSales "Sales" = lblSalesTotal (TitleFont 22 pt, Primary gold, "Net sales 0.00") on top,
+    dgvSales filling the middle (colSalesCategory "Service category" / category_name;
+    colSalesCount "Services" / services_count, centered; colSalesGross "Gross" / gross_sales;
+    colSalesDiscount "Discounts" / discount_total; colSalesNet "Net sales" / net_sales - all N2 and
+    right aligned) and pnlMethod (Dock Bottom, 208 px) with lblMethodTitle "Collected by payment
+    method" (Semibold) and the smaller dgvSalesByMethod (colMethodName "Payment method" /
+    payment_method; colMethodCount "Payments" / payments_count, centered; colMethodAmount
+    "Amount" / amount, N2 right).
+    tabTopServices "Top Services" = dgvTopServices filling the tab (colRank "#" / rank_no,
+    centered; colTopService "Service" / service_name; colTopCategory "Category" / category_name;
+    colTopCount "Times availed" / times_availed, centered; colTopRevenue "Revenue" / revenue,
+    N2 right).
+    tabCommission "Commissions" = lblCommissionTotal (TitleFont, Primary, "Total commission 0.00")
+    on top and dgvCommissionReport (colRepStaff "Staff" / full_name; colRepCount "Services" /
+    services_count, centered; colRepTotal "Total" / total_commission; colRepUnpaid "Unpaid" /
+    unpaid_amount; colRepPaid "Paid" / paid_amount - N2 right).
+    tabAppointments "Appointments" = pnlCards (Dock Top, 96 px) with tlpCards and four small white
+    cards (lblTotalAppointmentsTitle "Appointments" / lblTotalAppointments dark,
+    lblCompletedTitle "Completed" / lblCompletedCount green, lblCancelledTitle "Cancelled" /
+    lblCancelledCount red, lblRescheduledTitle "Rescheduled" / lblRescheduledCount amber), then
+    tlpApptGrids (Dock Fill, two 50 % columns with a 6 px gap) holding pnlStatusGrid with
+    dgvAppointmentStatus (colStatusName "Status" / status_label; colStatusTotal "Total" / total,
+    centered) and pnlSourceGrid with dgvAppointmentSource (colSourceName "Booking source" /
+    booking_source; colSourceTotal "Total" / total, centered).
+    Events wired: Load, cboPreset_SelectedIndexChanged, btnGenerate_Click, btnExport_Click,
+    btnPrint_Click, tabReports_SelectedIndexChanged and ONE shared money-format handler
+    dgvReports_CellFormatting, wired to all four money grids (dgvSales, dgvSalesByMethod,
+    dgvTopServices, dgvCommissionReport) - the two Appointments grids hold counts only.
+  - Fix rounds from the previews (0 used): both pages rendered with every label complete, no
+    overlap and nothing truncated on the first try. The empty Staff / Payout drop-downs and the
+    blank grids are expected: they are filled in the logic prompt. The three other Reports tabs
+    were also previewed by temporarily setting tabReports.SelectedIndex to 1, 2 and 3 (the
+    Designer value is back to 0 = Sales): Top Services, Commissions and Appointments (four cards +
+    the Status and Booking source grids side by side) all clean at 1240 x 600.
+  - LittleEreseSystemV3.csproj was NOT edited (all four files already existed and were listed).
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 47 passed, 0 failed, 0 skipped.
+  --preview checked for ucCommissions (the two toolbar rows with From / To / Staff / Payout and
+  Search / Mark Selected as Paid / Export CSV / Print, the three summary cards in red and green,
+  the 6-column staff summary and the 9-column commission details grid - nothing overlapping or
+  truncated) and ucReports (the filter strip with Period / From / To / Generate / Export CSV /
+  Print, the four tabs, "Net sales 0.00", the 5-column sales grid and "Collected by payment
+  method" with its 3-column grid). The app was started once and closed again (no error.log).
+
 - Step 18 (this task): the LOGIC for the Billing module (repository, receipt printer, the page and
   the payment dialog). The Designer layouts were NOT restructured; the only Designer touch was
   temporarily setting tabBilling.SelectedIndex = 1 to take the Transactions preview, which is back
