@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System;
 using System.Windows.Forms;
 
 namespace LittleEreseSystemV3.Forms
@@ -15,6 +8,31 @@ namespace LittleEreseSystemV3.Forms
         public PaymentForm()
         {
             InitializeComponent();
+        }
+
+        private void PaymentForm_Load(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
+
+        private void btnConfirm_Click(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
+
+        private void cboMethod_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
+
+        private void txtTendered_TextChanged(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
         }
     }
 }

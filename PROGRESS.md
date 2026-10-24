@@ -2,6 +2,80 @@
 
 Update this file at the end of every task.
 
+- Step 17 (this task): Layout only (Designer work) for the Billing page and the payment dialog.
+  No logic, no SQL, no file or Session access: every wired event got an empty handler with
+  "// TODO(logic prompt)", waiting for the logic prompt. Both files were empty shells before.
+  - Controls\ucBilling (.Designer.cs + .cs): AppBack page, 1000 x 640, holding tabBilling
+    (Dock Fill) with two tabs.
+    Tab "Checkout" (tabCheckout) = splitMain (Vertical, SplitterDistance 394 = about 40 % of the
+    986 px, Panel1MinSize 300, Panel2MinSize 340). LEFT panel: pnlQueueToolbar (Dock Top, 76 px,
+    Surface, FixedSingle) with flpQueueTop (lblQueueDate "Date" AutoSize, dtpQueueDate Short
+    132 px, btnQueueToday "Today", btnRefresh "Refresh", secondary look) and lblQueueCount
+    ("0 in the queue", SmallFont, TextMuted); below it the card pnlQueueGrid (Surface,
+    FixedSingle, 1 px padding) with dgvQueue (Dock Fill, Theme.StyleGrid look as literals,
+    AutoGenerateColumns = false): colQueueAppointmentId (hidden, appointment_id), colQueueTime
+    "Time" / time_range, colQueueClient "Client" / client_name, colQueueServices "Services" /
+    services, colQueueStatus "Status" / status, colQueuePayment "Payment" / payment_status,
+    colQueueBalance "Balance" / balance_due (N2, right aligned). Fill weights 17/22/24/13/12/14.
+    RIGHT panel: the scrollable card pnlBill (Surface, FixedSingle, AutoScroll, 16 px padding)
+    with the AutoSize tlpBill, one full-width row per block: lblBillClient (HeadingFont 16 pt,
+    placeholder "Select an appointment"), lblBillSchedule (TextMuted, "Schedule: -"),
+    dgvBillLines (150 px; Theme.StyleGrid literals; the ONLY editable column is the
+    DataGridViewComboBoxColumn colLineTech "Attending staff" / technician_id) with colLineId
+    (hidden, appointment_service_id), colLineService "Service" / service_name, colLineQty "Qty" /
+    quantity (centered), colLinePrice "Price" / price (N2, right), colLineSession "Session" /
+    session_label, colLineStatus "Status" / line_status; flpPromo (lblPromo + cboPromo DropDownList
+    282 px), lblPromoNote (muted, 2 lines), tlpTotals (5 rows: Subtotal / Discount / "Paid so far" /
+    Total / "Balance due" + lblBalance in TitleFont 22 pt Primary gold, right aligned), btnCollect
+    "Collect Payment and Complete" (primary look, full width, 48 px) and btnPrintReceipt
+    "Print Receipt" (secondary look).
+    Tab "Transactions" (tabTransactions): pnlTranToolbar (Dock Top, 92 px, Surface, FixedSingle)
+    with two rows - row 1 flpTranFilters (lblFrom + dtpFrom, lblTo + dtpTo, lblSearch "Client" +
+    txtSearch 180 px, lblMethod + cboMethod with All / Cash / GCash / Bank Transfer, all labels
+    AutoSize); row 2 flpTranButtons (btnSearch "Search" primary, btnReprint "Print Receipt"
+    secondary) and the right-aligned lblTotals (BoldFont, "0 transactions - 0.00"). Below it the
+    card pnlTranGrid with dgvTransactions (Theme.StyleGrid literals, AutoGenerateColumns = false):
+    colTranBillingId (hidden, billing_id), colTranDate "Date" / payment_date (MMM dd, yyyy h:mm tt),
+    colTranClient "Client" / client_name, colTranServices "Services" / services, colTranTotal
+    "Total" / total_amount (N2, right), colTranPaid "Paid" / amount_paid (N2, right), colTranMethod
+    "Method" / payment_method, colTranRef "Reference" / reference_number, colTranStaff "Staff" /
+    staff_names, colTranStatus "Status" / payment_status.
+    Events wired: Load, dtpQueueDate_ValueChanged, btnQueueToday_Click, btnRefresh_Click,
+    dgvQueue_SelectionChanged, dgvQueue_CellFormatting, cboPromo_SelectedIndexChanged,
+    dgvBillLines_CellValueChanged, dgvBillLines_CurrentCellDirtyStateChanged, btnCollect_Click,
+    btnPrintReceipt_Click, btnSearch_Click, btnReprint_Click, dgvTransactions_CellFormatting.
+  - Forms\PaymentForm (.Designer.cs + .cs): 460 x 560 client (the prompt's size, already inside
+    the "dialogs at most 1000 x 640" rule), FixedDialog, CenterParent, no minimize/maximize,
+    AcceptButton btnConfirm, CancelButton + DialogResult.Cancel on btnCancel, errorProvider1,
+    white header with lblTitle "Collect Payment" (HeadingFont) + 1 px Border line, white footer,
+    AutoScroll content so nothing can be cut on a 768 px screen.
+    Content, top to bottom = TabIndex order: lblClientName (Semibold, "-"), lblAmountDueTitle
+    "Amount due", lblAmountDue (TitleFont 22 pt, Primary gold), lblMethod + cboMethod
+    (DropDownList, Cash / GCash / Bank Transfer), lblReference + txtReference, lblTendered +
+    txtTendered, lblChangeTitle "Change" + lblChange (Success green, 14 pt), chkVerified
+    "I verified this payment in the GCash / bank app", lblNote (muted, wraps: the system never
+    contacts GCash or a bank), footer btnConfirm "Confirm Payment" (primary look, 144 px) and
+    btnCancel "Cancel" (secondary look).
+    Events wired: Load, btnConfirm_Click, btnCancel_Click, cboMethod_SelectedIndexChanged,
+    txtTendered_TextChanged.
+  - Fix rounds from the previews (2 used): (1) the queue date picker was 120 px wide and cut
+    "10/24/2026", so dtpQueueDate is 132 px (Today / Refresh moved 12 px right); the Transactions
+    toolbar filters were crowded, so dtpFrom / txtSearch / cboMethod were re-spaced to leave a
+    gap before every label; (2) the Transactions "Date" column could not show
+    "Oct 24, 2026 10:30 AM" at Fill weight 15, so colTranDate now has MinimumWidth 155 and
+    Width 160. The Transactions tab was also previewed once by temporarily selecting it
+    (Designer value is back to SelectedIndex 0 = Checkout) to confirm its layout.
+  - LittleEreseSystemV3.csproj was NOT edited (both files already existed and were listed).
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 44 passed, 0 failed, 0 skipped.
+  --preview checked for ucBilling (Checkout: the queue card with date / Today / Refresh and the
+  7-column grid, the bill card with the heading, schedule, the 7-column lines grid, promo, note,
+  the five totals and the two buttons; Transactions: the From / To / Client / Method row, Search +
+  Print Receipt, the "0 transactions - 0.00" total and the 9-column grid) and PaymentForm (the
+  amount due, method, reference, tendered, change, the verification tick, the note and the footer,
+  nothing overlapping or truncated).
+  The app was started once and closed again (no error.log).
+
 - Step 16 (this task): the LOGIC for the Appointments module (transaction helpers, repositories,
   the day page and the booking / reschedule / cancel dialog). The Designer layout was NOT
   restructured; no small Designer fix was needed.
