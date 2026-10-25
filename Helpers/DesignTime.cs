@@ -15,6 +15,7 @@ namespace LittleEreseSystemV3.Helpers
     {
         private static readonly bool _isDesignMode = Detect();
 
+        /// <summary>True while the design surface is drawing the control, so data loading is skipped.</summary>
         public static bool IsDesignMode
         {
             get { return _isDesignMode; }

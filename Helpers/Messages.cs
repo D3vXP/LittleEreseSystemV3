@@ -12,16 +12,19 @@ namespace LittleEreseSystemV3.Helpers
     {
         public const string Title = "Little Erese's";
 
+        /// <summary>Shows an information message with the shop's title.</summary>
         public static void Info(string message)
         {
             MessageBox.Show(message, Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
+        /// <summary>Shows a warning message (something the user should look at).</summary>
         public static void Warn(string message)
         {
             MessageBox.Show(message, Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
+        /// <summary>Shows an error message. Never pass a raw exception here - use DbError.</summary>
         public static void Error(string message)
         {
             MessageBox.Show(message, Title, MessageBoxButtons.OK, MessageBoxIcon.Error);

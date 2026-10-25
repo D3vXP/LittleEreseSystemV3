@@ -33,6 +33,9 @@ namespace LittleEreseSystemV3.Helpers
         private static int _failed;
         private static int _skipped;
 
+        /// <summary>
+        /// Runs every check, prints the report and ends the process (0 = all passed, 1 = a failure).
+        /// </summary>
         public static void Run()
         {
             Line("Little Erese's smoke test - " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));

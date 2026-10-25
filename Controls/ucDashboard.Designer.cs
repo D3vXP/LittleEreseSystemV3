@@ -520,8 +520,8 @@ namespace LittleEreseSystemV3.Controls
             // 
             this.tlpBody.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.tlpBody.ColumnCount = 2;
-            this.tlpBody.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 68F));
-            this.tlpBody.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 32F));
+            this.tlpBody.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 60F));
+            this.tlpBody.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 40F));
             this.tlpBody.Controls.Add(this.calMonth, 0, 0);
             this.tlpBody.Controls.Add(this.tabSide, 1, 0);
             this.tlpBody.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -625,13 +625,14 @@ namespace LittleEreseSystemV3.Controls
             // 
             // colTodayTime
             // 
-            this.colTodayTime.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.colTodayTime.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
             this.colTodayTime.DataPropertyName = "time_range";
-            this.colTodayTime.FillWeight = 15F;
+            this.colTodayTime.FillWeight = 20F;
             this.colTodayTime.HeaderText = "Time";
-            this.colTodayTime.MinimumWidth = 68;
+            this.colTodayTime.MinimumWidth = 148;
             this.colTodayTime.Name = "colTodayTime";
             this.colTodayTime.ReadOnly = true;
+            this.colTodayTime.Width = 148;
             // 
             // colTodayClient
             // 
@@ -639,7 +640,7 @@ namespace LittleEreseSystemV3.Controls
             this.colTodayClient.DataPropertyName = "client_name";
             this.colTodayClient.FillWeight = 25F;
             this.colTodayClient.HeaderText = "Client";
-            this.colTodayClient.MinimumWidth = 76;
+            this.colTodayClient.MinimumWidth = 70;
             this.colTodayClient.Name = "colTodayClient";
             this.colTodayClient.ReadOnly = true;
             // 
@@ -649,7 +650,7 @@ namespace LittleEreseSystemV3.Controls
             this.colTodayServices.DataPropertyName = "services";
             this.colTodayServices.FillWeight = 30F;
             this.colTodayServices.HeaderText = "Services";
-            this.colTodayServices.MinimumWidth = 76;
+            this.colTodayServices.MinimumWidth = 60;
             this.colTodayServices.Name = "colTodayServices";
             this.colTodayServices.ReadOnly = true;
             // 
@@ -659,7 +660,7 @@ namespace LittleEreseSystemV3.Controls
             this.colTodayStaff.DataPropertyName = "staff_names";
             this.colTodayStaff.FillWeight = 18F;
             this.colTodayStaff.HeaderText = "Staff";
-            this.colTodayStaff.MinimumWidth = 68;
+            this.colTodayStaff.MinimumWidth = 64;
             this.colTodayStaff.Name = "colTodayStaff";
             this.colTodayStaff.ReadOnly = true;
             // 
@@ -669,7 +670,7 @@ namespace LittleEreseSystemV3.Controls
             this.colTodayStatus.DataPropertyName = "status";
             this.colTodayStatus.FillWeight = 12F;
             this.colTodayStatus.HeaderText = "Status";
-            this.colTodayStatus.MinimumWidth = 68;
+            this.colTodayStatus.MinimumWidth = 64;
             this.colTodayStatus.Name = "colTodayStatus";
             this.colTodayStatus.ReadOnly = true;
             // 
@@ -736,13 +737,14 @@ namespace LittleEreseSystemV3.Controls
             // 
             // colDayTime
             // 
-            this.colDayTime.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.colDayTime.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
             this.colDayTime.DataPropertyName = "time_range";
-            this.colDayTime.FillWeight = 14F;
+            this.colDayTime.FillWeight = 20F;
             this.colDayTime.HeaderText = "Time";
-            this.colDayTime.MinimumWidth = 68;
+            this.colDayTime.MinimumWidth = 148;
             this.colDayTime.Name = "colDayTime";
             this.colDayTime.ReadOnly = true;
+            this.colDayTime.Width = 148;
             // 
             // colDayClient
             // 
@@ -750,7 +752,7 @@ namespace LittleEreseSystemV3.Controls
             this.colDayClient.DataPropertyName = "client_name";
             this.colDayClient.FillWeight = 24F;
             this.colDayClient.HeaderText = "Client";
-            this.colDayClient.MinimumWidth = 76;
+            this.colDayClient.MinimumWidth = 70;
             this.colDayClient.Name = "colDayClient";
             this.colDayClient.ReadOnly = true;
             // 
@@ -760,7 +762,7 @@ namespace LittleEreseSystemV3.Controls
             this.colDayServices.DataPropertyName = "services";
             this.colDayServices.FillWeight = 28F;
             this.colDayServices.HeaderText = "Services";
-            this.colDayServices.MinimumWidth = 76;
+            this.colDayServices.MinimumWidth = 60;
             this.colDayServices.Name = "colDayServices";
             this.colDayServices.ReadOnly = true;
             // 
@@ -770,7 +772,7 @@ namespace LittleEreseSystemV3.Controls
             this.colDayStaff.DataPropertyName = "staff_names";
             this.colDayStaff.FillWeight = 15F;
             this.colDayStaff.HeaderText = "Staff";
-            this.colDayStaff.MinimumWidth = 68;
+            this.colDayStaff.MinimumWidth = 64;
             this.colDayStaff.Name = "colDayStaff";
             this.colDayStaff.ReadOnly = true;
             // 
@@ -780,7 +782,7 @@ namespace LittleEreseSystemV3.Controls
             this.colDayPayment.DataPropertyName = "payment_status";
             this.colDayPayment.FillWeight = 19F;
             this.colDayPayment.HeaderText = "Payment";
-            this.colDayPayment.MinimumWidth = 78;
+            this.colDayPayment.MinimumWidth = 70;
             this.colDayPayment.Name = "colDayPayment";
             this.colDayPayment.ReadOnly = true;
             // 

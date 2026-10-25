@@ -235,6 +235,7 @@
     <Content Include="Assets\**\*.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Database\ResetDemoData.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Database\*.sql" />

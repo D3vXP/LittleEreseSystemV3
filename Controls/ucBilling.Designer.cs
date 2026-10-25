@@ -188,7 +188,7 @@ namespace LittleEreseSystemV3.Controls
             this.splitMain.Panel2.Controls.Add(this.pnlBill);
             this.splitMain.Panel2MinSize = 340;
             this.splitMain.Size = new System.Drawing.Size(986, 601);
-            this.splitMain.SplitterDistance = 394;
+            this.splitMain.SplitterDistance = 470;
             this.splitMain.SplitterWidth = 6;
             this.splitMain.TabIndex = 0;
             // 
@@ -272,19 +272,19 @@ namespace LittleEreseSystemV3.Controls
             // colQueueTime
             // 
             this.colQueueTime.DataPropertyName = "time_range";
-            this.colQueueTime.FillWeight = 17F;
+            this.colQueueTime.FillWeight = 21F;
             this.colQueueTime.HeaderText = "Time";
-            this.colQueueTime.MinimumWidth = 70;
+            this.colQueueTime.MinimumWidth = 130;
             this.colQueueTime.Name = "colQueueTime";
             this.colQueueTime.ReadOnly = true;
-            this.colQueueTime.Width = 105;
+            this.colQueueTime.Width = 118;
             // 
             // colQueueClient
             // 
             this.colQueueClient.DataPropertyName = "client_name";
             this.colQueueClient.FillWeight = 22F;
             this.colQueueClient.HeaderText = "Client";
-            this.colQueueClient.MinimumWidth = 80;
+            this.colQueueClient.MinimumWidth = 60;
             this.colQueueClient.Name = "colQueueClient";
             this.colQueueClient.ReadOnly = true;
             this.colQueueClient.Width = 120;
@@ -294,7 +294,7 @@ namespace LittleEreseSystemV3.Controls
             this.colQueueServices.DataPropertyName = "services";
             this.colQueueServices.FillWeight = 24F;
             this.colQueueServices.HeaderText = "Services";
-            this.colQueueServices.MinimumWidth = 80;
+            this.colQueueServices.MinimumWidth = 60;
             this.colQueueServices.Name = "colQueueServices";
             this.colQueueServices.ReadOnly = true;
             this.colQueueServices.Width = 120;
@@ -304,7 +304,7 @@ namespace LittleEreseSystemV3.Controls
             this.colQueueStatus.DataPropertyName = "status";
             this.colQueueStatus.FillWeight = 13F;
             this.colQueueStatus.HeaderText = "Status";
-            this.colQueueStatus.MinimumWidth = 70;
+            this.colQueueStatus.MinimumWidth = 62;
             this.colQueueStatus.Name = "colQueueStatus";
             this.colQueueStatus.ReadOnly = true;
             this.colQueueStatus.Width = 80;
@@ -314,7 +314,7 @@ namespace LittleEreseSystemV3.Controls
             this.colQueuePayment.DataPropertyName = "payment_status";
             this.colQueuePayment.FillWeight = 12F;
             this.colQueuePayment.HeaderText = "Payment";
-            this.colQueuePayment.MinimumWidth = 70;
+            this.colQueuePayment.MinimumWidth = 62;
             this.colQueuePayment.Name = "colQueuePayment";
             this.colQueuePayment.ReadOnly = true;
             this.colQueuePayment.Width = 80;
@@ -328,7 +328,7 @@ namespace LittleEreseSystemV3.Controls
             this.colQueueBalance.DataPropertyName = "balance_due";
             this.colQueueBalance.FillWeight = 14F;
             this.colQueueBalance.HeaderText = "Balance";
-            this.colQueueBalance.MinimumWidth = 80;
+            this.colQueueBalance.MinimumWidth = 76;
             this.colQueueBalance.Name = "colQueueBalance";
             this.colQueueBalance.ReadOnly = true;
             this.colQueueBalance.Width = 90;

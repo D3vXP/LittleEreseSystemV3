@@ -1,4 +1,3 @@
-using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -29,12 +28,14 @@ namespace LittleEreseSystemV3.Helpers
             return !string.IsNullOrWhiteSpace(value);
         }
 
+        /// <summary>True for a Philippine mobile number written as 09XXXXXXXXX or +639XXXXXXXXX.</summary>
         public static bool IsValidPhone(string value)
         {
             if (string.IsNullOrWhiteSpace(value)) return false;
             return Regex.IsMatch(value.Trim(), PhoneRegex);
         }
 
+        /// <summary>True for a person's name: 2 to 50 letters, spaces, dots, apostrophes or hyphens.</summary>
         public static bool IsValidName(string value)
         {
             if (string.IsNullOrWhiteSpace(value)) return false;
@@ -46,6 +47,7 @@ namespace LittleEreseSystemV3.Helpers
             return Regex.IsMatch(name, @"[A-Za-z]");
         }
 
+        /// <summary>True for 3 to 20 letters, digits or underscores (a login name).</summary>
         public static bool IsValidUsername(string value)
         {
             if (string.IsNullOrWhiteSpace(value)) return false;
@@ -101,12 +103,12 @@ namespace LittleEreseSystemV3.Helpers
             return amount > 0m && amount <= 100m;
         }
 
-        /// <summary>
-        /// A GCash / bank transfer reference is quoted over the phone, so it is limited to letters
-        /// and digits and 6 to 30 characters (the longest bank reference seen so far is 20).
-        /// </summary>
         // POLISH: widen the length range or allow "-" if a bank starts using longer or dashed
         // POLISH: reference numbers; the payment screens use this one rule.
+        /// <summary>
+        /// True for a GCash / bank reference: letters and digits, 6 to 30 characters
+        /// (the longest bank reference seen so far is 20).
+        /// </summary>
         public static bool IsValidReference(string value)
         {
             if (string.IsNullOrWhiteSpace(value)) return false;

@@ -98,3 +98,50 @@ Table PromotionServices (promo_service_id, promo_id, service_id) links a promoti
 ## Additions (Step 3)
 ### Screen size (applies to every layout prompt)
 The system must work on common 16:9 monitors (1366x768, 1600x900, 1920x1080 at 100 to 150 percent Windows scaling). The smallest supported size is 1280x720 logical pixels (about 1280x680 usable after the taskbar), which is also what a 1920x1080 monitor at 150 percent scaling gives. Every page must work inside a content area of about 1240 x 600 (a maximized MainForm minus the 240 px sidebar and the 64 px header). Dialogs must be at most 1000 x 640 logical pixels; if the content is taller, put it inside a scrollable panel. If a prompt gives bigger sizes, shrink them to fit these limits. Preview images are rendered off-screen, so the monitor the app opens on must not matter.
+
+## Additions (Step 4) - final state
+The system is COMPLETE (every module is built: Dashboard, Appointments, Clients, Services,
+Promotions, Billing, Commissions, Reports, Staff Accounts, File Maintenance, Activity Log,
+Settings). A task from now on is usually a small change, so these rules apply.
+
+### The four checks before a task is called finished
+1. Standard clean build: 0 errors, 0 warnings.
+2. `bin\Debug\LittleEreseSystemV3.exe --smoketest` - every check PASS (it is read-only and never
+   writes to the shop's data).
+3. `powershell -ExecutionPolicy Bypass -File tools\DesignerAudit.ps1` - no problems (exit code 0).
+   It checks every *.Designer.cs in Forms\ and Controls\: every `this.X = new` has a field
+   declaration, every declared control field is instantiated, every wired handler has a method in
+   the sibling .cs, there is exactly one InitializeComponent plus the components field and Dispose,
+   and no Image / Db / Session / repository code appears in a Designer file.
+4. Start the app once, confirm it stays open, close it, and check that bin\Debug\error.log is empty.
+
+### Two tools that are NOT part of the .csproj
+- `tools\DesignerAudit.ps1` (PowerShell, read-only) - see above.
+- `docs\screenshots\` - the PNG of every screen, produced with `--preview <ClassName>` (plus
+  `--role Staff` for ucDashboard, ucBilling and ucAppointments). Regenerate them after a layout
+  change.
+
+### Where the documentation lives now
+- `README.md` - what the system is, requirements, setup, demo accounts, the two switches, the
+  folder map and the limitations exactly as in the capstone proposal.
+- `docs\DEVELOPER_GUIDE.md` - the architecture in plain words, the naming rules, how to add a field /
+  a validation / a report / a sidebar page, Theme, the Designer yellow screen, the smoke test and
+  the preview tool, and a troubleshooting table.
+- `docs\POLISH_LIST.md` - every `// POLISH:` comment with its file and line. Keep it in step when a
+  POLISH comment is added or removed.
+- `Database\ResetDemoData.sql` - empties the demo tables in foreign-key order (ActivityLog ...
+  Promotions) WITHOUT touching Users, Services, ServiceCategories, Rooms or RoomServiceCategories.
+  It deletes real records too, so never run it without the owner's go-ahead.
+
+### House rules learned in this step
+- No `// TODO(logic prompt)` may remain in any file: either the handler is implemented, or the
+  wiring (the Designer line AND the method) is removed together.
+- Keep `// POLISH:` comments - they are the owner's adjustment points (see docs\POLISH_LIST.md).
+- Every public method / property of a Data\ or Helpers\ class carries a one-line `/// <summary>`.
+- Unused using directives, private fields and variables are removed (the IDE greys them out; CS8019
+  is reported for unused usings).
+- A Designer file stays exactly what the Visual Studio Designer would generate. When a layout must
+  change, change the smallest Designer property (one column width, one splitter distance, one row
+  height) and take a fresh preview.
+- The smoke test and every `--preview` run must leave no file behind except bin\Debug\previews\ and
+  smoketest.log, which .gitignore already covers.

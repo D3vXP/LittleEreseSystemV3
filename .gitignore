@@ -1,4 +1,4 @@
-# Visual Studio
+﻿# Visual Studio
 .vs/
 bin/
 obj/
@@ -7,3 +7,14 @@ obj/
 *.cache
 # Database backups created by the system
 *.bak
+
+# Files the app writes while it runs (they sit next to the exe, inside bin\)
+error.log
+smoketest.log
+previews/
+
+# Everything below IS meant to be committed:
+#   docs/screenshots/*.png   the picture of every screen (rendered by --preview)
+#   docs/*.md                POLISH_LIST.md, DEVELOPER_GUIDE.md
+#   tools/DesignerAudit.ps1  the Designer checker (not part of the .csproj)
+#   Database/*.sql           schema, seed data and helper scripts

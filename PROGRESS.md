@@ -1,7 +1,100 @@
-# PROGRESS.md
+﻿# PROGRESS.md
 
 Update this file at the end of every task.
 
+- Step 28 (this task): FINAL CLEAN-UP - designer audit tool, code hygiene, polish list, screenshots,
+  documentation and the final checks. No module, no behaviour and no feature was added.
+  - tools\DesignerAudit.ps1 (NEW, PowerShell, NOT in the .csproj). For every *.Designer.cs under
+    Forms\ and Controls\ it checks (a) every "this.<control> = new ..." has a field declaration,
+    (b) every declared control field is instantiated, (c) every handler wired with
+    "+= new ...(this.Y)" has a method Y in the sibling .cs, (d) exactly one InitializeComponent plus
+    the components field plus Dispose(bool), and (e) no Image =, no Db./Session./Sql* and no
+    repository call inside a Designer file. It prints one line per problem, a SUMMARY line and exits
+    with code 1 when anything is wrong. It strips the text inside "..." first, so a caption such as
+    "The package price is charged on the first session." is never mistaken for code (that bug was
+    found on the first run and fixed). It only reports on names that start with a control prefix
+    (btn/txt/lbl/cbo/dgv/...), so the form's own properties (this.ClientSize, this.Font) are not
+    reported as missing fields. Verified against a deliberately broken Designer file in a scratch
+    folder (4/4 problems reported, exit 1), then against the real project.
+    RESULT on the real project: 22 files checked, 0 problems, exit 0 - nothing had to be fixed.
+  - Code hygiene (no behaviour change):
+    * 8 unused using directives removed - Controls\ucServices.cs (System.Drawing),
+      Controls\ucReports.cs (System.Data), Controls\ucStaffAccounts.cs (System.Data),
+      Helpers\Theme.cs (System), Helpers\Validators.cs (System), Helpers\CsvExporter.cs (System.Data),
+      Helpers\PreviewTool.cs (System.Reflection) and Properties\AssemblyInfo.cs
+      (System.Runtime.CompilerServices). Found with the Roslyn compiler that ships with Visual Studio
+      (CS8019 "unnecessary using directive") compiled over the whole project - the list is exact, not
+      a guess. A hand-written scanner was tried first and gave 79 false positives; it was deleted.
+    * No unused private field or variable was found (the IDE/compiler reports none).
+    * No "// TODO(logic prompt)" comment existed anywhere (grep over every .cs file), so no handler
+      had to be implemented and no Designer wiring had to be removed.
+    * Every public method / property of Data\ and Helpers\ now carries a one-line
+      /// <summary>: added to Db.ConnectionString, Db.CreateConnection, DesignTime.IsDesignMode,
+      Messages.Info/Warn/Error, Session.UserId/FullName/Username/Role/IsLoggedIn,
+      SmokeTest.Run, Validators.IsValidPhone/IsValidName/IsValidUsername/IsValidReference (the last
+      one also had its POLISH comment moved above the summary, where it belongs).
+    * All 27 "// POLISH:" comments were kept.
+  - docs\POLISH_LIST.md (NEW, not in the .csproj): a table of all 27 POLISH comments - file, line and
+    text - grouped by folder (Controls, Data, Forms, Helpers), plus a short "where to look first"
+    section. docs\ was created for it.
+  - docs\screenshots\ (NEW folder, not in the .csproj): 25 PNGs - every Form (LoginForm, MainForm,
+    AppointmentForm, ClientEditForm, PackageForm, PaymentForm, PromotionEditForm, ServiceEditForm,
+    StaffEditForm), every UserControl (all 12 pages plus ucCalendarMonth) as Admin, and
+    ucDashboard_Staff, ucBilling_Staff, ucAppointments_Staff as Staff. Every PNG was looked at.
+  - Small Designer / layout fixes after looking at the Admin PNGs (2 fix rounds, listed below).
+    - Controls\ucAppointments.Designer.cs: splitMain.SplitterDistance 328 -> 300 (the day grid got
+      its height back and the details card moved up) and tlpDetails first RowStyle 122 -> 118, so
+      the third service line is visible without scrolling and the Notes box is 2 lines instead of 1.
+    - Controls\ucBilling.Designer.cs: splitMain.SplitterDistance 394 -> 470 (the queue grid was too
+      narrow: "Time" showed "1:00 PM - 7..." and "Balance" cut the amount), colQueueTime is now a
+      118 px Fill column with MinimumWidth 130, and the Client/Services/Status/Payment/Balance
+      minimum widths were trimmed so nothing overlaps at 1240 px wide.
+    - Controls\ucDashboard.Designer.cs: tlpBody columns 68/32 -> 60/40 (the Today grid was 320 px
+      wide and cut every cell to "Cunana..."), colTodayTime / colDayTime are now fixed 148 px Time
+      columns (MinimumWidth 148) and the other minimum widths were trimmed. Now "1:00 PM - 7:45 PM"
+      and the client name are both readable.
+    No control was added, renamed or removed and no event wiring was touched.
+  - README.md rewritten: what the system is, the two roles, requirements (Windows, .NET Framework 4.8,
+    SQL Server LocalDB, Visual Studio, 1280 x 720), setup (run Database\LittleEreses_Database.sql
+    then Database\SeedData.sql, open the solution, build, run), the demo accounts (admin/Admin@123,
+    aesthetician1..4 / therapist1..2 / nurse1 with Staff@123), the two command-line switches
+    (--smoketest, --preview <ClassName> [--role Admin|Staff]), the folder map, the tests and the
+    limitations exactly as in the capstone proposal (no inventory, no automatic SMS/email, no
+    payroll, no POS hardware, no digital consent forms, no online payment verification,
+    single-premise offline use).
+  - docs\DEVELOPER_GUIDE.md (NEW): the architecture in plain words (LoginForm -> MainForm ->
+    Controls -> Forms -> Data repositories -> Db), the naming rules table, how to add a field to an
+    existing form (Designer, repository, validation, smoke test), how to add a validation or a regex
+    (Validators), how to add a report (ReportRepository + Designer columns + Generate), how to add a
+    page to the sidebar (Designer button, PageXxx constant, CreatePage, PageTitle, NavButtonFor,
+    NavButtons, LoadImages icon, IsAdminPage/ApplyRoleVisibility, .csproj entry), how to change
+    colours and fonts (Theme plus the literals in the Designer files), how to avoid the yellow screen
+    (DesignTime.IsDesignMode, no database calls in constructors), how to use the smoke test and the
+    preview tool, and a troubleshooting table (yellow screen, CS0103 after a .csproj edit -> reload
+    the project, database connection errors, LocalDB not found, empty combo boxes, Admin-only page,
+    empty grid cells, silent exit -> error.log, printing).
+  - .gitignore: still ignores .vs/, bin/, obj/, *.user, *.suo, *.cache and *.bak, and now also
+    error.log, smoketest.log and previews/. docs/screenshots is deliberately NOT ignored (checked
+    with "git check-ignore docs/screenshots/ucBilling.png" -> exit 1, i.e. it can be committed).
+  - PROJECT_RULES.md: added "Additions (Step 4) - final state" (the four checks before a task is
+    finished, the two tools that are not in the .csproj, where the documentation lives now, and the
+    house rules about TODO/POLISH/summaries/unused code/Designer discipline).
+  - LittleEreseSystemV3.csproj was NOT edited (no new .cs file: tools\ and docs\ are not compiled).
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 61 passed, 1 failed - "Demo data: Completed appointments = 0 (expected at least 25)".
+  That one failure is expected and is the same one reported in Step 27: the shop database still
+  holds the 2 old test clients, so DemoDataSeeder.EnsureDemoData() correctly does nothing. Run
+  Database\ResetDemoData.sql in SSMS and start the app once to load the demo data; the check then
+  passes. Nothing was deleted by this task.
+  tools\DesignerAudit.ps1: 22 Designer files, no problems, exit code 0.
+  The app was started normally and stayed open for 3 seconds, then closed; no error.log was written.
+  - Known issues / what to look at: (1) the demo-data check above needs the reset script once;
+    (2) the two Reports "Period" date pickers show "10/ 1/2026" with the "1" slightly apart in the
+    preview - that is the Windows date picker drawing the focused date, not a layout problem;
+    (3) the ucDashboard / ucBilling / ucAppointments grids still shorten very long client and service
+    names ("Cunana...", "Barbie Ar...") because the pages are only 320-470 px wide at 1240 px; the
+    full text is always visible in the details card or the bill panel next to them - widen the
+    splitter if the owner prefers the list instead.
 - Step 27 (this task): the realistic DEMO DATA, loaded once, automatically, when the database has
   no clients yet, plus six read-only consistency checks and the reset script.
   - Data\DemoDataSeeder.cs: EnsureDemoData() (new, next to the unchanged EnsureDemoUsers()).
@@ -1623,4 +1716,5 @@ Update this file at the end of every task.
 - ucStaffAccounts refuses to run for a Staff user on purpose (it shows a short warning), and
   UserRepository blocks deactivating or demoting your own account and the last Active Admin, so a
   single-Admin shop can never lock itself out.
+
 

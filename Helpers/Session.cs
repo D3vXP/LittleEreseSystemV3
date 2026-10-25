@@ -9,11 +9,19 @@ namespace LittleEreseSystemV3.Helpers
     /// </summary>
     internal static class Session
     {
+        /// <summary>The user_id of the signed-in user (0 when nobody is signed in).</summary>
         public static int UserId { get; private set; }
+
+        /// <summary>The signed-in user's full name, for greetings and receipts.</summary>
         public static string FullName { get; private set; }
+
+        /// <summary>The signed-in user's username, for the activity log description.</summary>
         public static string Username { get; private set; }
+
+        /// <summary>The signed-in user's role: "Admin" or "Staff".</summary>
         public static string Role { get; private set; }
 
+        /// <summary>True after a successful login and until End() is called.</summary>
         public static bool IsLoggedIn
         {
             get { return UserId > 0; }

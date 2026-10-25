@@ -422,7 +422,7 @@ namespace LittleEreseSystemV3.Controls
             this.splitMain.Panel2.Controls.Add(this.pnlDetails);
             this.splitMain.Panel2MinSize = 150;
             this.splitMain.Size = new System.Drawing.Size(1000, 548);
-            this.splitMain.SplitterDistance = 328;
+            this.splitMain.SplitterDistance = 300;
             this.splitMain.SplitterWidth = 6;
             this.splitMain.TabIndex = 1;
             // 
@@ -603,7 +603,7 @@ namespace LittleEreseSystemV3.Controls
             this.tlpDetails.Location = new System.Drawing.Point(16, 16);
             this.tlpDetails.Name = "tlpDetails";
             this.tlpDetails.RowCount = 2;
-            this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 122F));
+            this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 118F));
             this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tlpDetails.SetRowSpan(this.tlpDetailInfo, 2);
             this.tlpDetails.Size = new System.Drawing.Size(966, 180);

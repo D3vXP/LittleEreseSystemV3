@@ -14,6 +14,7 @@ namespace LittleEreseSystemV3.Data
     {
         private const string ConnectionName = "LittleEreseDb";
 
+        /// <summary>The connection string read from App.config (name "LittleEreseDb").</summary>
         public static string ConnectionString
         {
             get
@@ -27,6 +28,7 @@ namespace LittleEreseSystemV3.Data
             }
         }
 
+        /// <summary>Creates a closed connection to the database. Callers use it inside using (...).</summary>
         public static SqlConnection CreateConnection()
         {
             return new SqlConnection(ConnectionString);
