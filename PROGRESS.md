@@ -2,6 +2,45 @@
 
 Update this file at the end of every task.
 
+- Step 23 (this task): Layout only (Designer work) for the Activity Log page (Admin only).
+  No logic, no SQL, no file or Session access: the four wired events got empty handlers with
+  "// TODO(logic prompt)". Both files were empty shells before.
+  - Controls\ucActivityLog (.Designer.cs + .cs): AppBack page, 1000 x 640.
+    pnlToolbar (Dock Top, 56 px, Surface/white) holds tlpToolbar (one row, two columns: the
+    filter strip and a fixed 300 px action strip). flpFilters (Dock Fill, no wrap) holds
+    lblFrom + dtpFrom (Short, 116 px), lblTo + dtpTo, lblUser + cboUser (DropDownList, 140 px),
+    lblModule + cboModule (DropDownList, 120 px) and lblSearch + txtSearch (180 px); every label
+    is AutoSize with a 0/8/2/0 margin so it lines up with the 25 px pickers and boxes.
+    tlpActions (3 columns 100/120/rest) holds btnSearch "Search" (primary look as literals),
+    btnExport "Export CSV" (secondary look as literals) and the AutoSize lblCount "0 entries"
+    (SmallFont 8.5 pt, TextMuted). Everything fits on ONE 56 px row at 1240 x 600, so the
+    two-row fallback the prompt allowed was not needed.
+    Below it the card pnlGrid (Dock Fill, Surface, FixedSingle, 1 px padding) with dgvLog
+    (Dock Fill, the Theme.StyleGrid look copied as literals, AutoGenerateColumns = false,
+    ReadOnly = true, AutoSizeColumnsMode Fill): colLogId (hidden, log_id),
+    colLogTime "Date and time" / logged_at (Format "MMM dd, yyyy h:mm:ss tt", 175 px),
+    colLogUser "User" / full_name (150 px), colLogAction "Action" / action (145 px),
+    colLogModule "Module" / module (120 px) and colLogDescription "Description" / description
+    (the only Fill column, so it takes the remaining width).
+    Events wired: Load (ucActivityLog_Load), btnSearch_Click, btnExport_Click,
+    txtSearch_KeyDown. btnExport_Click is used for the CSV button on purpose, so the empty
+    handler is where the logic goes later.
+  - Fix rounds from the preview (2 used): (1) the first full-width row pushed "Search" and
+    "Export CSV" off the right edge at 1000 px, so the toolbar was re-laid out into the two
+    columns described above (the buttons now sit in their own fixed 300 px strip and the
+    filter strip gets the rest); (2) the count label was docked and its text floated to the
+    middle of the row, so it is AutoSize again with a 4 px left margin beside "Export CSV".
+    The grid headers were also switched to the Theme.StyleGrid column mode (fixed ID/time/user
+    columns, Description Fill) so no caption is cut at 1240 px.
+  - LittleEreseSystemV3.csproj was NOT edited (both files already existed and were listed).
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 53 passed, 0 failed, 0 skipped. --preview ucActivityLog: From / To / User /
+  Module / Search on one row, Search + Export CSV + "0 entries", the 5 visible grid columns
+  (Description taking the rest of the width) - nothing overlapping or truncated. The app was
+  started once and closed again (no error.log).
+  - Known limits: cboUser and cboModule are empty in the Designer (they are filled in the logic
+    prompt, like the other pages); lblCount reads "0 entries" until then.
+
 - Step 22 (this task): the LOGIC of the Dashboard and its month calendar. The Designer layouts were
   NOT restructured (no Designer fix was needed).
   - Data\AppointmentRepository.cs: added GetMonthAppointments(year, month) - ONE query for the whole
