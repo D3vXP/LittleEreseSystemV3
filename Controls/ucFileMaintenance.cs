@@ -38,5 +38,15 @@ namespace LittleEreseSystemV3.Controls
         {
             // TODO(logic prompt)
         }
+
+        private void btnRefreshInfo_Click(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
+
+        private void btnOpenBackupFolder_Click(object sender, EventArgs e)
+        {
+            // TODO(logic prompt)
+        }
     }
 }

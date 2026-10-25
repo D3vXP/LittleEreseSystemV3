@@ -2,7 +2,53 @@
 
 Update this file at the end of every task.
 
-- Step 24 (this task): Layout only (Designer work), PART 1 of File Maintenance (Admin only):
+- Step 25 (this task): Layout only (Designer work), PART 2 of File Maintenance (Admin only):
+  the bottom row of tlpMain. PART 1 (frame, backup card, restore card) is unchanged. No logic,
+  no SQL, no file or Session access. The two wired events got empty handlers with
+  "// TODO(logic prompt)".
+  - Controls\ucFileMaintenance (.Designer.cs + .cs): grpSystem "System information" was added to
+    tlpMain at (0, 1) and grpBackups "Recent backups" at (1, 1), so the 2 x 2 frame from PART 1 is
+    now full. Both are GroupBoxes on Surface/white with the same Semibold 10 pt caption and the
+    14/10/14/12 padding as the two top cards; grpSystem carries the mirror-image margin
+    (0, 6, 6, 0) and grpBackups (6, 6, 0, 0), so the 12 px gaps between the four cards stay even.
+    grpSystem holds tlpSystem (1 column, 5 rows): lblDbName ("Database: -", TextDark),
+    lblServer ("Server: -", muted) and lblDbSize ("Database size: -", muted) are AutoSize 9 pt
+    labels stacked on top; then pnlTableCounts (Surface, FixedSingle, 1 px padding, the %
+    100F row so it takes every spare pixel) with dgvTableCounts; then a 34 px row with
+    flpSystemButtons (WrapContents = false, AutoSize = false) holding btnRefreshInfo "Refresh"
+    (96 x 34) and btnOpenBackupFolder "Open Backup Folder" (172 px), both with the secondary
+    button look as literals.
+    grpBackups holds pnlBackups (Surface, FixedSingle, 1 px padding, Dock Fill) with dgvBackups
+    only - no buttons, as the prompt asked.
+    dgvTableCounts and dgvBackups: AutoGenerateColumns = false, ReadOnly = true, the Theme.StyleGrid
+    look copied as literals (gold PrimaryDark #7A591C header band, 30 / 34 px header height,
+    Segoe UI 10 pt cells, gold selection, SingleHorizontal cell borders, no row headers,
+    FullRowSelect, AutoSizeColumnsMode Fill).
+    Columns: colTableName "Table" / table_name (Fill) and colRowCount "Records" / row_count
+    (fixed 110 px); colBackupFile "File" / file_name (Fill), colBackupSize "Size (MB)" / size_mb
+    (Format "N2", right aligned, fixed 100 px) and colBackupDate "Created" / created_at
+    (Format "MMM dd, yyyy h:mm tt", fixed 165 px).
+    Events wired: btnRefreshInfo_Click and btnOpenBackupFolder_Click (both new empty handlers in
+    the .cs); nothing else changed in the .cs.
+  - Fix rounds from the preview (2 used): (1) the first build failed twice on one line
+    (dataGridViewCellStyle5.ForeColor had two extra closing parentheses) - the line was repaired
+    with a small script that only balanced that line; (2) the "Open Backup Folder" button was the
+    last row of a percent-free grid row and sat directly on the card's bottom padding, so the
+    button row became a fixed 34 px row and flpSystemButtons AutoSize was set to false, which puts
+    the two buttons in line with the grid above. The table-counts cell font was also set back to
+    the 10 pt grid font and its row height to 28, matching the other grids.
+  - LittleEreseSystemV3.csproj was NOT edited (both files already existed and were listed).
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 53 passed, 0 failed, 0 skipped. --preview ucFileMaintenance: the four white cards
+  in a 2 x 2 grid, "System information" with Database / Server / Database size, the 2-column
+  Table / Records grid and Refresh + Open Backup Folder underneath, "Recent backups" with the
+  3-column File / Size (MB) / Created grid filling the whole card - every label complete, nothing
+  overlapping or truncated, all four cards the same size at 1240 x 600. The app was started once
+  and closed again (no error.log).
+  - Known limits: lblDbName / lblServer / lblDbSize show "-" and both new grids are empty until the
+    logic prompt fills them; the backup / restore cards still hold no values.
+
+- Step 24: Layout only (Designer work), PART 1 of File Maintenance (Admin only):
   the frame, the backup card and the restore card. No logic, no SQL, no file or Session access.
   The five wired events got empty handlers with "// TODO(logic prompt)". Both files were empty
   shells before.
