@@ -1,8 +1,67 @@
-﻿# PROGRESS.md
+# PROGRESS.md
 
 Update this file at the end of every task.
 
-- Step 20 (this task): the LOGIC for the Commissions and Reports modules (two repositories, two new
+- Step 21 (this task): Layout only (Designer work) for the Dashboard and its month calendar.
+  No logic, no SQL, no file or Session access: every wired event got an empty handler with
+  "// TODO(logic prompt)". Both files were empty shells before.
+  - Controls\ucCalendarMonth (.Designer.cs + .cs): BackColor Surface, 760 x 520.
+    pnlCalHeader (Dock Top, 56 px) holds tlpCalHeader (one row, five columns): btnPrevMonth
+    (34 x 30, secondary look, Font "Segoe MDL2 Assets" 12 pt, Text \uE76B), lblMonth (HeadingFont
+    16 pt semibold, TextDark, centered in its cell, "October 2026"), btnNextMonth (same look,
+    \uE76C), btnTodayMonth ("Today", 72 x 30, secondary look) and, on the right, flpLegend
+    (AutoSize, WrapContents = false, right aligned) with five 12 x 12 color Labels plus a muted
+    AutoSize text label each: lblLegendUpcoming (PrimaryLight) / lblLegendUpcomingText,
+    lblLegendOngoing (Info) / lblLegendOngoingText, lblLegendCompleted (Success) /
+    lblLegendCompletedText, lblLegendCancelled (Danger) / lblLegendCancelledText and
+    lblLegendRescheduled (Warning) / lblLegendRescheduledText. The prompt listed four legend
+    items and the Status palette has five, so the Rescheduled one was added to keep the legend
+    honest (Cancel if the owner wants only four).
+    tlpWeekdays (TableLayoutPanel, Dock Top, 32 px, 7 equal percent columns x 1 row): lblDaySun ..
+    lblDaySat "Sun".."Sat", Dock Fill, centered, white Semibold 10 pt on a PrimaryDark background.
+    tlpDays (Dock Fill, 7 equal columns x 6 equal percent rows, CellBorderStyle Single,
+    BackColor Border) is EMPTY in the Designer on purpose - the day cells are generated from data
+    in a later prompt (the "items generated from data" exception in PROJECT_RULES).
+  - Controls\ucDashboard (.Designer.cs + .cs): AppBack page, 1000 x 640.
+    tlpKpi (Dock Top, 104 px, 5 equal 20 % columns, the 12 px gap is the right margin of the four
+    left cards) with pnlCardToday, pnlCardRemaining, pnlCardCompleted, pnlCardSales,
+    pnlCardPackages. Every card is Surface + FixedSingle and holds pnlCard*Strip (Dock Left, 4 px,
+    Primary), tlpCard* (Fill, 2 columns: text, 44 px for the icon; Padding 10/8/6/8) with the
+    small title (SmallFont, TextMuted, 22 px row - "Today's Appointments", "Still to Come",
+    "Completed Today", "Today's Sales", "Active Packages"), the big value (TitleFont 22 pt,
+    TextDark - lblCardTodayValue "0", lblCardRemainingValue "0", lblCardCompletedValue "0",
+    lblCardSalesValue "0.00", lblCardPackagesValue "0") and the 36 x 36 PictureBox
+    picCardToday / picCardRemaining / picCardCompleted / picCardSales / picCardPackages (no Image
+    in the Designer: images load at runtime through IconHelper, per the layout rules).
+    tlpBody (Dock Fill, 2 columns 68 % / 32 %, one row, Padding 0/12/0/0 so it starts below the
+    KPI row, MinimumSize 900 x 420 so the right column stays usable at 1366 x 768). Left cell:
+    calMonth (the only user control allowed inside a Designer file), Dock Fill, 12 px right gap.
+    Right cell: tabSide (Dock Fill) with tabToday "Today" (lblTodayHeading + dgvToday) and
+    tabDay "Selected Day" (lblDayHeading, dgvDay, pnlDayFooter with btnOpenInAppointments
+    "Open in Appointments", secondary look, right aligned under the grid). Both grids use the
+    Theme.StyleGrid look as literals, AutoGenerateColumns = false, AutoSizeColumnsMode Fill.
+    dgvToday: colTodayTime "Time" / time_range, colTodayClient "Client" / client_name,
+    colTodayServices "Services" / services, colTodayStaff "Staff" / staff_names,
+    colTodayStatus "Status" / status. dgvDay: the same four plus colDayPayment "Payment" /
+    payment_status. Both grids scroll, so the 320 px column is readable at 1366 x 768.
+    Events wired: Load, dgvToday_CellFormatting, dgvDay_CellFormatting, dgvDay_CellDoubleClick,
+    btnOpenInAppointments_Click.
+  - Fix rounds from the previews (2 used): (1) in ucCalendarMonth the five legend items did not
+    fit beside the month in one 56 px row, so the header was re-laid out with the legend on its
+    own right-aligned row under the month row (same 56 px, nothing truncated); (2) the glyph
+    buttons and "Today" are 34 / 72 px and the legend text is 8 pt muted, so the month block and
+    the legend no longer touch. The "Selected Day" tab was also previewed once by temporarily
+    setting tabSide.SelectedIndex to 1 (the Designer value is back to 0 = Today).
+  - LittleEreseSystemV3.csproj was NOT edited (all four files already existed and were listed).
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 50 passed, 0 failed, 0 skipped.
+  --preview checked for ucCalendarMonth (the header with the glyph buttons and "Today", the
+  centered "October 2026", the five legend items in their Status colors, the dark weekday strip
+  and the empty 7 x 6 grid) and ucDashboard (the five KPI cards with their gold left strip, the
+  calendar on the left and "Today" / "Selected Day" on the right with the 5-column grid - nothing
+  overlapping or truncated). The app was started once and closed again (no error.log).
+
+- Step 20: the LOGIC for the Commissions and Reports modules (two repositories, two new
   helper files, the two pages). The Designer layouts were NOT restructured and no Designer fix was
   needed; the .cs files of both pages were rewritten from their "// TODO(logic prompt)" shells.
   - Data\CommissionRepository.cs (was an empty class):
@@ -1167,10 +1226,12 @@ Update this file at the end of every task.
   records a payment INSIDE a booking transaction, so it still needs the read methods of the Billing
   page, the PaymentForm logic and the Completing-a-service step (AppointmentServices 'Completed',
   the package session counter, the commission rows when a line is completed at billing).
-- The Dashboard screen (ucDashboard with ucCalendarMonth) and the remaining modules
-  (Billing, Commissions, Reports, File Maintenance, Activity Log) still need their layout prompts;
-  ucClients has a layout now but no logic yet, so it shows an empty grid and the
-  placeholder details card ("Select a client").
+- The Dashboard now has its LAYOUT (ucDashboard + ucCalendarMonth) but no logic yet: the KPI
+  cards read 0, the calendar grid is empty (its day cells are generated from data) and the two
+  lists are blank until the Dashboard logic prompt. File Maintenance and Activity Log still need
+  their layout prompts. The Dashboard logic must fill the five cards, both lists and create the
+  calendar day cells after Load (never in the Designer).
+- ucClients has a layout but it was waiting for its logic prompt.
 - POLISH items left for the owner: the lock out limits (5 tries / 30 seconds) in LoginForm,
   the "Log out now?" wording, the PhoneRegex (mobile numbers only), the "-" placeholder for an
   empty contact number in Settings and the version format (3 parts) in Settings.
