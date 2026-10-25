@@ -2,7 +2,42 @@
 
 Update this file at the end of every task.
 
-- Step 23 (this task): Layout only (Designer work) for the Activity Log page (Admin only).
+- Step 24 (this task): Layout only (Designer work), PART 1 of File Maintenance (Admin only):
+  the frame, the backup card and the restore card. No logic, no SQL, no file or Session access.
+  The five wired events got empty handlers with "// TODO(logic prompt)". Both files were empty
+  shells before.
+  - Controls\ucFileMaintenance (.Designer.cs + .cs): AppBack page, 1000 x 640, AutoScroll on
+    the control. tlpMain (Dock Fill, 2 columns x 2 rows, both 50 %, Padding 12) holds the four
+    cards; the 12 px gap is a 6 px margin on the two sides of each card, so the cards start at
+    the same 12 px edge as the padding. Only the TOP row is built now; the bottom row stays
+    empty on purpose (PART 2 later).
+    Top left grpBackup "Backup database" (GroupBox, Surface/white, Semibold 10 pt caption,
+    Padding 14/10/14/12) holds tlpBackup (2 columns: the rest + a fixed 96 px button column)
+    with lblBackupInfo (muted 9 pt, MaximumSize 440 so it wraps to 2 lines), lblBackupFolder,
+    txtBackupFolder (read-only, Dock Fill), btnBrowseBackupFolder "Browse..." (secondary look
+    as literals, Dock Fill in its cell), lblLastBackup ("Last backup: never") and btnBackupNow
+    "Backup Now" (primary look as literals, 130 x 34).
+    Top right grpRestore "Restore database" has the same structure: lblRestoreWarning (Danger
+    red, Semibold 9.5 pt, wraps, the exact sentence from the prompt), lblRestoreFile,
+    txtRestoreFile (read-only), btnBrowseRestoreFile "Browse...", btnRestore
+    "Restore Database" (danger look as literals, 150 x 34).
+    Events wired: Load (ucFileMaintenance_Load), btnBrowseBackupFolder_Click, btnBackupNow_Click,
+    btnBrowseRestoreFile_Click, btnRestore_Click.
+  - Fix rounds from the preview (1 used): (1) the first draft declared a FlowLayoutPanel around
+    each text box plus its Browse button; they were dropped before the first build because the
+    table row already has a stretching cell and a fixed 96 px cell; (2) grpRestore had no gap on
+    its left side (Margin 0), so both cards now use a 6 px margin and the 12 px gap shows evenly.
+  - LittleEreseSystemV3.csproj was NOT edited (both files already existed and were listed).
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 53 passed, 0 failed, 0 skipped. --preview ucFileMaintenance: the two white cards
+  side by side with "Backup folder" / Browse... / "Last backup: never" / "Backup Now" and
+  "Backup file" / Browse... / the red restore warning / "Restore Database" - every label
+  complete, nothing overlapping or truncated; the empty bottom half is the PART 2 card row.
+  The app was started once and closed again (no error.log).
+  - Known limits: the two text boxes are empty and lblLastBackup reads "Last backup: never"
+    until the logic prompt fills them; the PART 2 cards (and their handlers) do not exist yet.
+
+- Step 23: Layout only (Designer work) for the Activity Log page (Admin only).
   No logic, no SQL, no file or Session access: the four wired events got empty handlers with
   "// TODO(logic prompt)". Both files were empty shells before.
   - Controls\ucActivityLog (.Designer.cs + .cs): AppBack page, 1000 x 640.
