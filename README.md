@@ -22,20 +22,53 @@ Two roles share the same login:
 - **Visual Studio** with the ".NET desktop development" workload (C# 7.3, old-style .csproj).
 - A screen of at least **1280 x 720** logical pixels; the layout is designed for 1366 x 768 and up.
 
+## Quick start for testers
+
+Nothing has to be prepared in SSMS: the app creates and fills its own database on the first start.
+
+1. Clone or copy the whole folder to your PC.
+2. Open **LittleEreseSystemV3.slnx** in Visual Studio and wait until the project has loaded.
+3. Build the solution (Ctrl+Shift+B). It must finish with 0 errors.
+4. Press **Ctrl+F5** (Start Without Debugging). The login screen appears.
+5. Sign in with a demo account:
+
+   | Username | Password | Role |
+   |---|---|---|
+   | admin | Admin@123 | Admin |
+   | nurse1 | Staff@123 | Staff |
+
+6. The first start shows a short "Preparing the database" pause while the database is created and
+   filled; later starts go straight to the login screen, because an existing database is never
+   touched again. On an empty database the app also loads realistic demo data (12 clients, bookings
+   for the past and the next two weeks, bills and commissions), so every screen has something to
+   show.
+
+**Requirement: SQL Server Express LocalDB.** It is installed together with Visual Studio (workload
+".NET desktop development"), or you can add "SQL Server Express LocalDB" in the Visual Studio
+Installer under *Individual components*. To check that it is there, open a Command Prompt and run:
+
+    sqllocaldb info
+
+The list must contain **MSSQLLocalDB**. If the command is not recognised, LocalDB is missing and the
+app shows: "LocalDB was not found. Install SQL Server Express LocalDB from the Visual Studio
+Installer." The database name it uses is the one in the LittleEreseDb connection string in
+App.config.
+
 ## Setup
 
 1. Install the requirements above.
-2. Create the database: open **SSMS** (or sqlcmd) against the server (localdb)\MSSQLLocalDB and run,
-   in this order:
-   - Database\LittleEreses_Database.sql (creates the database LittleEresesDB and its 18 tables)
-   - Database\SeedData.sql (service catalogue, categories, rooms and the demo accounts)
+2. Create the database: **you do not have to do anything** - the app creates it, runs
+   Database\LittleEreses_Database.sql and then Database\SeedData.sql on the first start, when the
+   database named in App.config does not exist yet. Both scripts are copied next to the program.
+   To prepare it by hand instead (for example on the shop's PC before the app is installed), run
+   the same two scripts once in **SSMS** (or sqlcmd) against (localdb)\MSSQLLocalDB.
 
    An existing database created before the promotion-to-services feature only needs
    Database\Migration_01_PromotionServices.sql once.
 3. Open LittleEreseSystemV3.slnx in Visual Studio, build (Ctrl+Shift+B) and run (F5).
-4. Sign in. On the first start of a database with **no clients** the app loads realistic demo data
-   (12 clients, bookings for the past and the next two weeks, bills, commissions) so every screen
-   has something to show. It never deletes anything.
+4. Sign in with a demo account. On the first start of a database with **no clients** the app loads
+   realistic demo data (12 clients, bookings for the past and the next two weeks, bills,
+   commissions) so every screen has something to show. It never deletes anything.
 
 The connection string is LittleEreseDb in App.config. Change it there if your LocalDB instance has
 another name.
@@ -80,6 +113,7 @@ Example: bin\Debug\LittleEreseSystemV3.exe --preview ucBilling --role Staff
     Data\                           every SQL statement: Db (connections) and the repositories
                                     (Client, Appointment, Billing, Service, Promotion, User,
                                     Commission, Report, Activity, Maintenance) plus DemoDataSeeder
+                                    and DatabaseBootstrapper (creates the database on the first start)
     Helpers\                        Theme (colours / fonts), Validators (all input rules), Messages,
                                     GridHelper, GridPrinter, CsvExporter, ReceiptPrinter, IconHelper,
                                     Session, DesignTime, PasswordHasher, SmokeTest, PreviewTool

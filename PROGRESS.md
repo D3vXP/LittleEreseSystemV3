@@ -2,6 +2,61 @@
 
 Update this file at the end of every task.
 
+- Step 29 (this task): the database is created and filled AUTOMATICALLY on the first start, so a
+  fresh clone needs no manual SSMS work.
+  - Data\DatabaseBootstrapper.cs (NEW FILE, registered in LittleEreseSystemV3.csproj):
+    internal static DatabaseBootstrapper with one public method, EnsureDatabase(). It builds the
+    same connection as App.config (same server, same security) but with InitialCatalog = "master",
+    because a connection that names a missing database can never be opened. The database name is
+    read from the connection string and checked against ^[A-Za-z0-9_]+$ before it is used in
+    brackets. It opens master, asks SELECT DB_ID(@name) and, when the name is NOT NULL, returns at
+    once - an existing database is never dropped, altered or seeded, not one table, not one row.
+    When it is NULL it runs CREATE DATABASE [name] (CommandTimeout 120), then opens the normal
+    connection and runs Database\LittleEreses_Database.sql followed by Database\SeedData.sql, both
+    read from the Database folder next to the exe. Each file is split on lines that contain only GO;
+    the database-level lines (USE, CREATE / ALTER / DROP DATABASE and the "IF DB_ID(...) IS NULL"
+    guard in front of them) are skipped, because the connection already points at the right database
+    and the class must never create or change another one. Empty batches are dropped. Every failure
+    becomes an InvalidOperationException with a readable sentence - "LocalDB was not found. Install
+    SQL Server Express LocalDB from the Visual Studio Installer." for errors 53 / 26 / -1 / 2, the
+    login sentence for 18456, "the script could not be read ... build again" when the file is
+    missing, and Db.Describe(ex) for everything else, so the app keeps one voice.
+  - Program.cs: DatabaseBootstrapper.EnsureDatabase() is the first thing the normal startup flow
+    does after the two command-line switches (still before Db.CanConnect and before
+    DemoDataSeeder.EnsureDemoUsers / EnsureDemoData), inside its own try/catch with Messages.Error
+    plus return. --smoketest and --preview return before it, so the read-only switches still never
+    touch the database. Nothing else in Program.cs changed.
+  - LittleEreseSystemV3.csproj WAS edited (three changes, nothing else): (1) Data\DatabaseBootstrapper.cs
+    added to the Data\ <Compile> list; (2) Database\LittleEreses_Database.sql and Database\SeedData.sql
+    are now <Content> items with <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>, so
+    exactly those two scripts are copied to bin\Debug\Database\; (3) the old wildcard
+    <None Include="Database\*.sql" /> was replaced by <None Include="Database\Migration_01_PromotionServices.sql" />,
+    otherwise the two new Content entries would also be listed as None items and the build would
+    complain. Database\ResetDemoData.sql keeps its existing <Content> line without a copy rule, so it
+    stays out of the output folder (it is never run by the app).
+  - README.md: new "Quick start for testers" section (clone, open the .slnx, build, Ctrl+F5, the
+    database is created automatically, demo logins admin / Admin@123 and nurse1 / Staff@123, the
+    LocalDB requirement and how to check it with sqllocaldb info), plus two small updates in Setup
+    step 2 (the scripts run automatically now) and in the folder map (DatabaseBootstrapper).
+  - Verification: the whole path was proved on a THROW-AWAY database, never on the shop's one. The
+    built bin\Debug was copied to %TEMP%\boottest, its .exe.config was pointed at
+    "LittleEresesBootstrapTest" and the app was started: it created that database, ran both scripts
+    and stayed open. Checked with sqlcmd: 18 base tables, 8 Users, 77 Services, and the demo seeder
+    then wrote 12 Clients / 47 Appointments. A SECOND start found the database and did nothing
+    (same counts, no duplicates). A deliberately invalid name ("Little-Erese Test") was rejected
+    before any SQL ran. The scratch database was dropped and the scratch folder deleted afterwards,
+    so nothing was left behind and the shop database was never touched.
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 61 passed, 1 failed - "Demo data: Completed appointments = 0 (expected at least 25)",
+  the same expected failure reported since Step 27 (the shop database still holds its 2 old test
+  clients, so DemoDataSeeder.EnsureDemoData() correctly does nothing).
+  tools\DesignerAudit.ps1: 22 Designer files, no problems, exit code 0.
+  --preview ucDashboard rendered, the app was started normally once and closed, no error.log.
+  - Known limits / assumptions: the bootstrap only acts when the database is MISSING - an existing
+    but empty or half-built database is left alone on purpose (the owner can run the scripts by hand
+    in SSMS as before); the check runs on every start but is a single DB_ID() round trip, and it
+    never runs under --smoketest or --preview.
+
 - Step 28 (this task): FINAL CLEAN-UP - designer audit tool, code hygiene, polish list, screenshots,
   documentation and the final checks. No module, no behaviour and no feature was added.
   - tools\DesignerAudit.ps1 (NEW, PowerShell, NOT in the .csproj). For every *.Designer.cs under

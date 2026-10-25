@@ -40,6 +40,18 @@ namespace LittleEreseSystemV3
             Application.ThreadException += new System.Threading.ThreadExceptionEventHandler(OnThreadException);
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(OnDomainException);
 
+            // A fresh clone may not have the database yet: create and fill it here, before
+            // anything else touches it. An existing database is never dropped or altered.
+            try
+            {
+                DatabaseBootstrapper.EnsureDatabase();
+            }
+            catch (Exception ex)
+            {
+                Messages.Error(ex.Message);
+                return;
+            }
+
             // Without a reachable database nothing works, so say so and stop instead of
             // letting the login screen fail in a confusing way.
             string databaseError;
