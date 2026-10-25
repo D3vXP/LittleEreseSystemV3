@@ -63,8 +63,7 @@ namespace LittleEreseSystemV3
         }
 
         /// <summary>Exceptions raised on the UI thread (button clicks, timers, Load events).</summary>
-        private static void OnThreadException(object sender, System.Threading.ThreadExceptionEventArgs e)
-        {
+        private static void OnThreadException(object sender, System.Threading.ThreadExceptionEventArgs e)        {
             Report(e == null ? null : e.Exception);
         }
 

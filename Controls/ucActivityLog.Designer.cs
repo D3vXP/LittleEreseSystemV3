@@ -376,10 +376,10 @@ namespace LittleEreseSystemV3.Controls
             this.colLogTime.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
             this.colLogTime.DataPropertyName = "logged_at";
             this.colLogTime.HeaderText = "Date and time";
-            this.colLogTime.MinimumWidth = 170;
+            this.colLogTime.MinimumWidth = 195;
             this.colLogTime.Name = "colLogTime";
             this.colLogTime.ReadOnly = true;
-            this.colLogTime.Width = 175;
+            this.colLogTime.Width = 200;
             // 
             // colLogUser
             // 

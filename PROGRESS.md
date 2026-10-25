@@ -2,6 +2,92 @@
 
 Update this file at the end of every task.
 
+- Step 26 (this task): the LOGIC of the Activity Log and File Maintenance pages, plus the two
+  repositories they need. The Designer layouts were NOT restructured; one small Designer fix
+  (the Activity Log time column) is listed under "small Designer fix" below.
+  - Data\ActivityRepository.cs (Log unchanged, read methods added):
+    GetLog(from, to, userId, module, search) returns log_id, logged_at, full_name, action, module,
+    description, newest first (logged_at DESC, log_id DESC). The range uses the NEXT midnight as the
+    boundary, so the whole "to" day is included (the same rule the other reports use). userId 0 =
+    every user, module "All" = every module, search matches action OR description. The alias
+    full_name comes from INNER JOIN Users, which is exactly what colLogUser binds to.
+    GetModules() returns the DISTINCT module names, sorted, for the filter.
+  - Data\MaintenanceRepository.cs (was an empty class; now the only place with raw SQL for this):
+    BackupDatabase(filePath) runs BACKUP DATABASE [<name>] TO DISK = @path WITH INIT, FORMAT,
+    NAME = 'LittleEresesDB backup'. The database name is read from the "LittleEreseDb" connection
+    string (SqlConnectionStringBuilder.InitialCatalog) and checked against ^[A-Za-z0-9_]+$ before
+    it is placed inside the brackets; the path is always a parameter.
+    VerifyBackup(filePath) runs RESTORE VERIFYONLY FROM DISK = @path.
+    RestoreDatabase(filePath) opens its own connection to "master" (same server, same security -
+    the connection string is copied and only InitialCatalog changed), calls
+    SqlConnection.ClearAllPools(), then ALTER DATABASE ... SET SINGLE_USER WITH ROLLBACK IMMEDIATE,
+    RESTORE DATABASE ... FROM DISK = @path WITH REPLACE, and ALWAYS in a finally block
+    ALTER DATABASE ... SET MULTI_USER (a failed restore must not leave the shop locked out), then
+    clears the pools again. CommandTimeout 0 because a restore can run for minutes.
+    GetDatabaseInfo() returns db_name (DB_NAME()), server_name (SERVERPROPERTY('ServerName')) and
+    size_mb (SUM(size) * 8 / 1024 from sys.master_files, ROWS files only).
+    GetTableCounts() returns table_name + row_count for every user table (sys.tables joined to
+    sys.partitions with index_id IN (0,1), GROUP BY name, ordered by name).
+    ListBackups(folder) returns file_name, size_mb, created_at for *.bak, newest first
+    (LastWriteTime - a copied backup keeps the moment it was written; marked // POLISH). A missing
+    or unreadable folder gives an empty table, never an error.
+    Every method rethrows InvalidOperationException with a readable sentence; error 3201 and any
+    "access denied" text map to "SQL Server could not write to that folder. Choose a folder inside
+    your Documents folder."
+  - Controls\ucFileMaintenance.cs: Load styles the two grids and the six buttons with Theme, checks
+    Session.IsAdmin (a Staff user gets the boxes disabled plus a warning, which is skipped when
+    nobody is signed in so the smoke test and the preview tool still work), sets the default backup
+    folder to Documents\LittleEreseBackups (Directory.CreateDirectory, so the folder exists before
+    SQL Server writes into it) and refreshes everything.
+    Browse (folder / file) uses FolderBrowserDialog and OpenFileDialog ("Backup file (*.bak)|*.bak").
+    btnBackupNow builds LittleEreseBackup_yyyyMMdd_HHmmss.bak, shows the wait cursor, runs
+    BackupDatabase then VerifyBackup (a fresh backup is checked at once, which is far better than
+    finding out at restore time), reports the full path and the size in MB, logs "Backup" /
+    "File Maintenance", reloads the recent list and lblLastBackup.
+    btnRestore_Click needs a selected existing .bak, runs VerifyBackup FIRST, then asks TWO
+    confirmations (the path + "The current data will be replaced", then "This cannot be undone.
+    ALL current appointments, clients and payments will be replaced ..."), runs RestoreDatabase,
+    logs "Restore", tells the user the app will restart and calls Application.Restart().
+    btnRefreshInfo reloads the info, the table counts and the backups; btnOpenBackupFolder opens
+    the folder with Process.Start("explorer.exe", "<folder>"). Every action re-checks
+    Session.IsAdmin, every action is wrapped in try/catch with Messages.Error, and the wait cursor
+    is always restored in a finally block.
+    lblLastBackup reads "Last backup: MMM dd, yyyy h:mm tt" from the newest file, or "No backup yet".
+  - Controls\ucActivityLog.cs: Load styles the grid and the two buttons with Theme, checks
+    Session.IsAdmin (same rule as above), sets dtpFrom = 7 days ago and dtpTo = today, fills
+    cboUser with "All users" (value 0) + UserRepository.GetUsers("", "All") and cboModule with
+    "All modules" + ActivityRepository.GetModules(), then loads the grid and lblCount
+    ("1 entry" / "N entries"). btnSearch_Click and Enter in txtSearch reload (Enter is swallowed so
+    the box does not beep); a From date after the To date shows a warning instead of a query.
+    btnExport_Click exports the grid with CsvExporter (file name activity-log-yyyyMMdd-yyyyMMdd).
+    Every query runs behind Cursor.WaitCursor inside try/catch with Messages.DbError.
+  - Helpers\SmokeTest.cs: three read-only checks - GetLog(last 7 days) returns the six columns the
+    grid binds (checked by name, because a renamed alias would silently show empty cells),
+    GetTableCounts returns 18 tables, GetDatabaseInfo returns a row. No backup / restore is run.
+  - Small Designer fix: in ucActivityLog.Designer.cs colLogTime went from 175 px (MinimumWidth 170)
+    to 200 px (MinimumWidth 195), because the preview showed "Oct 25, 2026 8:15:28 PM" cut to
+    "8:15:28 ..." - the format is h:mm:ss tt and needs the extra 25 px.
+  - Self-test (temporary, REMOVED again - no --backuptest switch and no BackupSelfTest method are
+    left in Program.cs): a backup was written to the temp folder, verified with RESTORE VERIFYONLY,
+    it appeared in ListBackups and the file was deleted again. Result: BACKUP OK (7,196,672 bytes),
+    VERIFY OK, LIST rows = 1, SELFTEST PASSED, cleanup: file deleted = True. The restore was NEVER
+    run automatically.
+  - LittleEreseSystemV3.csproj was NOT edited (no new file).
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 56 passed, 0 failed, 0 skipped.
+  --preview ucActivityLog: From 7 days ago / To today / User "All users" / Module "All modules" /
+  Search + Search + Export CSV + "91 entries", and the real log rows ("Aesthetician 1", "Login",
+  "Authentication", "User logged in") with the full date and time after the column fix.
+  --preview ucFileMaintenance: the backup card with the default folder and "No backup yet", the
+  restore card with the red warning, System information reading "Database: LittleEresesDB",
+  "Server: D3vic...", "Database size: 8.00 MB" and the 18-row table counts grid, and the empty
+  Recent backups grid. The app was started once and closed again (no error.log).
+  - Known limits / assumptions: the backup is verified right after it is written (an extra few
+    seconds) because that is the only moment a bad file can still be replaced; the Recent backups
+    date is the file's LastWriteTime (POLISH: CreationTime if the owner prefers); a restore always
+    ends with Application.Restart(), so the login screen comes back; a Staff user opening either
+    page only sees disabled controls (MainForm already hides both pages).
+
 - Step 25 (this task): Layout only (Designer work), PART 2 of File Maintenance (Admin only):
   the bottom row of tlpMain. PART 1 (frame, backup card, restore card) is unchanged. No logic,
   no SQL, no file or Session access. The two wired events got empty handlers with

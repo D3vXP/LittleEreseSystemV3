@@ -308,6 +308,71 @@ namespace LittleEreseSystemV3.Helpers
             CheckMonthAppointments();
             CheckDashboardStats();
             CheckCalendarCells();
+
+            // The three read-only Activity Log / File Maintenance checks (Step 26).
+            // Nothing is written, and a backup or a restore is NEVER run here.
+            CheckActivityLog();
+            CheckMaintenanceTableCounts();
+            CheckMaintenanceDatabaseInfo();
+        }
+
+        /// <summary>GetLog for the last 7 days must run and come back with the columns the grid needs.</summary>
+        private static void CheckActivityLog()
+        {
+            const string label = "ActivityRepository.GetLog(last 7 days)";
+            try
+            {
+                DataTable log = ActivityRepository.GetLog(DateTime.Today.AddDays(-7), DateTime.Today, 0, "All", "");
+
+                // The grid binds by name, so a renamed alias would show empty cells instead of failing.
+                bool hasColumns = log.Columns.Contains("log_id")
+                    && log.Columns.Contains("logged_at")
+                    && log.Columns.Contains("full_name")
+                    && log.Columns.Contains("action")
+                    && log.Columns.Contains("module")
+                    && log.Columns.Contains("description");
+
+                string message = label + " rows = " + log.Rows.Count + " (6 columns)";
+                if (hasColumns) Pass(message);
+                else Fail(message + " - a column is missing");
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>The schema script says 18 tables, and sys.tables must agree.</summary>
+        private static void CheckMaintenanceTableCounts()
+        {
+            string label = "MaintenanceRepository.GetTableCounts returns " + ExpectedTables + " tables";
+            try
+            {
+                DataTable counts = MaintenanceRepository.GetTableCounts();
+                string message = label + " (got " + counts.Rows.Count + ")";
+                if (counts.Rows.Count == ExpectedTables) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>The System information card needs one row with the three values.</summary>
+        private static void CheckMaintenanceDatabaseInfo()
+        {
+            const string label = "MaintenanceRepository.GetDatabaseInfo returns a row";
+            try
+            {
+                DataRow info = MaintenanceRepository.GetDatabaseInfo();
+                if (info != null) Pass(label);
+                else Fail(label + " (no row)");
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
         }
 
         /// <summary>GetQueue(today) must list a day (usually empty) without an error.</summary>
