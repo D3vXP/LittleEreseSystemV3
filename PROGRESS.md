@@ -2,6 +2,90 @@
 
 Update this file at the end of every task.
 
+- Step 27 (this task): the realistic DEMO DATA, loaded once, automatically, when the database has
+  no clients yet, plus six read-only consistency checks and the reset script.
+  - Data\DemoDataSeeder.cs: EnsureDemoData() (new, next to the unchanged EnsureDemoUsers()).
+    It does nothing when EnableDemoSeed is false or when Clients already has rows, never deletes
+    anything, and writes the whole set inside ONE Db.InTransaction (SeedAll), so a stopped run
+    leaves nothing half saved. Every id is looked up by NAME (staff by username, rooms by
+    room_name, services by category + name, promo ids from the inserts) - no hard-coded numbers.
+    A fixed Random seed (20260415) makes the data identical on every machine.
+    Sections in the file: (1) 12 clients (Filipino names, 09xxxxxxxxx numbers, Concepcion / Tarlac
+    addresses, birth dates, 9 consent signed / 3 not, 5 with allergies or medical notes),
+    (2) 3 promotions - "Monthly Glow Promo" 15 % Active and covering today, "Beauty Bucket 500"
+    Fixed 500 Active (a second real choice in Billing), "Summer Radiance Promo" 10 % Expired
+    (ended last month), (3) the past two weeks: 3 ClientPackages (PRP/Vampire Facial 1 / 3 Active,
+    PRP 3 / 3 Completed, PRP 2 / 3 Active - three different progress labels) on top of
+    PastCompletedVisits = 25 finished visits spread over the last 14 days (3 quiet days with one
+    appointment, 11 days with two), (4) today: 2 finished (10:00 AM and 11:30 AM), 1 Ongoing
+    (1:00 PM) and 3 Upcoming (3:00, 4:30 and 6:00 PM), (5) 14 Upcoming over the next 14 days - one
+    per day, the 4th day is a massage at 1:00 PM, every 5th day is a Walk-in so it has no deposit,
+    the day-3 one carries an extra AppointmentHistory 'Rescheduled' row (old date + old time +
+    reason), (6) 2 Cancelled visits (20 and 12 days ago, Messenger / Text) with the deposit
+    forfeited (downpayment_status 'Forfeited', payment_status 'Forfeited') and their Created +
+    Cancelled history rows, (7) the clients' treatment_history text and 8 ActivityLog rows spread
+    over the past week (Login, Add Client, Book Appointment, Apply Promo, Start Service, Checkout,
+    Commission payout, Backup).
+    Everything obeys the business rules: starts only on 30-minute marks inside 10:00 AM - 8:00 PM
+    (massage 1:00 PM - 10:00 PM), end = start + duration, a 30-minute clean-up break between two
+    visits of a day (so no room is over capacity and no technician overlaps), the package price on
+    session 1 and 0.00 afterwards, Commissions at 10 % of the net line amount (package lines: price
+    / total_sessions) with about 70 % Unpaid / 30 % Paid + payout_date, and the money fields -
+    subtotal, discount (through PromotionRepository.ComputeDiscount), total = subtotal - discount,
+    balance_due = total - paid, payment_status Paid and Payments rows (Final, plus a Downpayment
+    for a non-walk-in) mixed Cash / GCash / Bank Transfer with a reference for the two electronic
+    methods, always 'Verified'. A promo bill is paid in FULL when the booking is made (a Final
+    payment, downpayment_status 'Applied') exactly like AppointmentRepository.Create.
+    Small readable helpers: InsertClient, InsertPackage, InsertAppointment, InsertLine, InsertStaff,
+    InsertRoom, InsertCommission, InsertHistory, InsertActivity, CompletePackageSession,
+    AddVisit / AddRandomVisit / TryStartTime (the day cursor), RoomForCategory (RoomServiceCategories
+    first, then the shop's usual room by category), DiscountFor, PickPaymentMethod, ReferenceFor.
+  - Program.cs: DemoDataSeeder.EnsureDemoData() is called right after EnsureDemoUsers(), inside the
+    same try/catch (so a seed failure shows the normal database message and never stops the login).
+  - Helpers\SmokeTest.cs: the six read-only checks (CheckDemoData + CheckScalarZero /
+    CheckScalarAtLeast): no Billing row with balance_due < 0, every Completed appointment has at
+    least one Commissions row, every ClientPackages row has 0 <= sessions_completed <=
+    total_sessions, no non-cancelled appointment ends after 10:00 PM, every Billing.total_amount =
+    subtotal - discount_amount, and at least 25 Completed appointments. The smoke test still only
+    runs EnsureDemoUsers (it must not change the shop's own records).
+  - Database\ResetDemoData.sql (NEW FILE, not in the .csproj - Database\*.sql is already a
+    wildcard): SET XACT_ABORT ON, one transaction, DELETE in foreign-key order - ActivityLog,
+    Commissions, Payments, AppointmentHistory, AppointmentRooms, AppointmentStaff,
+    AppointmentServices, Billing, Appointments, ClientPackages, Clients, Promotions - no RESEED,
+    and it never touches Users, Services, ServiceCategories, Rooms or RoomServiceCategories. It ends
+    with a row-count proof SELECT. NOT run by the app or by this task.
+  - LittleEreseSystemV3.csproj was NOT edited (DemoDataSeeder.cs and SmokeTest.cs were already
+    listed, and Database\*.sql is a wildcard).
+  - Verification: the seeder cannot run against the shop database yet (it already holds 2 clients
+    from the earlier tests, and nothing may be deleted without the owner's go-ahead), so the whole
+    seeding path was proved on a THROW-AWAY copy: a scratch database was built from
+    LittleEreses_Database.sql + SeedData.sql, the app was started against it and the demo data
+    appeared (12 Clients, 47 Appointments, 47 AppointmentServices / AppointmentStaff /
+    AppointmentRooms / Billing, 58 Payments, 27 Commissions, 50 AppointmentHistory,
+    3 ClientPackages, 3 Promotions, 8 ActivityLog; 27 Completed - 25 of them in the past 14 days,
+    6 today, 14 Upcoming, 2 Cancelled = 47). A rule sweep on that copy returned 0 bad rows for:
+    negative balance, Completed without commission, package sessions out of range, end after
+    10:00 PM, total <> subtotal - discount, half-hour starts, aesthetic hours, massage hours,
+    technicians overlapping, and the two daily capacities. --smoketest on the copy: 62 passed,
+    0 failed (the six new checks PASS). The scratch database and its app copy were then DROPPED
+    and deleted, so nothing was left behind.
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest on the real shop database: 61 passed, 1 failed - "Demo data: Completed appointments =
+  0 (expected at least 25)". That is expected and correct: the demo data is not seeded yet because
+  the Clients table already has rows. RUN Database\ResetDemoData.sql in SSMS (database
+  LittleEresesDB) and start the app once; the demo data loads on that start and the last check
+  turns PASS.
+  - Known limits / assumptions: the catalogue has no multi-session laser service, so the third
+    package uses the other multi-session service the catalogue has (today "Facial test", 8
+    sessions) - the code searches for default_total_sessions > 1 and is marked // POLISH. The demo
+    promotions are not linked to specific services (so the whole bill is eligible); a promotion
+    with service links is deliberately skipped by the demo's DiscountFor, which uses the ONE
+    formula PromotionRepository.ComputeDiscount because CalculateDiscount opens its own connection
+    and would deadlock inside the seeding transaction. The demo rooms fall back to the shop's usual
+    room by category name when RoomServiceCategories is still empty (POLISH: link the rooms and the
+    fallback is never used). Payout dates are today at the latest. The 8 ActivityLog demo rows are
+    illustrative - no backup file was created by them.
+
 - Step 26 (this task): the LOGIC of the Activity Log and File Maintenance pages, plus the two
   repositories they need. The Designer layouts were NOT restructured; one small Designer fix
   (the Activity Log time column) is listed under "small Designer fix" below.

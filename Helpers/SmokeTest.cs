@@ -38,6 +38,8 @@ namespace LittleEreseSystemV3.Helpers
             Line("Little Erese's smoke test - " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 
             // Run the seeder first so this check also works on a brand-new database.
+            // Only the demo ACCOUNTS are created here; the demo business data is NOT written by the
+            // smoke test (it would change the shop's own records), so these checks stay read-only.
             try
             {
                 DemoDataSeeder.EnsureDemoUsers();
@@ -314,6 +316,76 @@ namespace LittleEreseSystemV3.Helpers
             CheckActivityLog();
             CheckMaintenanceTableCounts();
             CheckMaintenanceDatabaseInfo();
+
+            // The six read-only demo-data consistency checks (Step 27). Nothing is written here.
+            CheckDemoData();
+        }
+
+        /// <summary>
+        /// Read-only consistency checks on the demo data, so a bad seeder run is found at once:
+        /// no negative balance, one commission per finished service, package sessions in range,
+        /// nothing finishing after 10:00 PM, total = subtotal - discount, and enough finished visits.
+        /// </summary>
+        private static void CheckDemoData()
+        {
+            CheckScalarZero("Demo data: no Billing row has balance_due < 0",
+                "SELECT COUNT(*) FROM Billing WHERE balance_due < 0");
+
+            CheckScalarZero("Demo data: every Completed appointment has at least one Commissions row",
+                "SELECT COUNT(*) FROM Appointments a " +
+                "WHERE a.status = 'Completed' " +
+                "  AND NOT EXISTS (SELECT 1 FROM AppointmentServices asv " +
+                "                   INNER JOIN Commissions cm ON cm.appointment_service_id = asv.appointment_service_id " +
+                "                  WHERE asv.appointment_id = a.appointment_id)");
+
+            CheckScalarZero("Demo data: every ClientPackages row has 0 <= sessions_completed <= total_sessions",
+                "SELECT COUNT(*) FROM ClientPackages " +
+                "WHERE sessions_completed < 0 OR sessions_completed > total_sessions");
+
+            CheckScalarZero("Demo data: no non-cancelled appointment ends after 10:00 PM",
+                "SELECT COUNT(*) FROM Appointments " +
+                "WHERE status <> 'Cancelled' AND end_time > CAST('22:00:00' AS time)");
+
+            CheckScalarZero("Demo data: every Billing.total_amount = subtotal - discount_amount",
+                "SELECT COUNT(*) FROM Billing " +
+                "WHERE total_amount <> subtotal - discount_amount");
+
+            CheckScalarAtLeast("Demo data: Completed appointments = ", 25,
+                "SELECT COUNT(*) FROM Appointments WHERE status = 'Completed'");
+        }
+
+        /// <summary>PASS when the query returns exactly 0 (the rule holds everywhere).</summary>
+        private static void CheckScalarZero(string label, string sql)
+        {
+            try
+            {
+                int count = Convert.ToInt32(Db.Scalar(sql));
+                string message = label + " (got " + count + " bad rows)";
+
+                if (count == 0) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>PASS when the query returns at least <paramref name="minimum"/>.</summary>
+        private static void CheckScalarAtLeast(string label, int minimum, string sql)
+        {
+            try
+            {
+                int count = Convert.ToInt32(Db.Scalar(sql));
+                string message = label + count + " (expected at least " + minimum + ")";
+
+                if (count >= minimum) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
         }
 
         /// <summary>GetLog for the last 7 days must run and come back with the columns the grid needs.</summary>

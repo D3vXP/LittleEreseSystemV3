@@ -49,10 +49,12 @@ namespace LittleEreseSystemV3
                 return;
             }
 
-            // Demo accounts (admin + staff) for the owner to try the system with.
+            // Demo accounts (admin + staff) for the owner to try the system with, plus the demo
+            // business data (clients, bookings, bills, commissions) when the shop has no clients yet.
             try
             {
                 DemoDataSeeder.EnsureDemoUsers();
+                DemoDataSeeder.EnsureDemoData();
             }
             catch (Exception ex)
             {
