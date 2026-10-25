@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
+using LittleEreseSystemV3.Controls;
 using LittleEreseSystemV3.Data;
 
 namespace LittleEreseSystemV3.Helpers
@@ -302,6 +303,11 @@ namespace LittleEreseSystemV3.Helpers
             CheckCommissionSummary();
             CheckReportSalesByCategory();
             CheckReportAppointmentStatusCounts();
+
+            // The three read-only Dashboard checks (Step 22). Nothing is written here.
+            CheckMonthAppointments();
+            CheckDashboardStats();
+            CheckCalendarCells();
         }
 
         /// <summary>GetQueue(today) must list a day (usually empty) without an error.</summary>
@@ -403,6 +409,84 @@ namespace LittleEreseSystemV3.Helpers
             {
                 Fail(label, ex);
             }
+        }
+
+        /// <summary>The month query of the Dashboard calendar must run for the current month.</summary>
+        private static void CheckMonthAppointments()
+        {
+            const string label = "AppointmentRepository.GetMonthAppointments(this month)";
+            try
+            {
+                DataTable month = AppointmentRepository.GetMonthAppointments(DateTime.Today.Year, DateTime.Today.Month);
+                Pass(label + " rows = " + month.Rows.Count);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>The five KPI numbers must come back as one row.</summary>
+        private static void CheckDashboardStats()
+        {
+            const string label = "ReportRepository.GetDashboardStats(today, true) returns one row";
+            try
+            {
+                DataRow stats = ReportRepository.GetDashboardStats(DateTime.Today, true);
+
+                if (stats == null) Fail(label + " (no row)");
+                else Pass(label);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// An empty month must still fill the calendar with its 42 day cells. The cells are built
+        /// in code (the "items generated from data" exception), so this is the check that they
+        /// really are created without a parent window.
+        /// </summary>
+        private static void CheckCalendarCells()
+        {
+            const string label = "ucCalendarMonth.LoadMonth(empty table) builds 42 cells";
+            try
+            {
+                DataTable empty = AppointmentRepository.GetMonthAppointments(DateTime.Today.Year, DateTime.Today.Month).Clone();
+
+                using (ucCalendarMonth calendar = new ucCalendarMonth())
+                {
+                    calendar.LoadMonth(DateTime.Today, empty);
+
+                    int cells = CountCells(calendar);
+
+                    if (cells == 42) Pass(label);
+                    else Fail(label + " (got " + cells + ")");
+                }
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>Counts the direct children of the day grid (the day cells themselves).</summary>
+        private static int CountCells(ucCalendarMonth calendar)
+        {
+            TableLayoutPanel grid = FindGrid(calendar);
+            return grid == null ? 0 : grid.Controls.Count;
+        }
+
+        /// <summary>The day grid is the table named tlpDays (the weekday strip is a table too).</summary>
+        private static TableLayoutPanel FindGrid(ucCalendarMonth calendar)
+        {
+            foreach (Control child in calendar.Controls)
+            {
+                if (child is TableLayoutPanel && child.Name == "tlpDays") return child as TableLayoutPanel;
+            }
+
+            return null;
         }
 
         /// <summary>GetByDate must list a day (usually empty) without an error.</summary>

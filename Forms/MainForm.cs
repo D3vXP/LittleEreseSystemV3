@@ -74,8 +74,10 @@ namespace LittleEreseSystemV3.Forms
         /// Opens a page inside pnlContent. Every accepted key builds a NEW instance of its
         /// UserControl, so a page always starts with fresh data.
         /// The previous page is disposed so a long session cannot fill the memory with old screens.
+        /// The optional argument is handed to the page that knows how to use it (for example the
+        /// day the Appointments page must open on).
         /// </summary>
-        public void Navigate(string pageKey)
+        public void Navigate(string pageKey, object argument = null)
         {
             if (string.IsNullOrEmpty(pageKey)) return;
 
@@ -87,6 +89,7 @@ namespace LittleEreseSystemV3.Forms
             try
             {
                 page = CreatePage(pageKey);
+                ApplyArgument(page, argument);
             }
             catch (Exception ex)
             {
@@ -117,6 +120,32 @@ namespace LittleEreseSystemV3.Forms
 
             lblPageTitle.Text = PageTitle(pageKey);
             HighlightNavButton(pageKey);
+        }
+
+        /// <summary>
+        /// Shows the Appointments page on a particular day. The date is set on the new page
+        /// BEFORE it is loaded, because ucAppointments reads StartDate in its Load event.
+        /// </summary>
+        public void OpenAppointments(DateTime date)
+        {
+            Navigate(PageAppointments, date);
+        }
+
+        /// <summary>
+        /// Hands the navigation argument to the page that understands it. Today only the
+        /// Appointments page takes one (a day); every other page simply ignores it, which keeps
+        /// every existing Navigate call working unchanged.
+        /// </summary>
+        private static void ApplyArgument(UserControl page, object argument)
+        {
+            if (page == null || argument == null) return;
+
+            if (!(argument is DateTime)) return;
+
+            ucAppointments appointments = page as ucAppointments;
+            if (appointments == null) return;
+
+            appointments.StartDate = ((DateTime)argument).Date;
         }
 
         private void btnMenuToggle_Click(object sender, EventArgs e)

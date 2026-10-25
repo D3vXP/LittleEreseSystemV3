@@ -188,5 +188,51 @@ ORDER BY COUNT(*) DESC, a.booking_source",
 
             return 0;
         }
+
+        /// <summary>
+        /// The five numbers of the Dashboard cards for one day:
+        /// today_total (every appointment that is not cancelled), remaining (Upcoming or Ongoing),
+        /// completed, today_sales (the money that arrived that day) and active_packages.
+        /// includeSales = false keeps sales out of the query, because Staff must not see amounts
+        /// (the caller simply does not show the value then).
+        /// Always returns one row with zeros on a quiet day, so the cards never show a blank.
+        /// </summary>
+        public static DataRow GetDashboardStats(DateTime date, bool includeSales)
+        {
+            string salesExpression = includeSales
+                ? @"(SELECT ISNULL(SUM(p.amount_paid), 0)
+       FROM Payments p
+       WHERE p.verification_status <> 'Rejected'
+         AND p.payment_date >= @from_date
+         AND p.payment_date < @to_date)"
+                : "0";
+
+            // One SELECT with sub-queries: a single round trip gives all five numbers, and the day
+            // and the sales range are separate parameters so the boundaries are never guessed.
+            DataTable stats = Db.Query(
+@"SELECT
+    (SELECT COUNT(*)
+       FROM Appointments a
+      WHERE a.appointment_date = @day_date
+        AND a.status <> 'Cancelled') AS today_total,
+    (SELECT COUNT(*)
+       FROM Appointments a
+      WHERE a.appointment_date = @day_date
+        AND a.status IN ('Upcoming', 'Ongoing')) AS remaining,
+    (SELECT COUNT(*)
+       FROM Appointments a
+      WHERE a.appointment_date = @day_date
+        AND a.status = 'Completed') AS completed,
+    " + salesExpression + @" AS today_sales,
+    (SELECT COUNT(*)
+       FROM ClientPackages cp
+      WHERE cp.status = 'Active') AS active_packages",
+                Db.P("@day_date", date.Date),
+                Db.P("@from_date", date.Date),
+                Db.P("@to_date", date.Date.AddDays(1)));
+
+            if (stats.Rows.Count == 0) stats.Rows.Add(stats.NewRow());
+            return stats.Rows[0];
+        }
     }
 }

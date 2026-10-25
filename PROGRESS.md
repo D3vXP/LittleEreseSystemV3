@@ -2,7 +2,63 @@
 
 Update this file at the end of every task.
 
-- Step 21 (this task): Layout only (Designer work) for the Dashboard and its month calendar.
+- Step 22 (this task): the LOGIC of the Dashboard and its month calendar. The Designer layouts were
+  NOT restructured (no Designer fix was needed).
+  - Data\AppointmentRepository.cs: added GetMonthAppointments(year, month) - ONE query for the whole
+    month returning appointment_id, appointment_date, start_time_text ("10:00 AM"), client_name,
+    services, staff_names, status, payment_status. The per-appointment comma lists are built with the
+    same child queries GetByDate uses, so the two screens can never disagree. The old ChildNames was
+    split into CollectChildNames (shared) + ChildNamesForRange (the new range variant); GetByDate
+    behaves exactly as before. AddRef: no Designer/SQL change was needed.
+  - Data\ReportRepository.cs: added GetDashboardStats(date, includeSales) - one row with today_total
+    (non-cancelled), remaining (Upcoming/Ongoing), completed, today_sales (SUM amount_paid of
+    Payments not Rejected, by payment_date < date+1) and active_packages (ClientPackages Active).
+    includeSales = false puts a literal 0 in the query, so Staff never even asks for money.
+  - Controls\ucCalendarMonth.cs: public VisibleMonth / SelectedDate, LoadMonth(month, table), events
+    DaySelected / DayOpened / AppointmentOpened / MonthChanged. LoadMonth builds the 42 day cells at
+    runtime (DesignTime guard, old cells disposed, SuspendLayout/ResumeLayout), each one a Panel with
+    a day-number Label (other months muted), a count badge, up to three "10:00 AM Client" lines
+    coloured by Theme.StatusColor (cancelled muted and not counted) and "+N more". Cell colours:
+    Surface, today = light Primary tint, selected = stronger tint + Primary border (painted in
+    Cell_Paint), 20 to 29 = light amber, 30 or more = light red. Hover highlights the cell; one
+    ToolTip created in code is disposed with the control and lists up to 8 appointments
+    ("time - client - services - technician - status", "+N more", "No appointments"). Every child of
+    a cell forwards its mouse events; a double-click on a line raises AppointmentOpened, elsewhere
+    DayOpened. DoubleBuffered is set in OnLoad. Small methods: BuildCells / BuildCell / FillLines /
+    ApplyCellColors / ShowTooltip / TooltipText / GroupAppointments.
+  - Controls\ucDashboard.cs: Load (DesignTime guard) styles both grids, loads the five icons through
+    IconHelper.Load(name, 30) (CalendarDarkIcon, ClockIcon, CheckIcon, BillingIcon, ServicesIcon) and
+    hides pnlCardSales for Staff, whose column is then squeezed to 0 px so the other four cards share
+    the width. RefreshAll() fills the cards (sales as PHP peso), the Today grid and the calendar month;
+    lblTodayHeading shows "MMM dd, yyyy - n appointments". Calendar events: MonthChanged reloads only
+    (POLISH note in code: the heading reads "Today - MMM dd, yyyy (n appointments)".)
+    the month, DaySelected fills dgvDay and switches to tabDay, DayOpened opens the Appointments page
+    on that day, AppointmentOpened does the same for the appointment's date. dgvDay_CellDoubleClick
+    behaves like AppointmentOpened. CellFormatting colours the Status (Today) / Payment (Selected Day)
+    columns. A Timer created in code (60 s) calls RefreshAll; it is stopped and disposed through the
+    control's Disposed event, because the Designer Dispose must stay untouched.
+  - Forms\MainForm.cs: Navigate(string pageKey, object argument = null) and new
+    public void OpenAppointments(DateTime date). A small ApplyArgument hands a DateTime to
+    ucAppointments.StartDate BEFORE the page loads; every existing Navigate call still compiles and
+    behaves as before (the argument is simply ignored by the other pages).
+  - Helpers\SmokeTest.cs: three new read-only checks - GetMonthAppointments(this month) (1 row),
+    GetDashboardStats(today, true) returns one row, and ucCalendarMonth.LoadMonth with an empty table
+    builds 42 cells. Because the smoke test's BuildEveryFormAndControl already constructs the control,
+    the calendar checks use the table named tlpDays. 53 passed.
+  - LittleEreseSystemV3.csproj was NOT edited (no new file).
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 53 passed, 0 failed, 0 skipped. --preview ucDashboard (Admin and Staff): the five /
+  four cards, the calendar with the today tint, the count badge and the "1:00 PM Cunanan, J..." line,
+  the right column with the Today grid - nothing overlapping or truncated. --preview
+  ucCalendarMonth: the header, legend, weekday strip and the empty 7 x 6 frame (its cells only exist
+  after LoadMonth, which the Dashboard calls). Two fix rounds: the appointment lines were moved from
+  a FlowLayoutPanel to docked Labels (a flow panel clipped the first line), and their height/font
+  was raised to 16 px / 8 pt so the text is not cut.
+  - Known limits / assumptions: dgvDay has no Status column in the Designer, so only Payment is
+    coloured there; the Appointments page has no public "select this row" API, so a double-clicked
+    appointment only opens its DAY; the 60 s timer is disposed from the Disposed event.
+
+- Step 21: Layout only (Designer work) for the Dashboard and its month calendar.
   No logic, no SQL, no file or Session access: every wired event got an empty handler with
   "// TODO(logic prompt)". Both files were empty shells before.
   - Controls\ucCalendarMonth (.Designer.cs + .cs): BackColor Surface, 760 x 520.

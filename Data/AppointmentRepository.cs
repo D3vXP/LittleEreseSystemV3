@@ -141,9 +141,21 @@ ORDER BY ar.appointment_room_id");
         /// <summary>The per-appointment values of one child query (services, technicians, rooms).</summary>
         private static Dictionary<int, string> ChildNames(DateTime date, string sql)
         {
+            return CollectChildNames(Db.Query(sql, Db.P("@appointment_date", date.Date)));
+        }
+
+        /// <summary>The same child query but for a range of days (used by the month calendar).</summary>
+        private static Dictionary<int, string> ChildNamesForRange(DateTime first, DateTime last, string sql)
+        {
+            return CollectChildNames(Db.Query(sql, Db.P("@from_date", first.Date), Db.P("@to_date", last.Date)));
+        }
+
+        /// <summary>Turns the (appointment_id, name) rows into one comma separated list per appointment.</summary>
+        private static Dictionary<int, string> CollectChildNames(DataTable rows)
+        {
             Dictionary<int, string> values = new Dictionary<int, string>();
 
-            foreach (DataRow row in Db.Query(sql, Db.P("@appointment_date", date.Date)).Rows)
+            foreach (DataRow row in rows.Rows)
             {
                 int appointmentId = Db.Get<int>(row["appointment_id"]);
                 string name = Db.Get<string>(row["name"]);
@@ -162,6 +174,72 @@ ORDER BY ar.appointment_room_id");
             }
 
             return values;
+        }
+
+        /// <summary>
+        /// The appointments of ONE whole month, for the Dashboard calendar.
+        /// Returns appointment_id, appointment_date, start_time_text ("10:00 AM"), client_name,
+        /// services, staff_names, status and payment_status.
+        /// WHY one query for the month: the calendar shows 42 days at once, and asking the
+        /// database once per day would mean 31 round trips every time the page is refreshed.
+        /// </summary>
+        public static DataTable GetMonthAppointments(int year, int month)
+        {
+            DateTime first = new DateTime(year, month, 1);
+            DateTime last = first.AddMonths(1).AddDays(-1);
+
+            DataTable table = Db.Query(
+@"SELECT a.appointment_id,
+         a.appointment_date,
+         a.start_time,
+         c.last_name + ', ' + c.first_name AS client_name,
+         a.status,
+         ISNULL(b.payment_status, 'Unpaid') AS payment_status
+FROM Appointments a
+INNER JOIN Clients c ON c.client_id = a.client_id
+LEFT JOIN Billing b ON b.appointment_id = a.appointment_id
+WHERE a.appointment_date >= @from_date
+  AND a.appointment_date <= @to_date
+ORDER BY a.appointment_date, a.start_time, a.appointment_id",
+                Db.P("@from_date", first),
+                Db.P("@to_date", last));
+
+            table.Columns.Add("start_time_text", typeof(string));
+            table.Columns.Add("services", typeof(string));
+            table.Columns.Add("staff_names", typeof(string));
+
+            Dictionary<int, string> services = ChildNamesForRange(first, last,
+@"SELECT asv.appointment_id,
+         s.service_name + CASE WHEN asv.quantity > 1 THEN ' x' + CAST(asv.quantity AS varchar(10)) ELSE '' END AS name
+FROM AppointmentServices asv
+INNER JOIN Services s ON s.service_id = asv.service_id
+INNER JOIN Appointments a ON a.appointment_id = asv.appointment_id
+WHERE a.appointment_date >= @from_date AND a.appointment_date <= @to_date
+  AND asv.status <> 'Cancelled'
+ORDER BY asv.appointment_service_id");
+
+            Dictionary<int, string> staff = ChildNamesForRange(first, last,
+@"SELECT ast.appointment_id, u.full_name AS name
+FROM AppointmentStaff ast
+INNER JOIN Users u ON u.user_id = ast.user_id
+INNER JOIN Appointments a ON a.appointment_id = ast.appointment_id
+WHERE a.appointment_date >= @from_date AND a.appointment_date <= @to_date
+  AND ast.status <> 'Reassigned'
+ORDER BY ast.appointment_staff_id");
+
+            foreach (DataRow row in table.Rows)
+            {
+                int appointmentId = Db.Get<int>(row["appointment_id"]);
+
+                row["start_time_text"] = Clock(ReadTime(row["start_time"]));
+                row["services"] = Lookup(services, appointmentId, "-");
+                row["staff_names"] = Lookup(staff, appointmentId, "Unassigned");
+            }
+
+            // The raw time column is only used to build the readable one above.
+            table.Columns.Remove("start_time");
+
+            return table;
         }
 
         private static string Lookup(Dictionary<int, string> values, int appointmentId, string fallback)
