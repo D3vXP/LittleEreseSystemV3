@@ -41,10 +41,12 @@ namespace LittleEreseSystemV3
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(OnDomainException);
 
             // A fresh clone may not have the database yet: create and fill it here, before
-            // anything else touches it. An existing database is never dropped or altered.
+            // anything else touches it. An existing database is never dropped or altered; it is
+            // only upgraded by the numbered files of Database\Migrations.
             try
             {
                 DatabaseBootstrapper.EnsureDatabase();
+                DatabaseBootstrapper.ApplyMigrations();
             }
             catch (Exception ex)
             {

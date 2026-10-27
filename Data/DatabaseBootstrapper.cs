@@ -24,6 +24,9 @@ namespace LittleEreseSystemV3.Data
         private const string SchemaScript = "LittleEreses_Database.sql";
         private const string SeedScript = "SeedData.sql";
 
+        // The numbered update files, in the Database folder next to the exe.
+        private const string MigrationsFolder = "Migrations";
+
         /// <summary>
         /// Makes sure the database exists and fills it from the two .sql scripts when it is new.
         /// Throws InvalidOperationException with a sentence a normal user can read on any failure.
@@ -49,6 +52,121 @@ namespace LittleEreseSystemV3.Data
                 Open(connection);
                 RunScript(connection, SchemaScript);
                 RunScript(connection, SeedScript);
+            }
+        }
+
+        /// <summary>
+        /// Runs the numbered update files of the Migrations folder on a database that already exists
+        /// (a tester's LittleEresesDB), so new columns and tables arrive without deleting anything.
+        /// Every file runs at most once: its name is written to SchemaVersion inside the same
+        /// transaction, so a file that fails is rolled back completely and tried again next start.
+        /// Nothing here ever drops or truncates a table.
+        /// </summary>
+        public static void ApplyMigrations()
+        {
+            string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Database", MigrationsFolder);
+            if (!Directory.Exists(folder)) return;
+
+            string[] files = Directory.GetFiles(folder, "*.sql");
+            Array.Sort(files, StringComparer.OrdinalIgnoreCase);
+
+            using (SqlConnection connection = new SqlConnection(Db.ConnectionString))
+            {
+                Open(connection);
+                EnsureSchemaVersionTable(connection);
+
+                foreach (string path in files)
+                {
+                    string fileName = Path.GetFileName(path);
+
+                    // A file already listed has run on this database before, so it is skipped.
+                    if (MigrationApplied(connection, fileName)) continue;
+
+                    RunMigration(connection, fileName, path);
+                }
+            }
+        }
+
+        /// <summary>
+        /// The list of applied files. Its name is written with it, so a half-finished migration can
+        /// simply be run again on the next start.
+        /// </summary>
+        private static void EnsureSchemaVersionTable(SqlConnection connection)
+        {
+            const string sql =
+                "IF OBJECT_ID('dbo.SchemaVersion', 'U') IS NULL " +
+                "CREATE TABLE dbo.SchemaVersion (" +
+                "  script_name nvarchar(200) NOT NULL PRIMARY KEY, " +
+                "  applied_at datetime2 NOT NULL CONSTRAINT DF_SchemaVersion_applied_at DEFAULT SYSUTCDATETIME())";
+
+            using (SqlCommand command = new SqlCommand(sql, connection))
+            {
+                command.ExecuteNonQuery();
+            }
+        }
+
+        /// <summary>True when the schema version table already holds this file name.</summary>
+        private static bool MigrationApplied(SqlConnection connection, string fileName)
+        {
+            using (SqlCommand command = new SqlCommand("SELECT COUNT(*) FROM dbo.SchemaVersion WHERE script_name = @script_name", connection))
+            {
+                command.Parameters.Add(Db.P("@script_name", fileName));
+                return Convert.ToInt32(command.ExecuteScalar()) > 0;
+            }
+        }
+
+        /// <summary>
+        /// Runs one file batch by batch (the same GO splitter as the baseline script) and records the
+        /// file in the SAME transaction, so the update is either fully applied and listed, or not at
+        /// all. A failure stops the whole run with a sentence naming the file.
+        /// </summary>
+        private static void RunMigration(SqlConnection connection, string fileName, string path)
+        {
+            List<string> batches;
+            try
+            {
+                batches = SplitOnGo(File.ReadAllText(path));
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    "Database update failed in " + fileName + ": " + ex.Message + " (looked in " + path + ")", ex);
+            }
+
+            using (SqlTransaction transaction = connection.BeginTransaction())
+            {
+                try
+                {
+                    foreach (string batch in batches)
+                    {
+                        using (SqlCommand command = new SqlCommand(batch, connection, transaction))
+                        {
+                            // A big update file can take a while on a cold LocalDB.
+                            command.CommandTimeout = 300;
+                            command.ExecuteNonQuery();
+                        }
+                    }
+
+                    using (SqlCommand command = new SqlCommand("INSERT INTO dbo.SchemaVersion (script_name) VALUES (@script_name)", connection, transaction))
+                    {
+                        command.Parameters.Add(Db.P("@script_name", fileName));
+                        command.ExecuteNonQuery();
+                    }
+
+                    transaction.Commit();
+                }
+                catch (Exception ex)
+                {
+                    // The rollback itself can fail on a broken connection; the first error is the
+                    // one the user needs, so it is the one that is reported.
+                    try { transaction.Rollback(); }
+                    catch { /* ignored on purpose */ }
+
+                    SqlException sql = ex as SqlException;
+                    string reason = sql == null ? ex.Message : DescribeBootError(sql);
+                    throw new InvalidOperationException(
+                        "Database update failed in " + fileName + ": " + reason, ex);
+                }
             }
         }
 

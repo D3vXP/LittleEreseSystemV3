@@ -2,6 +2,77 @@
 
 Update this file at the end of every task.
 
+- Step 30 (this task): UPGRADING EXISTING DATABASES - numbered migration files that are applied
+  automatically at startup, so a tester's LittleEresesDB gets new columns and tables without
+  anything being deleted.
+  - Data\DatabaseBootstrapper.cs: new public ApplyMigrations(), plus four small private helpers
+    (EnsureSchemaVersionTable, MigrationApplied, RunMigration, and the constant MigrationsFolder).
+    It returns at once when Database\Migrations is not next to the exe, otherwise it creates
+    dbo.SchemaVersion (script_name nvarchar(200) NOT NULL PRIMARY KEY, applied_at datetime2 NOT
+    NULL DEFAULT SYSUTCDATETIME()) when OBJECT_ID says it is missing, then reads the *.sql files of
+    that folder sorted by file name and skips every file already listed. A new file is split with
+    the EXISTING SplitOnGo (so USE / CREATE DATABASE / the DB_ID guard lines are dropped by
+    IsDatabaseLevelLine, exactly like the baseline script - no second splitter was written) and all
+    of its batches run in ONE transaction together with the INSERT of its name into SchemaVersion.
+    On any error that file is rolled back, the loop stops and the caller gets
+    "Database update failed in <file>: <reason>" (SQL errors go through DescribeBootError, so
+    LocalDB / login problems keep their plain sentences). Nothing drops or truncates anything.
+    EnsureDatabase() is unchanged.
+  - Program.cs: DatabaseBootstrapper.ApplyMigrations() is called on the line after EnsureDatabase(),
+    inside the same try/catch (a failed update shows the message and the app stops, instead of
+    running against a half-updated database). --smoketest and --preview still return before it.
+  - Database\Migrations\001_runner_check.sql (NEW FILE): a comment plus SELECT 1 - it changes
+    nothing and only proves that the runner finds the folder, splits on GO, runs the file in one
+    transaction and records it.
+  - LittleEreseSystemV3.csproj WAS edited (one item added, nothing else):
+    <Content Include="Database\Migrations\*.sql"> with
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>, so every migration file,
+    including the ones added later, is copied to bin\Debug\Database\Migrations\ automatically.
+    The existing entries (LittleEreses_Database.sql, SeedData.sql, ResetDemoData.sql,
+    Database\Migration_01_PromotionServices.sql as None) are untouched.
+  - Helpers\SmokeTest.cs: ExpectedTables was renamed MinimumTables (18) and is now a MINIMUM,
+    because a later migration may add another table. "Base tables" uses CheckScalarAtLeast with the
+    label "Base tables = <n> (expected at least 18)", CheckMaintenanceTableCounts accepts
+    counts.Rows.Count >= MinimumTables, and the now unused CheckCount helper was deleted. Two new
+    read-only checks: "SchemaVersion exists" (OBJECT_ID) and "Every migration file is listed in
+    SchemaVersion" (at-least style - it lists the files on disk that are not recorded and prints
+    their names). The smoke test NEVER applies a migration, so the app must be started once before
+    --smoketest or those two checks fail.
+  - Data\MaintenanceRepository.GetTableCounts was deliberately NOT changed: SchemaVersion is a real
+    table and may show on the File Maintenance page.
+  - PROJECT_RULES.md: line 3 now also says to read Database/Migrations/*.sql; the SOURCE OF TRUTH
+    line became "LittleEreses_Database.sql is the BASELINE (18 tables) and is never edited again.
+    Every later schema change is a new numbered file in Database/Migrations, safe to run twice
+    (IF COL_LENGTH / IF OBJECT_ID / IF NOT EXISTS), with no DROP and no data loss. Only a prompt
+    that says so may add a migration." and the destructive-SQL line became "The baseline script
+    runs only if the database does not exist; migrations run automatically at startup."
+  - README.md: a short "Upgrading a database you already have" paragraph in Setup, the folder map
+    now lists Database\Migrations\, and Database\Migration_01_PromotionServices.sql is described as
+    only for a database made before the baseline had that table (that file itself was not touched).
+  - Verification: (a) on the real shop database the app was started once - SchemaVersion appeared
+    with 001_runner_check.sql and a second start did NOT duplicate the row (same applied_at,
+    COUNT = 1), so existing data is untouched and the runner is idempotent; (b) on a THROW-AWAY copy
+    of bin\Debug in %TEMP% (its .exe.config pointed at LittleEresesMigTest) a deliberately broken
+    002_bad_test.sql was added: the app created the database, applied 001, then rolled 002 back
+    completely - SchemaVersion held only 001_runner_check.sql and the dbo.RollbackProof table that
+    its first batch had created was GONE, which proves the whole file runs in one transaction and
+    that the error message is shown instead of a crash. The scratch database and folder were
+    dropped and deleted afterwards; the shop database never saw the test file.
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest (after one normal start, as the two new checks require): 64 passed, 0 failed,
+  0 skipped - "Base tables = 19 (expected at least 18)", "MaintenanceRepository.GetTableCounts
+  returns at least 18 tables (got 19)", "SchemaVersion exists", "Every migration file is listed in
+  SchemaVersion (files on disk = 1, missing = 0)". tools\DesignerAudit.ps1: 22 files, no problems,
+  exit 0. The app was started normally and stayed open, then closed; no error.log.
+  - Known limits / assumptions: the migration runner never creates the database (EnsureDatabase
+    does) and never touches an existing table by itself - only a numbered file does, and only a
+    prompt that says so may add one. A migration runs on EVERY database, including a fresh one, so
+    a new file must be safe on an empty database too (IF OBJECT_ID / IF COL_LENGTH guards). Only
+    *.sql files directly inside Database\Migrations are read, in plain file-name order, so the
+    numbers must be zero-padded (001, 002, ... 010) to keep that order. A file that was recorded
+    once is never re-run, so a mistake must be fixed with a NEW file, not by editing an old one.
+    --smoketest cannot apply migrations (it is read-only), so start the app once first.
+
 - Step 29 (this task): the database is created and filled AUTOMATICALLY on the first start, so a
   fresh clone needs no manual SSMS work.
   - Data\DatabaseBootstrapper.cs (NEW FILE, registered in LittleEreseSystemV3.csproj):

@@ -1,13 +1,13 @@
 # PROJECT_RULES.md - Little Erese's Appointment and Billing System
 
-Read this file, PROGRESS.md and Database/LittleEreses_Database.sql at the start of EVERY chat. Follow every rule below.
+Read this file, PROGRESS.md, Database/LittleEreses_Database.sql and Database/Migrations/*.sql at the start of EVERY chat. Follow every rule below.
 
 ## Project facts
 - C# Windows Forms, .NET Framework 4.8, Visual Studio 2026, old-style .csproj (every file must be listed in it).
 - Project / root namespace: LittleEreseSystemV3. Forms: LittleEreseSystemV3.Forms. Controls: LittleEreseSystemV3.Controls. Data: LittleEreseSystemV3.Data. Helpers: LittleEreseSystemV3.Helpers.
 - Database: SQL Server LocalDB, server (localdb)\MSSQLLocalDB, database LittleEresesDB, Windows Authentication. The connection string "LittleEreseDb" lives in App.config.
 - Offline desktop app, one computer, two roles: Admin and Staff.
-- Database/LittleEreses_Database.sql is the SOURCE OF TRUTH for tables and columns. Never invent, rename or drop columns. If you think the schema must change, STOP and tell the user first.
+- LittleEreses_Database.sql is the BASELINE (18 tables) and is never edited again. Every later schema change is a new numbered file in Database/Migrations, safe to run twice (IF COL_LENGTH / IF OBJECT_ID / IF NOT EXISTS), with no DROP and no data loss. Only a prompt that says so may add a migration.
 
 ## Language and library limits (the build breaks if you ignore these)
 - C# 7.3 only. NO: using declarations (using var), switch expressions, ??=, "is not", ranges/indices, nullable reference types, records, default interface members, static local functions.
@@ -36,7 +36,7 @@ Read this file, PROGRESS.md and Database/LittleEreses_Database.sql at the start 
 ## Build and clean-up rules
 - After every task: close any running copy of the app, run a clean build, fix every error AND every warning, run the app once, then close it. Report the result.
 - You may delete only the bin, obj and .vs folders. Never delete anything else.
-- Never run DROP DATABASE, DROP TABLE or any destructive SQL without asking the user. Run the schema script only if LittleEresesDB does not exist.
+- Never run DROP DATABASE, DROP TABLE or any destructive SQL without asking the user. The baseline script runs only if the database does not exist; migrations run automatically at startup.
 - If the same error is still there after 3 attempts, stop and report it instead of trying new ideas.
 - Do not change files outside the task. Do not refactor unrelated code.
 

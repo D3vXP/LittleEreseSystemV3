@@ -19,8 +19,9 @@ namespace LittleEreseSystemV3.Helpers
     /// </summary>
     internal static class SmokeTest
     {
-        // The schema now has 18 tables (PromotionServices was added to link a promo to services).
-        private const int ExpectedTables = 18;
+        // The baseline script makes 18 tables, but a later migration may add more (SchemaVersion
+        // already is one), so this is a MINIMUM and never an exact number.
+        private const int MinimumTables = 18;
         // The seed data has 77 services, but the owner adds more through the app, so only the
         // seeded minimum is checked (like the Users count below).
         private const int ExpectedMinServices = 77;
@@ -137,7 +138,8 @@ namespace LittleEreseSystemV3.Helpers
             if (Db.CanConnect(out error)) Pass("Db.CanConnect");
             else Fail("Db.CanConnect - " + error);
 
-            CheckCount("Base tables", "SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped = 0", ExpectedTables);
+            CheckScalarAtLeast("Base tables = ", MinimumTables,
+                "SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped = 0");
 
             // Services grows while the owner uses the app, so only the minimum is checked.
             try
@@ -161,21 +163,6 @@ namespace LittleEreseSystemV3.Helpers
             catch (Exception ex)
             {
                 Fail("Users rows", ex);
-            }
-        }
-
-        private static void CheckCount(string label, string sql, int expected)
-        {
-            try
-            {
-                int actual = Convert.ToInt32(Db.Scalar(sql));
-                string message = label + " = " + actual + " (expected " + expected + ")";
-                if (actual == expected) Pass(message);
-                else Fail(message);
-            }
-            catch (Exception ex)
-            {
-                Fail(label, ex);
             }
         }
 
@@ -322,6 +309,11 @@ namespace LittleEreseSystemV3.Helpers
 
             // The six read-only demo-data consistency checks (Step 27). Nothing is written here.
             CheckDemoData();
+
+            // The two read-only migration checks. The smoke test never applies a migration itself
+            // (it must not change the shop's database), so start the app once first.
+            CheckSchemaVersionTable();
+            CheckMigrationsListed();
         }
 
         /// <summary>
@@ -391,6 +383,70 @@ namespace LittleEreseSystemV3.Helpers
             }
         }
 
+        /// <summary>
+        /// The migration runner keeps its list in SchemaVersion, so that table must exist.
+        /// </summary>
+        private static void CheckSchemaVersionTable()
+        {
+            const string label = "SchemaVersion exists";
+            try
+            {
+                object found = Db.Scalar("SELECT OBJECT_ID('dbo.SchemaVersion', 'U')");
+
+                if (found != null && found != DBNull.Value) Pass(label);
+                else Fail(label + " (the table is missing - start the app once so ApplyMigrations runs)");
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// Every file in Database\Migrations must be listed in SchemaVersion, otherwise the shop
+        /// database is missing an update the code expects. "At least" style: a listed file that is
+        /// no longer on disk is not a problem.
+        /// </summary>
+        private static void CheckMigrationsListed()
+        {
+            const string label = "Every migration file is listed in SchemaVersion";
+            try
+            {
+                string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Database", "Migrations");
+
+                List<string> missing = new List<string>();
+                int files = 0;
+
+                if (Directory.Exists(folder))
+                {
+                    string[] paths = Directory.GetFiles(folder, "*.sql");
+                    Array.Sort(paths, StringComparer.OrdinalIgnoreCase);
+
+                    foreach (string path in paths)
+                    {
+                        files++;
+                        string fileName = Path.GetFileName(path);
+
+                        object listed = Db.Scalar(
+                            "SELECT COUNT(*) FROM dbo.SchemaVersion WHERE script_name = @script_name",
+                            Db.P("@script_name", fileName));
+
+                        if (Convert.ToInt32(listed) == 0) missing.Add(fileName);
+                    }
+                }
+
+                string message = label + " (files on disk = " + files + ", missing = " + missing.Count + ")";
+
+                if (missing.Count == 0) Pass(message);
+                else Fail(message + " - not applied: " + string.Join(", ", missing.ToArray()) +
+                    " (start the app once so ApplyMigrations runs)");
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
         /// <summary>GetLog for the last 7 days must run and come back with the columns the grid needs.</summary>
         private static void CheckActivityLog()
         {
@@ -417,15 +473,17 @@ namespace LittleEreseSystemV3.Helpers
             }
         }
 
-        /// <summary>The schema script says 18 tables, and sys.tables must agree.</summary>
+        /// <summary>
+        /// The baseline script makes 18 tables and a migration may add more, so this is "at least".
+        /// </summary>
         private static void CheckMaintenanceTableCounts()
         {
-            string label = "MaintenanceRepository.GetTableCounts returns " + ExpectedTables + " tables";
+            string label = "MaintenanceRepository.GetTableCounts returns at least " + MinimumTables + " tables";
             try
             {
                 DataTable counts = MaintenanceRepository.GetTableCounts();
                 string message = label + " (got " + counts.Rows.Count + ")";
-                if (counts.Rows.Count == ExpectedTables) Pass(message);
+                if (counts.Rows.Count >= MinimumTables) Pass(message);
                 else Fail(message);
             }
             catch (Exception ex)

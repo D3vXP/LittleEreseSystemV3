@@ -63,8 +63,8 @@ App.config.
    To prepare it by hand instead (for example on the shop's PC before the app is installed), run
    the same two scripts once in **SSMS** (or sqlcmd) against (localdb)\MSSQLLocalDB.
 
-   An existing database created before the promotion-to-services feature only needs
-   Database\Migration_01_PromotionServices.sql once.
+   Database\Migration_01_PromotionServices.sql is only for a database made before the baseline had
+   that table; a database created from the current baseline already has it.
 3. Open LittleEreseSystemV3.slnx in Visual Studio, build (Ctrl+Shift+B) and run (F5).
 4. Sign in with a demo account. On the first start of a database with **no clients** the app loads
    realistic demo data (12 clients, bookings for the past and the next two weeks, bills,
@@ -72,6 +72,13 @@ App.config.
 
 The connection string is LittleEreseDb in App.config. Change it there if your LocalDB instance has
 another name.
+
+**Upgrading a database you already have.** Every later schema change is a new numbered file in
+`Database\Migrations` (001_runner_check.sql, 002_..., and so on). They are copied next to the
+program and run automatically at startup, each one only once - its name is recorded in the
+`SchemaVersion` table - so a tester's existing LittleEresesDB gets the new columns and tables
+without anything being deleted. The baseline script is never edited again, and a migration file is
+written so it is safe to run twice (IF COL_LENGTH / IF OBJECT_ID).
 
 ## Demo accounts
 
@@ -118,8 +125,11 @@ Example: bin\Debug\LittleEreseSystemV3.exe --preview ucBilling --role Staff
                                     GridHelper, GridPrinter, CsvExporter, ReceiptPrinter, IconHelper,
                                     Session, DesignTime, PasswordHasher, SmokeTest, PreviewTool
     Assets\                         the PNG icons and the login image (loaded at runtime)
-    Database\                       LittleEreses_Database.sql (schema, SOURCE OF TRUTH), SeedData.sql,
-                                    Migration_01_PromotionServices.sql, ResetDemoData.sql
+    Database\                       LittleEreses_Database.sql (baseline schema, never edited again),
+                                    SeedData.sql, ResetDemoData.sql, Migration_01_PromotionServices.sql
+                                    (only for databases made before the baseline had that table)
+    Database\Migrations\            the numbered update files (001_runner_check.sql, ...), applied
+                                    automatically at startup and recorded in SchemaVersion
     Properties\                     AssemblyInfo, Resources, Settings (generated - do not hand-edit)
     docs\                           POLISH_LIST.md, DEVELOPER_GUIDE.md, screenshots\
     tools\                          DesignerAudit.ps1 (checks every *.Designer.cs, not in the .csproj)
