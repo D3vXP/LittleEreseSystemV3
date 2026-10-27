@@ -2,6 +2,52 @@
 
 Update this file at the end of every task.
 
+- Step 36 (this task): LAYOUT ONLY of PromotionEditForm. The dialog now holds only the name, the
+  description, the services covered, the promotional price, the two dates, the status and the price
+  preview. No repository, validation or business rule was touched; the parts that cannot compile
+  without the removed controls are commented out with "// TODO(logic prompt)" and listed below.
+  - Forms\PromotionEditForm.Designer.cs: lblConditions now reads "Description" (same multiline box,
+    same name and TabIndex). lblType / cboType / lblValue / txtValue are gone and were replaced by
+    lblPromoPrice "Promotional price" + txtPromoPrice in the same two grid rows (tlpLeft shrank from
+    16 to 14 rows, and the rows below moved up one slot). chkApplyAll is gone from tlpServices (5 to
+    4 rows), the pick grid grew from 111 to 146 px and the search/category rows moved up to start at
+    the top of the card. In the preview grid colPrevPromo and colPrevSaving are gone, so it holds
+    Service + Regular price only, and its total row is now lblRegularTitle "Regular price of the
+    services" / lblRegularTotal plus lblSaving "Customers save" / lblSavingAmount (the old
+    lblDropTitle / lblDropTotal / lblPromoTitle / lblPromoTotal were removed). lblHint "Promos need
+    full payment upfront." is unchanged. Visual order equals the new TabIndex order (0..12 on the
+    left column, then the services card 13..18, then Save 0 / Cancel 1 in the footer).
+  - Forms\PromotionEditForm.cs (only what the removed controls forced):
+    txtPromoPrice_TextChanged was added as an EMPTY handler with "// TODO(logic prompt)";
+    chkApplyAll_CheckedChanged, cboType_SelectedIndexChanged and txtValue_TextChanged were deleted
+    together with their Designer wiring.
+    Commented out with "// TODO(logic prompt)" because they used the removed controls:
+    Money.ApplyTo(colPrevPromo) and Money.ApplyTo(colPrevSaving) in Load; cboType.SelectedIndex = 0
+    in Load; the old chkApplyAll.Checked default in Load; cboType.SelectedItem / txtValue.Text in
+    LoadPromotion; the body of ApplyApplyAllState() and the chkApplyAll guard in
+    UpdateSelectedCount(); the applyAll/type/value block and the "applies to every service on the
+    bill" branch in UpdatePreview(), plus lblDropTotal / lblPromoTotal; the four removed labels in
+    ShowTotals(); the type/value read and the chkApplyAll link rule in btnSave_Click; validation
+    rules 2 and 3 (discount type, value) in ValidateFields, where rule 4 now demands at least one
+    ticked service.
+    To keep the file compiling, UpdatePreview and btnSave_Click keep two PLAIN LOCALS
+    (type = "Percentage", value = 0m and an empty-links list) marked "// TODO(logic prompt)" - they
+    are placeholders for the logic prompt and produce no discount today.
+  - PROJECT_RULES.md was NOT edited: this prompt changed no business rule or value list. The rules
+    "Percentage / Fixed" and "No linked services = it applies to the whole bill" still describe the
+    stored data of existing promotions, so they stay until the logic prompt replaces them.
+  - LittleEreseSystemV3.csproj was NOT edited (no new file).
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  tools\DesignerAudit.ps1: 22 files, no problems, exit 0. --preview PromotionEditForm: Promotion
+  name / Description / Promotional price / the full-payment note / Start date / End date / Status on
+  the left, the Services card (Search, Category, the tick grid, "0 services selected") and the Price
+  preview (Service + Regular price, "Regular price of the services", "Customers save") on the right,
+  no overlap and no truncated caption - no fix round was needed. The app was started once and
+  closed; no error.log.
+  - Known limits: the form is not functional for discounts until the logic prompt lands (saving
+    writes discount_type 'Percentage' with value 0.00 and the ticked links). lblSavingAmount shows a
+    plain "0.00" in the Designer, like every other money label there; Money.Text fills it at runtime.
+
 - Step 35 (this task): the JOB TYPE of a staff account (Users.staff_type from migration 002) is now
   real: it is captured in StaffEditForm, shown in the Staff Accounts grid, and used to pick the
   technicians of a service category. AppointmentForm was deliberately NOT changed yet.

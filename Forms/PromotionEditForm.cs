@@ -43,14 +43,14 @@ namespace LittleEreseSystemV3.Forms
 
             // The money columns (the designer only sets N2) go through the one formatter of the app.
             Money.ApplyTo(colPrevRegular);
-            Money.ApplyTo(colPrevPromo);
-            Money.ApplyTo(colPrevSaving);
+            // TODO(logic prompt) Money.ApplyTo(colPrevPromo);
+            // TODO(logic prompt) Money.ApplyTo(colPrevSaving);
             Money.ApplyTo(colPickPrice);
 
             _loading = true;
             try
             {
-                cboType.SelectedIndex = 0; // "Percentage" by default
+                // TODO(logic prompt) cboType.SelectedIndex = 0; // "Percentage" by default
                 cboStatus.SelectedIndex = 0; // "Active"
 
                 // A new promo starts today and runs for a month; the owner can change both.
@@ -65,9 +65,8 @@ namespace LittleEreseSystemV3.Forms
                     LoadPromotion(EditId);
                 }
 
-                // A brand-new promotion starts as "applies to all services"; an existing one keeps
-                // its saved links.
-                chkApplyAll.Checked = _selectedServiceIds.Count == 0;
+                // TODO(logic prompt) a brand-new promotion used to start as "applies to all
+                // TODO(logic prompt) services"; that checkbox was removed from the layout.
             }
             finally
             {
@@ -215,11 +214,12 @@ namespace LittleEreseSystemV3.Forms
             txtName.Text = Db.Get<string>(row["promo_name"]);
             txtConditions.Text = Db.Get<string>(row["description"]);
 
-            string type = Db.Get<string>(row["discount_type"], "Percentage");
-            cboType.SelectedItem = type;
-            if (cboType.SelectedIndex < 0) cboType.SelectedIndex = 0;
+            // TODO(logic prompt) string type = Db.Get<string>(row["discount_type"], "Percentage");
+            // TODO(logic prompt) cboType.SelectedItem = type;
+            // TODO(logic prompt) if (cboType.SelectedIndex < 0) cboType.SelectedIndex = 0;
 
-            txtValue.Text = Db.Get<decimal>(row["discount_value"]).ToString("0.00");
+            // TODO(logic prompt) txtValue.Text = Db.Get<decimal>(row["discount_value"]).ToString("0.00");
+            // TODO(logic prompt) txtPromoPrice.Text = Money.Text-plain of row["promo_price"];
 
             DateTime start = Db.Get<DateTime>(row["start_date"], DateTime.Today);
             DateTime end = Db.Get<DateTime>(row["end_date"], start);
@@ -237,23 +237,24 @@ namespace LittleEreseSystemV3.Forms
         /// </summary>
         private void ApplyApplyAllState()
         {
-            bool applyAll = chkApplyAll.Checked;
+            // TODO(logic prompt) bool applyAll = chkApplyAll.Checked;
 
-            txtServiceSearch.Enabled = !applyAll;
-            cboServiceCategory.Enabled = !applyAll;
-            dgvServicePick.Enabled = !applyAll;
+            // TODO(logic prompt) txtServiceSearch.Enabled = !applyAll;
+            // TODO(logic prompt) cboServiceCategory.Enabled = !applyAll;
+            // TODO(logic prompt) dgvServicePick.Enabled = !applyAll;
 
-            if (!applyAll) return;
+            // TODO(logic prompt) if (!applyAll) return;
 
-            // Nothing is ticked while it applies to everything, so the count cannot lie.
-            lblSelectedCount.Text = "Applies to every service";
-            dgvServicePick.ClearSelection();
+            // TODO(logic prompt) nothing is ticked while it applies to everything, so the count
+            // TODO(logic prompt) cannot lie. The "apply to all services" checkbox was removed.
+            // TODO(logic prompt) lblSelectedCount.Text = "Applies to every service";
+            // TODO(logic prompt) dgvServicePick.ClearSelection();
         }
 
         /// <summary>The "N services selected" line under the pick grid.</summary>
         private void UpdateSelectedCount()
         {
-            if (chkApplyAll.Checked) return;
+            // TODO(logic prompt) if (chkApplyAll.Checked) return;
 
             int count = _selectedServiceIds.Count;
             lblSelectedCount.Text = count + (count == 1 ? " service selected" : " services selected");
@@ -272,25 +273,30 @@ namespace LittleEreseSystemV3.Forms
             preview.Columns.Add("promo_price", typeof(object));
             preview.Columns.Add("saving", typeof(object));
 
-            bool applyAll = chkApplyAll.Checked;
-            string type = cboType.SelectedItem == null ? "Percentage" : cboType.SelectedItem.ToString();
+            // TODO(logic prompt) bool applyAll = chkApplyAll.Checked;
+            // TODO(logic prompt) string type = cboType.SelectedItem == null ? "Percentage" : cboType.SelectedItem.ToString();
 
-            decimal value;
-            if (!Validators.TryMoney(txtValue.Text, out value)) value = 0m;
+            // TODO(logic prompt) decimal value;
+            // TODO(logic prompt) if (!Validators.TryMoney(txtValue.Text, out value)) value = 0m;
 
-            // The totals are meaningless while the promotion applies to the whole bill, because the
-            // bill is not known in this dialog.
-            if (applyAll)
-            {
-                dgvPreview.DataSource = preview;
-                dgvPreview.ClearSelection();
-                lblPreviewNote.Text = "Applies to every service on the bill.";
-                ShowTotals(false);
-                lblRegularTotal.Text = string.Empty;
-                lblDropTotal.Text = string.Empty;
-                lblPromoTotal.Text = string.Empty;
-                return;
-            }
+            // The two values above came from the removed discount type combo and value box. They are
+            // kept as plain locals so this file still compiles; the promo price replaces them.
+            string type = "Percentage"; // TODO(logic prompt)
+            decimal value = 0m;         // TODO(logic prompt)
+
+            // TODO(logic prompt) the "applies to every service on the bill" branch went away with
+            // TODO(logic prompt) the checkbox; the promo price is typed in txtPromoPrice now.
+            // TODO(logic prompt) if (applyAll)
+            // TODO(logic prompt) {
+            // TODO(logic prompt)     dgvPreview.DataSource = preview;
+            // TODO(logic prompt)     dgvPreview.ClearSelection();
+            // TODO(logic prompt)     lblPreviewNote.Text = "Applies to every service on the bill.";
+            // TODO(logic prompt)     ShowTotals(false);
+            // TODO(logic prompt)     lblRegularTotal.Text = string.Empty;
+            // TODO(logic prompt)     lblDropTotal.Text = string.Empty;
+            // TODO(logic prompt)     lblPromoTotal.Text = string.Empty;
+            // TODO(logic prompt)     return;
+            // TODO(logic prompt) }
 
             decimal regularTotal = 0m;
             int shown = 0;
@@ -341,8 +347,8 @@ namespace LittleEreseSystemV3.Forms
             dgvPreview.ClearSelection();
 
             lblRegularTotal.Text = Money.Text(regularTotal);
-            lblDropTotal.Text = Money.Text(totalDrop);
-            lblPromoTotal.Text = Money.Text(regularTotal - totalDrop);
+            // TODO(logic prompt) lblDropTotal.Text = Money.Text(totalDrop);
+            // TODO(logic prompt) lblPromoTotal.Text = Money.Text(regularTotal - totalDrop);
 
             ShowTotals(true);
 
@@ -365,10 +371,10 @@ namespace LittleEreseSystemV3.Forms
         {
             lblRegularTitle.Visible = visible;
             lblRegularTotal.Visible = visible;
-            lblDropTitle.Visible = visible;
-            lblDropTotal.Visible = visible;
-            lblPromoTitle.Visible = visible;
-            lblPromoTotal.Visible = visible;
+            // TODO(logic prompt) lblDropTitle.Visible = visible;
+            // TODO(logic prompt) lblDropTotal.Visible = visible;
+            // TODO(logic prompt) lblPromoTitle.Visible = visible;
+            // TODO(logic prompt) lblPromoTotal.Visible = visible;
         }
 
         /// <summary>The regular (undiscounted) total of the ticked services.</summary>
@@ -395,19 +401,16 @@ namespace LittleEreseSystemV3.Forms
             {
                 string name = txtName.Text.Trim();
                 string conditions = txtConditions.Text.Trim();
-                string type = cboType.SelectedItem.ToString();
+                string type = "Percentage"; // TODO(logic prompt) cboType.SelectedItem.ToString();
 
-                decimal value;
-                Validators.TryMoney(txtValue.Text, out value);
+                decimal value = 0m;         // TODO(logic prompt) Validators.TryMoney(txtValue.Text, out value);
 
                 DateTime start = dtpStart.Value.Date;
                 DateTime end = dtpEnd.Value.Date;
                 string status = cboStatus.SelectedItem.ToString();
 
-                // "Applies to all services" is stored as NO links at all.
-                List<int> serviceIds = chkApplyAll.Checked
-                    ? new List<int>()
-                    : new List<int>(_selectedServiceIds);
+                // TODO(logic prompt) "Applies to all services" is stored as NO links at all.
+                List<int> serviceIds = new List<int>(_selectedServiceIds); // TODO(logic prompt)
 
                 // The promotion AND its links are written in one transaction inside the repository,
                 // so a half saved promotion can never reach the database.
@@ -466,45 +469,14 @@ namespace LittleEreseSystemV3.Forms
                 }
             }
 
-            // 2. A discount type must be chosen.
-            if (cboType.SelectedIndex < 0)
-            {
-                Validators.SetError(errorProvider1, cboType, "Choose a discount type.");
-                ok = false;
-            }
+            // 2. and 3. (discount type and value) went with the two removed controls.
+            // TODO(logic prompt) validate txtPromoPrice instead of txtValue.
 
-            // 3. The value must be money above zero, and at most 100 for a percentage.
-            decimal value;
-            if (!Validators.IsPositiveMoney(txtValue.Text) || !Validators.TryMoney(txtValue.Text, out value))
+            // 4. At least one service must be ticked (the "apply to all" option is gone).
+            if (_selectedServiceIds.Count == 0)
             {
-                Validators.SetError(errorProvider1, txtValue, "Enter a value greater than 0.");
-                ok = false;
-            }
-            else if (cboType.SelectedIndex >= 0
-                && string.Equals(cboType.SelectedItem.ToString(), "Percentage", StringComparison.OrdinalIgnoreCase)
-                && !Validators.IsValidPercentage(value))
-            {
-                Validators.SetError(errorProvider1, txtValue, "A percentage must not be more than 100.");
-                ok = false;
-            }
-            else if (cboType.SelectedIndex >= 0
-                && string.Equals(cboType.SelectedItem.ToString(), "Fixed", StringComparison.OrdinalIgnoreCase)
-                && !chkApplyAll.Checked
-                && _selectedServiceIds.Count > 0
-                && value > RegularTotalOfSelected())
-            {
-                // A fixed amount can never be more than the services it is taken from.
-                Validators.SetError(errorProvider1, txtValue,
-                    "A fixed discount cannot be more than the regular total of the selected services (" +
-                    Money.Text(RegularTotalOfSelected()) + ").");
-                ok = false;
-            }
-
-            // 4. Either the promotion applies to every service, or at least one is ticked.
-            if (!chkApplyAll.Checked && _selectedServiceIds.Count == 0)
-            {
-                Validators.SetError(errorProvider1, chkApplyAll,
-                    "Tick at least one service, or apply the promotion to all services.");
+                Validators.SetError(errorProvider1, dgvServicePick,
+                    "Tick at least one service.");
                 ok = false;
             }
 
@@ -528,16 +500,6 @@ namespace LittleEreseSystemV3.Forms
         {
             DialogResult = DialogResult.Cancel;
             Close();
-        }
-
-        private void chkApplyAll_CheckedChanged(object sender, EventArgs e)
-        {
-            if (_loading) return;
-
-            errorProvider1.Clear();
-            ApplyApplyAllState();
-            UpdateSelectedCount();
-            UpdatePreview();
         }
 
         private void txtServiceSearch_TextChanged(object sender, EventArgs e)
@@ -590,18 +552,9 @@ namespace LittleEreseSystemV3.Forms
             UpdatePreview();
         }
 
-        private void cboType_SelectedIndexChanged(object sender, EventArgs e)
+        private void txtPromoPrice_TextChanged(object sender, EventArgs e)
         {
-            if (_loading) return;
-
-            UpdatePreview();
-        }
-
-        private void txtValue_TextChanged(object sender, EventArgs e)
-        {
-            if (_loading) return;
-
-            UpdatePreview();
+            // TODO(logic prompt)
         }
     }
 }
