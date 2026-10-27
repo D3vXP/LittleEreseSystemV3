@@ -314,6 +314,7 @@ namespace LittleEreseSystemV3.Helpers
             // (it must not change the shop's database), so start the app once first.
             CheckSchemaVersionTable();
             CheckMigrationsListed();
+            CheckMigration002Columns();
 
             // The two read-only minimum-age checks. Nothing is written: the rejected call stops
             // inside ClientRepository BEFORE its INSERT, so no row is created and none has to
@@ -508,6 +509,22 @@ namespace LittleEreseSystemV3.Helpers
             {
                 Fail(label, ex);
             }
+        }
+
+        /// <summary>
+        /// The nine columns of migration 002 must exist, otherwise the build expects a schema the
+        /// shop database does not have. Read-only; "at least" style because a later file may add more.
+        /// </summary>
+        private static void CheckMigration002Columns()
+        {
+            CheckScalarAtLeast("Migration 002 columns exist = ", 9,
+                "SELECT COUNT(*) FROM (VALUES " +
+                "('Users','staff_type'),('Services','staff_busy_minutes')," +
+                "('Services','session_interval_days'),('AppointmentServices','start_time')," +
+                "('AppointmentServices','end_time'),('AppointmentServices','busy_end_time')," +
+                "('AppointmentServices','assessed_by'),('Promotions','promo_price')," +
+                "('Clients','health_conditions')) v(t, c) " +
+                "WHERE COL_LENGTH('dbo.' + v.t, v.c) IS NOT NULL");
         }
 
         /// <summary>GetLog for the last 7 days must run and come back with the columns the grid needs.</summary>
