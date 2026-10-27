@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using LittleEreseSystemV3.Helpers;
 
 namespace LittleEreseSystemV3.Data
 {
@@ -583,10 +584,10 @@ ORDER BY asv.appointment_service_id",
 
             if (required > 0m && amountPaid < required)
             {
-                problems.Add("This " + bookingSource + " booking needs " + Money(required) +
+                problems.Add("This " + bookingSource + " booking needs " + Money.Text(required) +
                     " paid now" + (discount > 0m
                         ? " (a promotion is always paid in full)."
-                        : " (50% of the " + Money(subtotal) + " subtotal)."));
+                        : " (50% of the " + Money.Text(subtotal) + " subtotal)."));
             }
 
             if (amountPaid > 0m && NeedsReference(paymentMethod))
@@ -1420,10 +1421,5 @@ ORDER BY p.payment_id DESC",
             return DateTime.Today.Add(value).ToString("h:mm tt");
         }
 
-        /// <summary>Money in the project format: peso sign + #,##0.00.</summary>
-        private static string Money(decimal amount)
-        {
-            return "\u20B1" + amount.ToString("N2");
-        }
     }
 }

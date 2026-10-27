@@ -16,8 +16,6 @@ namespace LittleEreseSystemV3.Forms
         /// <summary>The promotion that was saved (the new id after an Add), so the grid can select it.</summary>
         public int SavedPromoId { get; private set; }
 
-        // The peso format used by the preview and the totals.
-        private const string MoneyFormat = "\u20B1#,##0.00";
         private const string AllCategories = "All categories";
 
         // The ticked service ids live here, NOT in the grid, so a tick survives the search and
@@ -43,11 +41,11 @@ namespace LittleEreseSystemV3.Forms
             Theme.StylePrimaryButton(btnSave);
             Theme.StyleSecondaryButton(btnCancel);
 
-            // The money columns of the preview show the peso sign (the designer only sets N2).
-            colPrevRegular.DefaultCellStyle.Format = MoneyFormat;
-            colPrevPromo.DefaultCellStyle.Format = MoneyFormat;
-            colPrevSaving.DefaultCellStyle.Format = MoneyFormat;
-            colPickPrice.DefaultCellStyle.Format = MoneyFormat;
+            // The money columns (the designer only sets N2) go through the one formatter of the app.
+            Money.ApplyTo(colPrevRegular);
+            Money.ApplyTo(colPrevPromo);
+            Money.ApplyTo(colPrevSaving);
+            Money.ApplyTo(colPickPrice);
 
             _loading = true;
             try
@@ -342,9 +340,9 @@ namespace LittleEreseSystemV3.Forms
             dgvPreview.DataSource = preview;
             dgvPreview.ClearSelection();
 
-            lblRegularTotal.Text = Money(regularTotal);
-            lblDropTotal.Text = Money(totalDrop);
-            lblPromoTotal.Text = Money(regularTotal - totalDrop);
+            lblRegularTotal.Text = Money.Text(regularTotal);
+            lblDropTotal.Text = Money.Text(totalDrop);
+            lblPromoTotal.Text = Money.Text(regularTotal - totalDrop);
 
             ShowTotals(true);
 
@@ -386,11 +384,6 @@ namespace LittleEreseSystemV3.Forms
             }
 
             return total;
-        }
-
-        private static string Money(decimal amount)
-        {
-            return "\u20B1" + amount.ToString("N2", CultureInfo.CurrentCulture);
         }
 
         private void btnSave_Click(object sender, EventArgs e)
@@ -503,7 +496,7 @@ namespace LittleEreseSystemV3.Forms
                 // A fixed amount can never be more than the services it is taken from.
                 Validators.SetError(errorProvider1, txtValue,
                     "A fixed discount cannot be more than the regular total of the selected services (" +
-                    Money(RegularTotalOfSelected()) + ").");
+                    Money.Text(RegularTotalOfSelected()) + ").");
                 ok = false;
             }
 

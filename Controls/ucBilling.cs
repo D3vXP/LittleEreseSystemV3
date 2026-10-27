@@ -17,9 +17,6 @@ namespace LittleEreseSystemV3.Controls
     /// </summary>
     public partial class ucBilling : UserControl
     {
-        // Money in the project format: peso sign + #,##0.00.
-        private const string MoneyFormat = "\u20B1#,##0.00";
-
         // The bill of the selected appointment (see BillingRepository.GetBillHeader), or null.
         private DataRow _bill;
 
@@ -54,11 +51,11 @@ namespace LittleEreseSystemV3.Controls
             Theme.StylePrimaryButton(btnSearch);
             Theme.StyleSecondaryButton(btnReprint);
 
-            // The Designer only says "N2"; at runtime money shows the peso sign as everywhere else.
-            colQueueBalance.DefaultCellStyle.Format = MoneyFormat;
-            colLinePrice.DefaultCellStyle.Format = MoneyFormat;
-            colTranTotal.DefaultCellStyle.Format = MoneyFormat;
-            colTranPaid.DefaultCellStyle.Format = MoneyFormat;
+            // The Designer only says "N2"; Money is the one formatter of the app.
+            Money.ApplyTo(colQueueBalance);
+            Money.ApplyTo(colLinePrice);
+            Money.ApplyTo(colTranTotal);
+            Money.ApplyTo(colTranPaid);
 
             _loading = true;
             try
@@ -148,7 +145,7 @@ namespace LittleEreseSystemV3.Controls
                     string caption = Db.Get<string>(row["promo_name"]) + " - " +
                         (string.Equals(type, "Percentage", StringComparison.OrdinalIgnoreCase)
                             ? value.ToString("0.##") + " % off"
-                            : value.ToString(MoneyFormat) + " off");
+                            : Money.Text(value) + " off");
 
                     items.Rows.Add(promoId, caption);
                 }
@@ -310,11 +307,11 @@ namespace LittleEreseSystemV3.Controls
         /// <summary>The five money rows under the lines.</summary>
         private void ShowTotals(DataRow header)
         {
-            lblSubtotal.Text = Db.Get<decimal>(header["subtotal"]).ToString(MoneyFormat);
-            lblDiscount.Text = Db.Get<decimal>(header["discount_amount"]).ToString(MoneyFormat);
-            lblPaid.Text = Db.Get<decimal>(header["paid_so_far"]).ToString(MoneyFormat);
-            lblTotal.Text = Db.Get<decimal>(header["total_amount"]).ToString(MoneyFormat);
-            lblBalance.Text = Db.Get<decimal>(header["balance_due"]).ToString(MoneyFormat);
+            lblSubtotal.Text = Money.Text(Db.Get<decimal>(header["subtotal"]));
+            lblDiscount.Text = Money.Text(Db.Get<decimal>(header["discount_amount"]));
+            lblPaid.Text = Money.Text(Db.Get<decimal>(header["paid_so_far"]));
+            lblTotal.Text = Money.Text(Db.Get<decimal>(header["total_amount"]));
+            lblBalance.Text = Money.Text(Db.Get<decimal>(header["balance_due"]));
         }
 
         /// <summary>
@@ -337,7 +334,7 @@ namespace LittleEreseSystemV3.Controls
             if (promoId > 0)
             {
                 lblPromoNote.Text = "Promotion: " + Db.Get<string>(header["promo_name"], "-") +
-                    ", -" + Db.Get<decimal>(header["discount_amount"]).ToString(MoneyFormat) +
+                    ", -" + Money.Text(Db.Get<decimal>(header["discount_amount"])) +
                     ". A promotion is always paid in full.";
             }
             else if (paid > 0m)
@@ -378,11 +375,11 @@ namespace LittleEreseSystemV3.Controls
                 _loading = false;
             }
 
-            lblSubtotal.Text = 0m.ToString(MoneyFormat);
-            lblDiscount.Text = 0m.ToString(MoneyFormat);
-            lblPaid.Text = 0m.ToString(MoneyFormat);
-            lblTotal.Text = 0m.ToString(MoneyFormat);
-            lblBalance.Text = 0m.ToString(MoneyFormat);
+            lblSubtotal.Text = Money.Text(0m);
+            lblDiscount.Text = Money.Text(0m);
+            lblPaid.Text = Money.Text(0m);
+            lblTotal.Text = Money.Text(0m);
+            lblBalance.Text = Money.Text(0m);
 
             btnCollect.Enabled = false;
             btnPrintReceipt.Enabled = false;
@@ -486,7 +483,7 @@ namespace LittleEreseSystemV3.Controls
             string done = "The appointment of " + clientName + " is completed.";
             if (string.Equals(method, "Cash", StringComparison.OrdinalIgnoreCase) && tendered > balance)
             {
-                done += " Change: " + (tendered - balance).ToString(MoneyFormat) + ".";
+                done += " Change: " + Money.Text(tendered - balance) + ".";
             }
 
             Messages.Info(done);
@@ -631,7 +628,7 @@ namespace LittleEreseSystemV3.Controls
 
             lblTotals.Text = dgvTransactions.Rows.Count +
                 (dgvTransactions.Rows.Count == 1 ? " transaction - " : " transactions - ") +
-                total.ToString(MoneyFormat);
+                Money.Text(total);
         }
 
         private void btnSearch_Click(object sender, EventArgs e)

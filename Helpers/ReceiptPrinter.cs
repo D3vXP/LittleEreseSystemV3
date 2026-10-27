@@ -168,10 +168,11 @@ namespace LittleEreseSystemV3.Helpers
                         y += line;
 
                         // "  2 x 500.00" on the left, the line amount on the right.
-                        string details = "  " + quantity + " x " + price.ToString("N2");
+                        string details = "  " + quantity + " x " + Money.Text(price);
+                        string lineAmount = Money.Text(amount);
                         e.Graphics.DrawString(details, normal, ink, left, y);
-                        e.Graphics.DrawString(amount.ToString("N2"), normal, ink,
-                            left + width - Measure(e, normal, amount.ToString("N2")), y);
+                        e.Graphics.DrawString(lineAmount, normal, ink,
+                            left + width - Measure(e, normal, lineAmount), y);
                         y += line;
 
                         _rowIndex++;
@@ -183,16 +184,17 @@ namespace LittleEreseSystemV3.Helpers
                     y += 2;
                     DrawRule(e, ink, left, width, ref y);
 
-                    DrawPair(e, ink, normal, "Subtotal", Db.Get<decimal>(totals["subtotal"]).ToString("N2"),
+                    DrawPair(e, ink, normal, "Subtotal", Money.Text(Db.Get<decimal>(totals["subtotal"])),
                         left, width, ref y);
-                    DrawPair(e, ink, normal, "Discount", Db.Get<decimal>(totals["discount_amount"]).ToString("N2"),
+                    DrawPair(e, ink, normal, "Discount", Money.Text(Db.Get<decimal>(totals["discount_amount"])),
                         left, width, ref y);
-                    DrawPair(e, ink, normal, "Paid upfront", Db.Get<decimal>(totals["amount_paid"]).ToString("N2"),
+                    DrawPair(e, ink, normal, "Paid upfront", Money.Text(Db.Get<decimal>(totals["amount_paid"])),
                         left, width, ref y);
 
                     e.Graphics.DrawString("Total", bold, ink, left, y);
-                    e.Graphics.DrawString(Db.Get<decimal>(totals["total_amount"]).ToString("N2"), bold, ink,
-                        left + width - Measure(e, bold, Db.Get<decimal>(totals["total_amount"]).ToString("N2")), y);
+                    string grandTotal = Money.Text(Db.Get<decimal>(totals["total_amount"]));
+                    e.Graphics.DrawString(grandTotal, bold, ink,
+                        left + width - Measure(e, bold, grandTotal), y);
                     y += line;
 
                     string method = Db.Get<string>(totals["payment_method"], "-");

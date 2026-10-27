@@ -46,6 +46,9 @@ namespace LittleEreseSystemV3.Controls
             Theme.StyleSecondaryButton(btnRefresh);
             Theme.StyleDangerButton(btnArchive);
 
+            // The Designer only says "N2"; Money is the one formatter of the app.
+            Money.ApplyTo(colPrice);
+
             // Staff only look at the price list, so the actions are hidden.
             if (!Session.IsAdmin)
             {

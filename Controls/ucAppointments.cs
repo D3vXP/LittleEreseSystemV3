@@ -15,9 +15,6 @@ namespace LittleEreseSystemV3.Controls
     /// </summary>
     public partial class ucAppointments : UserControl
     {
-        // Money in the project format: peso sign + #,##0.00.
-        private const string MoneyFormat = "\u20B1#,##0.00";
-
         private const string StatusUpcoming = "Upcoming";
 
         // True while the screen fills its own controls, so the filter and selection events do
@@ -51,8 +48,8 @@ namespace LittleEreseSystemV3.Controls
             // The two glyph buttons keep the icon font the Designer gave them, which is why the
             // secondary style (it sets the body font) is NOT applied to them.
 
-            // The grid columns only say "N2" in the Designer; at runtime money shows the peso sign.
-            colDetailPrice.DefaultCellStyle.Format = MoneyFormat;
+            // The grid column only says "N2" in the Designer; Money is the one formatter of the app.
+            Money.ApplyTo(colDetailPrice);
 
             _loading = true;
             try
@@ -234,13 +231,13 @@ namespace LittleEreseSystemV3.Controls
             decimal total = Db.Get<decimal>(billing["total_amount"]);
             decimal balance = Db.Get<decimal>(billing["balance_due"]);
 
-            string summary = "Payment: Paid " + Money(paid) + " of " + Money(total) +
-                " - Balance " + Money(balance);
+            string summary = "Payment: Paid " + Money.Text(paid) + " of " + Money.Text(total) +
+                " - Balance " + Money.Text(balance);
 
             decimal discount = Db.Get<decimal>(billing["discount_amount"]);
             if (discount > 0m)
             {
-                summary += "   (promo " + Db.Get<string>(billing["promo_name"], "-") + ", -" + Money(discount) + ")";
+                summary += "   (promo " + Db.Get<string>(billing["promo_name"], "-") + ", -" + Money.Text(discount) + ")";
             }
 
             return summary;
@@ -503,10 +500,5 @@ namespace LittleEreseSystemV3.Controls
             return DateTime.Today.Add(value).ToString("h:mm tt");
         }
 
-        /// <summary>Money in the project format: peso sign + #,##0.00.</summary>
-        private static string Money(decimal amount)
-        {
-            return amount.ToString(MoneyFormat);
-        }
     }
 }

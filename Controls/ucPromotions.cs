@@ -298,7 +298,7 @@ namespace LittleEreseSystemV3.Controls
                 lblPromoSummary.Text = percentage
                     ? "Applies to every service. " +
                       value.ToString("0.##", CultureInfo.InvariantCulture) + " % off the whole bill."
-                    : "Applies to every service. " + Money(value) + " off the whole bill.";
+                    : "Applies to every service. " + Money.Text(value) + " off the whole bill.";
                 return;
             }
 
@@ -308,15 +308,15 @@ namespace LittleEreseSystemV3.Controls
             if (percentage)
             {
                 lblPromoSummary.Text =
-                    "Applies to: " + nameList + ". Regular total " + Money(regularTotal) +
-                    " -> promo total " + Money(regularTotal - discount) +
-                    " (save " + Money(discount) + ")";
+                    "Applies to: " + nameList + ". Regular total " + Money.Text(regularTotal) +
+                    " -> promo total " + Money.Text(regularTotal - discount) +
+                    " (save " + Money.Text(discount) + ")";
             }
             else
             {
                 // A fixed promo is taken off once, so the sentence says "off the combined" total.
                 lblPromoSummary.Text =
-                    Money(discount) + " off the combined " + Money(regularTotal) + " of: " + nameList;
+                    Money.Text(discount) + " off the combined " + Money.Text(regularTotal) + " of: " + nameList;
             }
         }
 
@@ -332,12 +332,6 @@ namespace LittleEreseSystemV3.Controls
             }
 
             return text;
-        }
-
-        /// <summary>Money in the project format: peso sign + #,##0.00.</summary>
-        private static string Money(decimal amount)
-        {
-            return "\u20B1" + amount.ToString("N2", CultureInfo.CurrentCulture);
         }
 
         private void dgvPromotions_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
@@ -364,7 +358,7 @@ namespace LittleEreseSystemV3.Controls
                 }
                 else
                 {
-                    e.Value = amount.ToString("N2", CultureInfo.CurrentCulture);
+                    e.Value = Money.Text(amount);
                 }
 
                 e.FormattingApplied = true;

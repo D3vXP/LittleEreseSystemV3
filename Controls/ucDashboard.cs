@@ -135,7 +135,7 @@ namespace LittleEreseSystemV3.Controls
             lblCardCompletedValue.Text = Db.Get<int>(stats["completed"]).ToString();
             lblCardPackagesValue.Text = Db.Get<int>(stats["active_packages"]).ToString();
 
-            lblCardSalesValue.Text = Money(Db.Get<decimal>(stats["today_sales"]));
+            lblCardSalesValue.Text = Money.Text(Db.Get<decimal>(stats["today_sales"]));
         }
 
         /// <summary>The "Today" tab: the appointments of today and its heading.</summary>
@@ -351,10 +351,5 @@ namespace LittleEreseSystemV3.Controls
         // Small helpers
         // ------------------------------------------------------------------
 
-        /// <summary>Money in the project format: peso sign + #,##0.00.</summary>
-        private static string Money(decimal amount)
-        {
-            return "\u20B1" + amount.ToString("N2");
-        }
     }
 }

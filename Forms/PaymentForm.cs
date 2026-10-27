@@ -11,9 +11,6 @@ namespace LittleEreseSystemV3.Forms
     /// </summary>
     public partial class PaymentForm : Form
     {
-        // Money in the project format: peso sign + #,##0.00.
-        private const string MoneyFormat = "\u20B1#,##0.00";
-
         /// <summary>What the client still owes. The caller sets it before ShowDialog().</summary>
         public decimal AmountDue { get; set; }
 
@@ -45,7 +42,7 @@ namespace LittleEreseSystemV3.Forms
             Theme.StyleSecondaryButton(btnCancel);
 
             lblClientName.Text = string.IsNullOrWhiteSpace(ClientName) ? "-" : ClientName;
-            lblAmountDue.Text = AmountDue.ToString(MoneyFormat);
+            lblAmountDue.Text = Money.Text(AmountDue);
 
             // Cash is the normal case, so it is picked and the change row is already filled in.
             cboMethod.SelectedIndex = 0;
@@ -108,14 +105,14 @@ namespace LittleEreseSystemV3.Forms
             decimal amount;
             if (!Validators.TryMoney(txtTendered.Text, out amount))
             {
-                lblChange.Text = 0m.ToString(MoneyFormat);
+                lblChange.Text = Money.Text(0m);
                 return;
             }
 
             decimal change = amount - AmountDue;
             if (change < 0m) change = 0m;
 
-            lblChange.Text = change.ToString(MoneyFormat);
+            lblChange.Text = Money.Text(change);
         }
 
         // ---------------------------------------------------------------- buttons
@@ -166,7 +163,7 @@ namespace LittleEreseSystemV3.Forms
                 else if (tendered < AmountDue)
                 {
                     Validators.SetError(errorProvider1, txtTendered,
-                        "The amount must be at least " + AmountDue.ToString(MoneyFormat) + ".");
+                        "The amount must be at least " + Money.Text(AmountDue) + ".");
                     valid = false;
                 }
                 else

@@ -8,9 +8,6 @@ namespace LittleEreseSystemV3.Forms
 {
     public partial class PackageForm : Form
     {
-        // The peso format used everywhere in the app.
-        private const string MoneyFormat = "\u20B1#,##0.00";
-
         /// <summary>One entry of the package service drop-down list.</summary>
         private sealed class ServiceItem
         {
@@ -30,7 +27,7 @@ namespace LittleEreseSystemV3.Forms
             // The combo shows the price too, so the staff member can confirm it without leaving the form.
             public override string ToString()
             {
-                return Name + " - " + Price.ToString(MoneyFormat);
+                return Name + " - " + Money.Text(Price);
             }
         }
 
@@ -145,7 +142,7 @@ namespace LittleEreseSystemV3.Forms
         private void UpdatePrice()
         {
             ServiceItem item = cboService.SelectedItem as ServiceItem;
-            lblPriceValue.Text = item == null ? "-" : item.Price.ToString(MoneyFormat);
+            lblPriceValue.Text = item == null ? "-" : Money.Text(item.Price);
         }
 
         /// <summary>Keeps a value inside the limits of a NumericUpDown instead of throwing.</summary>

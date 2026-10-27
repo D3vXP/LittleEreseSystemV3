@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -15,9 +15,6 @@ namespace LittleEreseSystemV3.Controls
     /// </summary>
     public partial class ucCommissions : UserControl
     {
-        // Money in the project format: peso sign + #,##0.00.
-        private const string MoneyFormat = "\u20B1#,##0.00";
-
         // True while the screen fills its own controls, so the selection events do not run twice.
         private bool _loading;
 
@@ -55,12 +52,11 @@ namespace LittleEreseSystemV3.Controls
             Theme.StyleSecondaryButton(btnExport);
             Theme.StyleSecondaryButton(btnPrint);
 
-            // The Designer only says "N2"; money shows the peso sign at runtime as everywhere else.
-            colSumTotal.DefaultCellStyle.Format = MoneyFormat;
-            colSumUnpaid.DefaultCellStyle.Format = MoneyFormat;
-            colSumPaid.DefaultCellStyle.Format = MoneyFormat;
-            colDetBase.DefaultCellStyle.Format = MoneyFormat;
-            colDetAmount.DefaultCellStyle.Format = MoneyFormat;
+            Money.ApplyTo(colSumTotal);
+            Money.ApplyTo(colSumUnpaid);
+            Money.ApplyTo(colSumPaid);
+            Money.ApplyTo(colDetBase);
+            Money.ApplyTo(colDetAmount);
 
             _loading = true;
             try
@@ -175,9 +171,9 @@ namespace LittleEreseSystemV3.Controls
                 paid += Db.Get<decimal>(row.Cells["colSumPaid"].Value);
             }
 
-            lblTotalEarned.Text = total.ToString(MoneyFormat);
-            lblUnpaid.Text = unpaid.ToString(MoneyFormat);
-            lblPaid.Text = paid.ToString(MoneyFormat);
+            lblTotalEarned.Text = Money.Text(total);
+            lblUnpaid.Text = Money.Text(unpaid);
+            lblPaid.Text = Money.Text(paid);
         }
 
         /// <summary>
@@ -261,7 +257,7 @@ namespace LittleEreseSystemV3.Controls
             }
 
             string question = "Mark " + commissionIds.Count + " commission(s) totalling " +
-                total.ToString(MoneyFormat) + " as paid?";
+                Money.Text(total) + " as paid?";
             if (alreadyPaid > 0)
             {
                 question += Environment.NewLine + alreadyPaid +
@@ -282,7 +278,7 @@ namespace LittleEreseSystemV3.Controls
             }
 
             ActivityRepository.Log(Session.UserId, "Commission payout", "Commissions",
-                updated + " commission(s) marked as paid, " + total.ToString(MoneyFormat));
+                updated + " commission(s) marked as paid, " + Money.Text(total));
 
             Messages.Info(updated + " commission(s) marked as paid.");
 
@@ -347,9 +343,9 @@ namespace LittleEreseSystemV3.Controls
                 _loading = false;
             }
 
-            lblTotalEarned.Text = 0m.ToString(MoneyFormat);
-            lblUnpaid.Text = 0m.ToString(MoneyFormat);
-            lblPaid.Text = 0m.ToString(MoneyFormat);
+            lblTotalEarned.Text = Money.Text(0m);
+            lblUnpaid.Text = Money.Text(0m);
+            lblPaid.Text = Money.Text(0m);
         }
     }
 }

@@ -13,9 +13,6 @@ namespace LittleEreseSystemV3.Controls
     /// </summary>
     public partial class ucReports : UserControl
     {
-        // Money in the project format: peso sign + #,##0.00.
-        private const string MoneyFormat = "\u20B1#,##0.00";
-
         // How many services the "Top Services" tab lists.
         private const int TopServiceCount = 25;
 
@@ -53,15 +50,15 @@ namespace LittleEreseSystemV3.Controls
             Theme.StyleSecondaryButton(btnExport);
             Theme.StyleSecondaryButton(btnPrint);
 
-            // The Designer only says "N2"; money shows the peso sign at runtime as everywhere else.
-            colSalesGross.DefaultCellStyle.Format = MoneyFormat;
-            colSalesDiscount.DefaultCellStyle.Format = MoneyFormat;
-            colSalesNet.DefaultCellStyle.Format = MoneyFormat;
-            colMethodAmount.DefaultCellStyle.Format = MoneyFormat;
-            colTopRevenue.DefaultCellStyle.Format = MoneyFormat;
-            colRepTotal.DefaultCellStyle.Format = MoneyFormat;
-            colRepUnpaid.DefaultCellStyle.Format = MoneyFormat;
-            colRepPaid.DefaultCellStyle.Format = MoneyFormat;
+            // The Designer only says "N2"; Money is the one formatter of the app.
+            Money.ApplyTo(colSalesGross);
+            Money.ApplyTo(colSalesDiscount);
+            Money.ApplyTo(colSalesNet);
+            Money.ApplyTo(colMethodAmount);
+            Money.ApplyTo(colTopRevenue);
+            Money.ApplyTo(colRepTotal);
+            Money.ApplyTo(colRepUnpaid);
+            Money.ApplyTo(colRepPaid);
 
             _loading = true;
             try
@@ -204,8 +201,8 @@ namespace LittleEreseSystemV3.Controls
                 commission += Db.Get<decimal>(row.Cells["colRepTotal"].Value);
             }
 
-            lblSalesTotal.Text = "Net sales " + netSales.ToString(MoneyFormat);
-            lblCommissionTotal.Text = "Total commission " + commission.ToString(MoneyFormat);
+            lblSalesTotal.Text = "Net sales " + Money.Text(netSales);
+            lblCommissionTotal.Text = "Total commission " + Money.Text(commission);
 
             int completed = 0;
             int cancelled = 0;
@@ -340,8 +337,8 @@ namespace LittleEreseSystemV3.Controls
                 _loading = false;
             }
 
-            lblSalesTotal.Text = "Net sales " + 0m.ToString(MoneyFormat);
-            lblCommissionTotal.Text = "Total commission " + 0m.ToString(MoneyFormat);
+            lblSalesTotal.Text = "Net sales " + Money.Text(0m);
+            lblCommissionTotal.Text = "Total commission " + Money.Text(0m);
             lblTotalAppointments.Text = "0";
             lblCompletedCount.Text = "0";
             lblCancelledCount.Text = "0";

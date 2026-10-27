@@ -2,6 +2,59 @@
 
 Update this file at the end of every task.
 
+- Step 32 (this task): ONE money formatter for the whole app, so no screen can show 5,000.00
+  while another shows the peso sign.
+  - Helpers\Money.cs (NEW FILE, registered in LittleEreseSystemV3.csproj): internal static class
+    Money with Culture = CultureInfo.GetCultureInfo("en-PH"), Format = "C2" (culture, two
+    decimals, thousands separator), public static string Text(decimal) for labels / messages /
+    the receipt, and public static void ApplyTo(DataGridViewColumn) which sets the column's
+    DefaultCellStyle.Format to "C2" and its FormatProvider to the en-PH culture. This one class
+    replaces the six private MoneyFormat constants and the four private Money() helpers that
+    were copied into page after page.
+  - Grids: ucAppointments (colDetailPrice), ucBilling (colQueueBalance, colLinePrice,
+    colTranTotal, colTranPaid), ucCommissions (colSumTotal, colSumUnpaid, colSumPaid, colDetBase,
+    colDetAmount - colDetRate stays a plain number because it is a percentage), ucReports
+    (colSalesGross, colSalesDiscount, colSalesNet, colMethodAmount, colTopRevenue, colRepTotal,
+    colRepUnpaid, colRepPaid), ucServices (colPrice - it showed 5,000.00 without the sign),
+    AppointmentForm (colCatPrice, colSelPrice), PromotionEditForm (colPrevRegular, colPrevPromo,
+    colPrevSaving, colPickPrice). Every one of them now shows the peso sign. ucPromotions
+    colValue stays in its CellFormatting because a percentage promotion must read "15 %" and a
+    fixed one Money.Text(value).
+  - Labels and messages: the bill totals (ucBilling ShowTotals / ClearBill / the change line and
+    the transactions total), the promo captions (ucBilling, AppointmentForm), the appointment
+    payment summary and its tooltip text, the three commission cards, the payout question and its
+    activity-log line, "Net sales" / "Total commission" in ucReports, the Dashboard sales card,
+    the promotion summary strips (ucPromotions, PromotionEditForm), the PackageForm combo and
+    price label, PaymentForm (amount due, change, the "at least" message) and the repository
+    sentences of AppointmentRepository / BillingRepository all use Money.Text now.
+  - Helpers\ReceiptPrinter.cs: the line detail, the line amount, Subtotal, Discount, Paid upfront
+    and Total are printed with Money.Text, so a printed receipt and the Billing screen can never
+    disagree.
+  - The three "MB" texts in ucFileMaintenance were deliberately NOT touched: a file size is not
+    money.
+  - PROJECT_RULES.md: the business line now says every amount is formatted by Helpers\Money
+    (en-PH, peso sign, two decimals, thousands separator) and never by a private format constant
+    in a screen.
+  - LittleEreseSystemV3.csproj WAS edited (one line added): <Compile Include="Helpers\Money.cs" />.
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 64 passed, 0 failed, 0 skipped. tools\DesignerAudit.ps1: 22 files, no problems,
+  exit 0 (no Designer file was touched: the runtime format override is the documented way).
+  The app was started normally and stayed open, then closed; no error.log.
+  The four previews were looked at again: ucBilling (Balance 75.00, Subtotal / Discount / Paid so
+  far / Total / Balance due), ucServices (the Price column, which showed 5,000.00 before),
+  ucPromotions (the fixed promo value), AppointmentForm (both Price columns) - every amount now
+  reads with the peso sign and no other prefix. ucReports and ucCommissions were checked too
+  (Net sales / the three cards / all eight money columns).
+  - Known limits / assumptions: Money.Text always uses the en-PH culture, so the amounts are the
+    same whatever Windows language the shop's computer uses. "C2" already rounds to two decimals,
+    so no screen rounds an amount itself. A new money column still needs one Money.ApplyTo(...)
+    line in the page's Load event, because the Designer file must stay exactly what the Visual
+    Studio Designer generates.
+  - One thing to look at (NOT changed, it is text and not a formatted amount): the demo promotion
+    "Beauty Bucket 500" has the description "PHP 500 off the whole bill." in
+    Data\DemoDataSeeder.cs, so the Conditions column of ucPromotions shows the letters "PHP".
+    Editing that sentence is the owner's call.
+
 - Step 31 (this task): GROUPED SIDEBAR with category headings. No page, icon, caption, shortcut or
   role rule was changed - only the order and the grouping of the menu.
   - Forms\MainForm.Designer.cs: three new Labels in pnlNav - lblNavStaffManagement

@@ -19,9 +19,6 @@ namespace LittleEreseSystemV3.Forms
     /// </summary>
     public partial class AppointmentForm : Form
     {
-        // Money in the project format: peso sign + #,##0.00.
-        private const string MoneyFormat = "\u20B1#,##0.00";
-
         private const string NoPromo = "No promo";
         private const string AnyTechnician = "Any available";
 
@@ -72,9 +69,9 @@ namespace LittleEreseSystemV3.Forms
             Theme.StylePrimaryButton(btnSave);
             Theme.StyleSecondaryButton(btnCancel);
 
-            // The designer only says "N2"; money shows the peso sign at runtime.
-            colCatPrice.DefaultCellStyle.Format = MoneyFormat;
-            colSelPrice.DefaultCellStyle.Format = MoneyFormat;
+            // The designer only says "N2"; Money is the one formatter of the app.
+            Money.ApplyTo(colCatPrice);
+            Money.ApplyTo(colSelPrice);
 
             // A letter typed into Qty would otherwise pop up the raw .NET error dialog of the grid.
             // It is wired here because it keeps a bad entry quiet instead of showing two dialogs.
@@ -325,7 +322,7 @@ namespace LittleEreseSystemV3.Forms
                     decimal value = Db.Get<decimal>(row["discount_value"]);
                     string amount = string.Equals(type, "Percentage", StringComparison.OrdinalIgnoreCase)
                         ? value.ToString("0.##") + " % off"
-                        : Money(value) + " off";
+                        : Money.Text(value) + " off";
 
                     cboPromo.Items.Add(Db.Get<string>(row["promo_name"]) + " - " + amount);
                 }
@@ -932,12 +929,12 @@ namespace LittleEreseSystemV3.Forms
                 ? "Ends -"
                 : "Ends " + Clock(start + duration) + " (" + duration.TotalMinutes.ToString("0") + " min)";
 
-            lblSubtotal.Text = "Subtotal: " + Money(_subtotal);
-            lblDiscount.Text = "Discount: -" + Money(_discount);
-            lblTotal.Text = "Total: " + Money(total);
+            lblSubtotal.Text = "Subtotal: " + Money.Text(_subtotal);
+            lblDiscount.Text = "Discount: -" + Money.Text(_discount);
+            lblTotal.Text = "Total: " + Money.Text(total);
             lblRequired.Text = _required > 0m
-                ? "Required now: " + Money(_required)
-                : "Required now: " + Money(0m) + " (pay at the counter)";
+                ? "Required now: " + Money.Text(_required)
+                : "Required now: " + Money.Text(0m) + " (pay at the counter)";
 
             // A reschedule never takes money, so the payment group stays closed in that mode.
             grpPayment.Enabled = _required > 0m && RescheduleId <= 0;
@@ -1311,10 +1308,5 @@ namespace LittleEreseSystemV3.Forms
             return DateTime.Today.Add(value).ToString("h:mm tt");
         }
 
-        /// <summary>Money in the project format: peso sign + #,##0.00.</summary>
-        private static string Money(decimal amount)
-        {
-            return amount.ToString(MoneyFormat);
-        }
     }
 }

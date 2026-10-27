@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using LittleEreseSystemV3.Helpers;
 
 namespace LittleEreseSystemV3.Data
 {
@@ -16,9 +17,6 @@ namespace LittleEreseSystemV3.Data
     /// </summary>
     internal static class BillingRepository
     {
-        /// <summary>Money in the project format: peso sign + #,##0.00.</summary>
-        private const string MoneyFormat = "\u20B1#,##0.00";
-
         /// <summary>
         /// Creates the bill of an appointment and returns the new billing_id.
         /// Runs inside the caller's transaction, so the bill can never exist without its appointment.
@@ -394,7 +392,7 @@ WHERE billing_id = @billing_id",
             });
 
             ActivityRepository.Log(Helpers.Session.UserId, "Apply Promo", "Billing",
-                "Promotion #" + promoId + " applied to bill #" + billingId + " (-" + Money(discount) + ")");
+                "Promotion #" + promoId + " applied to bill #" + billingId + " (-" + Money.Text(discount) + ")");
 
             return string.Empty;
         }
@@ -470,7 +468,7 @@ WHERE billing_id = @billing_id",
                 if (string.IsNullOrEmpty(paymentMethod))
                 {
                     throw new InvalidOperationException("Choose a payment method for the balance of " +
-                        Money(balance) + ".");
+                        Money.Text(balance) + ".");
                 }
 
                 if (NeedsReference(paymentMethod))
@@ -490,7 +488,7 @@ WHERE billing_id = @billing_id",
                 else if (tendered < balance)
                 {
                     throw new InvalidOperationException("The amount tendered does not cover the balance of " +
-                        Money(balance) + ".");
+                        Money.Text(balance) + ".");
                 }
             }
 
@@ -671,13 +669,13 @@ VALUES (@appointment_id, @changed_by, 'Status Change', @old_status, 'Completed',
                     Db.P("@changed_by", userId),
                     Db.P("@old_status", oldStatus),
                     Db.P("@reason", "Paid out at the counter (" +
-                        (balance > 0m ? paymentMethod + ", " + Money(balance) : "nothing left to pay") + ")."));
+                        (balance > 0m ? paymentMethod + ", " + Money.Text(balance) : "nothing left to pay") + ")."));
             });
 
             // (j) The activity log. It never throws, so a failure here cannot undo the checkout.
             ActivityRepository.Log(userId, "Checkout", "Billing",
                 "Appointment #" + appointmentId + " completed, bill #" + billingId +
-                (balance > 0m ? ", " + paymentMethod + " " + Money(balance) : ", nothing left to pay"));
+                (balance > 0m ? ", " + paymentMethod + " " + Money.Text(balance) : ", nothing left to pay"));
 
             return billingId;
         }
@@ -828,10 +826,5 @@ ORDER BY asv.appointment_service_id",
             return DateTime.Today.Add(value).ToString("h:mm tt");
         }
 
-        /// <summary>Money in the project format: peso sign + #,##0.00.</summary>
-        private static string Money(decimal amount)
-        {
-            return amount.ToString(MoneyFormat);
-        }
     }
 }
