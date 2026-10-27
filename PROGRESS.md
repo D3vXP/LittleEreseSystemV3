@@ -2,6 +2,63 @@
 
 Update this file at the end of every task.
 
+- Step 35 (this task): the JOB TYPE of a staff account (Users.staff_type from migration 002) is now
+  real: it is captured in StaffEditForm, shown in the Staff Accounts grid, and used to pick the
+  technicians of a service category. AppointmentForm was deliberately NOT changed yet.
+  - PART 1 - layout (no logic).
+    Forms\StaffEditForm.Designer.cs: lblStaffType "Job type" + cboStaffType (DropDownList:
+    Aesthetician, Massage Therapist, Nurse, Other) sit directly under the Role row. Adding one row
+    needed the fields below to move up 22 px (Contact 236/258, Password 292/314, Confirm 348/370,
+    hint 403) and the Status row to 430/452, so the dialog keeps its 460 x 620 size instead of
+    growing. lblFullName also moved from y 16 to 14 and the two rows above Role were tightened
+    (Username 68/90, Role 124/146), so there is no overlap and the visual order equals the
+    TabIndex order: Full name 0, Username 2, Role 4, Job type 6, Contact 8, Password 10, Confirm
+    12, hint 14, Status 15/16.
+    Controls\ucStaffAccounts.Designer.cs: new colStaffType "Job type" / staff_type right after
+    colRole (Fill, FillWeight 14; Role / Status / Created were trimmed to 10 / 12 / 16 so the seven
+    visible columns still share the width at 1240 px).
+  - PART 2 - logic.
+    Data\UserRepository.cs: GetUsers and GetById also return staff_type. Create and Update take a
+    staffType parameter and pass it through the new NormalizeStaffType(role, staffType): an Admin
+    always gets NULL, a Staff account with an empty job type throws
+    InvalidOperationException(Validators.StaffTypeRequiredMessage) before any SQL runs.
+    New GetActiveStaffFor(categoryName): user_id, full_name of Active Staff whose staff_type is
+    the category's type OR 'Other' OR NULL - a category whose name starts with "Massage" wants
+    'Massage Therapist', everything else wants 'Aesthetician' (the prefix comes from
+    AppointmentRepository.MassageCategoryPrefix, so one place owns it). POLISH comment in the code:
+    nurses never appear there. New GetActiveNurses(): Active Staff with staff_type 'Nurse'.
+    Helpers\Validators.cs: StaffTypeRequiredMessage = "Choose the job type." (the one sentence the
+    form shows and the repository throws).
+    Forms\StaffEditForm.cs: Load selects the stored job type (first entry when there is none);
+    cboRole_SelectedIndexChanged calls ApplyRoleToStaffType, which disables and empties the combo
+    while the role is Admin and re-enables it for Staff. ValidateFields stops with the message on
+    cboStaffType when the combo is enabled but nothing is picked, and SelectedStaffType() sends
+    null for an Admin. PasswordOnly mode also locks the two new controls.
+    Data\DemoDataSeeder.cs: EnsureStaff now takes the job type (Aesthetician 1-4 ->
+    'Aesthetician', Massage Therapist 1-2 -> 'Massage Therapist', Nurse 1 -> 'Nurse') and, for an
+    account that already exists with staff_type IS NULL, writes it in place. That matters on a
+    fresh clone, where the migration runs BEFORE the seeder.
+    Helpers\SmokeTest.cs: three read-only checks - GetActiveStaffFor("Botox") >= 1 (got 4),
+    GetActiveStaffFor("Massage - Feet") >= 1 (got 2), GetActiveNurses() >= 1 (got 1).
+    PROJECT_RULES.md: the "Rooms / technicians" business rule now says technicians are Active Staff
+    filtered by staff_type through GetActiveStaffFor, that 'Other' and NULL appear in every list,
+    that a nurse is NEVER a technician (GetActiveNurses), and that a Staff account always has a job
+    type while an Admin has none.
+    LittleEreseSystemV3.csproj was NOT edited (no new file).
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 70 passed, 0 failed, 0 skipped (the three new job-type checks PASS).
+  tools\DesignerAudit.ps1: 22 files, no problems, exit 0. --preview StaffEditForm: Full name,
+  Username, Role, Job type (Aesthetician), Contact number, Password, Confirm password, the hint and
+  Status - nothing overlapping or truncated, no fix round needed. --preview ucStaffAccounts: the
+  new "Job type" column after Role shows Aesthetician / Massage Therapist / Nurse and is empty for
+  the System Administrator row (an Admin has no job type, by design). The app was started normally
+  and closed; no error.log.
+  - Known limits / assumptions: the job type of an existing account is stored in ONE column, so a
+  staff member who does both jobs must pick 'Other' (which shows them in every list). AppointmentForm
+  still uses GetActiveStaff() (every Active Staff) - switching it to GetActiveStaffFor(service
+  category) is the next prompt. The demo seeder only fills staff_type when it is NULL, so a job type
+  the owner changed by hand is never overwritten.
+
 - Step 34 (this task): the SCHEMA of tester feedback round 1, applied to existing databases by the
   migration runner from Step 30. No screen, repository or business logic was changed.
   - Database\Migrations\002_feedback_round1_schema.sql (NEW FILE, exactly the content the prompt

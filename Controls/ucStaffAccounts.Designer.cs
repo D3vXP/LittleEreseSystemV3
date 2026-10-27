@@ -49,6 +49,7 @@ namespace LittleEreseSystemV3.Controls
             this.colFullName = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colUsername = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colRole = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colStaffType = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colContact = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colCreated = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -272,6 +273,7 @@ namespace LittleEreseSystemV3.Controls
             this.colFullName,
             this.colUsername,
             this.colRole,
+            this.colStaffType,
             this.colContact,
             this.colStatus,
             this.colCreated});
@@ -334,6 +336,15 @@ namespace LittleEreseSystemV3.Controls
             this.colRole.HeaderText = "Role";
             this.colRole.Name = "colRole";
             this.colRole.ReadOnly = true;
+            // 
+            // colStaffType
+            // 
+            this.colStaffType.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.colStaffType.DataPropertyName = "staff_type";
+            this.colStaffType.FillWeight = 14F;
+            this.colStaffType.HeaderText = "Job type";
+            this.colStaffType.Name = "colStaffType";
+            this.colStaffType.ReadOnly = true;
             // 
             // colContact
             // 
@@ -409,6 +420,7 @@ namespace LittleEreseSystemV3.Controls
         private System.Windows.Forms.DataGridViewTextBoxColumn colFullName;
         private System.Windows.Forms.DataGridViewTextBoxColumn colUsername;
         private System.Windows.Forms.DataGridViewTextBoxColumn colRole;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colStaffType;
         private System.Windows.Forms.DataGridViewTextBoxColumn colContact;
         private System.Windows.Forms.DataGridViewTextBoxColumn colStatus;
         private System.Windows.Forms.DataGridViewTextBoxColumn colCreated;

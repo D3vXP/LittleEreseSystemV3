@@ -40,6 +40,7 @@ namespace LittleEreseSystemV3.Forms
             if (EditId > 0) LoadUser(EditId);
 
             if (PasswordOnly) ApplyPasswordOnlyMode();
+            else ApplyRoleToStaffType();
         }
 
         /// <summary>Applies the shared Theme styles (the Designer keeps the same colors as literals).</summary>
@@ -84,6 +85,7 @@ namespace LittleEreseSystemV3.Forms
 
             SelectComboText(cboRole, Db.Get<string>(row["role"], "Staff"));
             SelectComboText(cboStatus, Db.Get<string>(row["status"], "Active"));
+            SelectStaffType(Db.Get<string>(row["staff_type"]));
 
             // Editing: leaving both password boxes empty keeps the current password.
             lblPassword.Text = "New password (optional)";
@@ -95,6 +97,34 @@ namespace LittleEreseSystemV3.Forms
         {
             box.SelectedItem = text;
             if (box.SelectedIndex < 0) box.SelectedIndex = 0;
+        }
+
+        /// <summary>Selects the stored job type; an account without one starts on the first entry.</summary>
+        private void SelectStaffType(string staffType)
+        {
+            cboStaffType.SelectedItem = staffType;
+            if (cboStaffType.SelectedIndex < 0) cboStaffType.SelectedIndex = 0;
+        }
+
+        /// <summary>
+        /// An Admin has no job type, so the combo is disabled and empty for that role; a Staff
+        /// account must pick one (Validators.StaffTypeRequiredMessage says why).
+        /// </summary>
+        private void ApplyRoleToStaffType()
+        {
+            bool isAdmin = string.Equals(Convert.ToString(cboRole.SelectedItem), "Admin",
+                StringComparison.OrdinalIgnoreCase);
+
+            cboStaffType.Enabled = !isAdmin;
+            lblStaffType.Enabled = !isAdmin;
+
+            if (isAdmin) cboStaffType.SelectedIndex = -1;
+            else if (cboStaffType.SelectedIndex < 0) cboStaffType.SelectedIndex = 0;
+        }
+
+        private void cboRole_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ApplyRoleToStaffType();
         }
 
         /// <summary>
@@ -110,11 +140,13 @@ namespace LittleEreseSystemV3.Forms
             txtFullName.ReadOnly = true;
             txtUsername.ReadOnly = true;
             cboRole.Enabled = false;
+            cboStaffType.Enabled = false;
             txtContact.ReadOnly = true;
             lblStatus.Enabled = false;
             lblFullName.Enabled = false;
             lblUsername.Enabled = false;
             lblRole.Enabled = false;
+            lblStaffType.Enabled = false;
             lblContact.Enabled = false;
 
             // In this mode a password is not optional any more, so the labels say what is expected.
@@ -141,10 +173,11 @@ namespace LittleEreseSystemV3.Forms
                 string contact = txtContact.Text.Trim();
                 string role = cboRole.SelectedItem.ToString();
                 string status = cboStatus.SelectedItem.ToString();
+                string staffType = SelectedStaffType();
 
                 if (EditId > 0)
                 {
-                    UserRepository.Update(EditId, fullName, role, contact, status);
+                    UserRepository.Update(EditId, fullName, role, contact, status, staffType);
                     SavedUserId = EditId;
 
                     // A blank password box means "keep the current password".
@@ -158,7 +191,7 @@ namespace LittleEreseSystemV3.Forms
                 else
                 {
                     SavedUserId = UserRepository.Create(fullName, txtUsername.Text.Trim(),
-                        txtPassword.Text, role, contact);
+                        txtPassword.Text, role, contact, staffType);
 
                     ActivityRepository.Log(Session.UserId, "Add", "Staff Accounts", fullName);
                 }
@@ -251,7 +284,14 @@ namespace LittleEreseSystemV3.Forms
                 ok = false;
             }
 
-            // 4. The contact number must be a Philippine mobile number.
+            // 4. A Staff account needs a job type; an Admin has none (the box is empty and disabled).
+            if (cboStaffType.Enabled && cboStaffType.SelectedIndex < 0)
+            {
+                Validators.SetError(errorProvider1, cboStaffType, Validators.StaffTypeRequiredMessage);
+                ok = false;
+            }
+
+            // 5. The contact number must be a Philippine mobile number.
             // POLISH: relax this if the shop also allows landline numbers.
             if (!Validators.IsValidPhone(txtContact.Text))
             {
@@ -259,10 +299,20 @@ namespace LittleEreseSystemV3.Forms
                 ok = false;
             }
 
-            // 5. The password: required for a new account, optional when editing.
+            // 6. The password: required for a new account, optional when editing.
             if (!ValidatePasswords(EditId <= 0)) ok = false;
 
             return ok;
+        }
+
+        /// <summary>
+        /// The job type to save: the picked one for a Staff account, null for an Admin
+        /// (UserRepository keeps the column NULL for an Admin regardless).
+        /// </summary>
+        private string SelectedStaffType()
+        {
+            if (!cboStaffType.Enabled || cboStaffType.SelectedIndex < 0) return null;
+            return cboStaffType.SelectedItem.ToString();
         }
 
         /// <summary>

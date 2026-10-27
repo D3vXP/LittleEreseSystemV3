@@ -320,6 +320,9 @@ namespace LittleEreseSystemV3.Helpers
             // inside ClientRepository BEFORE its INSERT, so no row is created and none has to
             // be cleaned up afterwards (that is why the smoke test stays read-only here too).
             CheckClientMinimumAge();
+
+            // The three read-only job-type checks. Nothing is written or changed here.
+            CheckStaffForCategory();
         }
 
         /// <summary>
@@ -386,6 +389,45 @@ namespace LittleEreseSystemV3.Helpers
             catch (Exception ex)
             {
                 Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// The job type of a staff account decides which technician list a service category sees
+        /// (PROJECT_RULES.md, "Technicians"). Read-only: nothing is written.
+        /// </summary>
+        private static void CheckStaffForCategory()
+        {
+            CheckStaffFor("GetActiveStaffFor(\"Botox\")", "Botox");
+            CheckStaffFor("GetActiveStaffFor(\"Massage - Feet\")", "Massage - Feet");
+
+            try
+            {
+                DataTable nurses = UserRepository.GetActiveNurses();
+                string message = "UserRepository.GetActiveNurses() rows = " +
+                    nurses.Rows.Count + " (expected at least 1)";
+                if (nurses.Rows.Count >= 1) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail("UserRepository.GetActiveNurses", ex);
+            }
+        }
+
+        private static void CheckStaffFor(string label, string categoryName)
+        {
+            try
+            {
+                DataTable staff = UserRepository.GetActiveStaffFor(categoryName);
+                string message = "UserRepository." + label + " rows = " +
+                    staff.Rows.Count + " (expected at least 1)";
+                if (staff.Rows.Count >= 1) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail("UserRepository.GetActiveStaffFor", ex);
             }
         }
 

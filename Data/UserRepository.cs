@@ -55,20 +55,24 @@ namespace LittleEreseSystemV3.Data
         /// <summary>
         /// Creates a new account with status 'Active' and returns the new user_id.
         /// The plain password is hashed here so it is never stored in the database.
+        /// staffType is the job type of a Staff account and is always null for an Admin.
         /// </summary>
-        public static int Create(string fullName, string username, string password, string role, string contactNumber)
+        public static int Create(string fullName, string username, string password, string role, string contactNumber,
+            string staffType)
         {
             string hash = PasswordHasher.Hash(password);
+            string type = NormalizeStaffType(role, staffType);
 
             object id = Db.Scalar(
-                "INSERT INTO Users (full_name, username, password_hash, role, contact_number, status) " +
-                "VALUES (@full_name, @username, @password_hash, @role, @contact_number, 'Active'); " +
+                "INSERT INTO Users (full_name, username, password_hash, role, contact_number, status, staff_type) " +
+                "VALUES (@full_name, @username, @password_hash, @role, @contact_number, 'Active', @staff_type); " +
                 "SELECT CAST(SCOPE_IDENTITY() AS int);",
                 Db.P("@full_name", fullName),
                 Db.P("@username", username),
                 Db.P("@password_hash", hash),
                 Db.P("@role", role),
-                Db.P("@contact_number", contactNumber));
+                Db.P("@contact_number", contactNumber),
+                Db.P("@staff_type", type));
 
             return Convert.ToInt32(id);
         }
@@ -90,12 +94,12 @@ namespace LittleEreseSystemV3.Data
         /// The accounts for the Staff Accounts grid.
         ///   search - matches the full name OR the username (empty = everything)
         ///   status - "All" means every status
-        /// Returns user_id, full_name, username, role, contact_number, status, created_at.
+        /// Returns user_id, full_name, username, role, staff_type, contact_number, status, created_at.
         /// </summary>
         public static DataTable GetUsers(string search, string status)
         {
             string sql =
-                "SELECT user_id, full_name, username, role, contact_number, status, created_at " +
+                "SELECT user_id, full_name, username, role, staff_type, contact_number, status, created_at " +
                 "FROM Users " +
                 "WHERE (@search = '' OR full_name LIKE @like OR username LIKE @like) " +
                 "  AND (@status = 'All' OR status = @status) " +
@@ -113,7 +117,7 @@ namespace LittleEreseSystemV3.Data
         public static DataRow GetById(int userId)
         {
             DataTable table = Db.Query(
-                "SELECT user_id, full_name, username, role, contact_number, status, created_at " +
+                "SELECT user_id, full_name, username, role, staff_type, contact_number, status, created_at " +
                 "FROM Users WHERE user_id = @user_id",
                 Db.P("@user_id", userId));
 
@@ -125,8 +129,10 @@ namespace LittleEreseSystemV3.Data
         /// Throws InvalidOperationException with a clear message when the change would
         /// lock the shop out: nobody may demote or deactivate themselves, and the last
         /// Active Admin may not be demoted or deactivated either.
+        /// staffType is the job type of a Staff account and is always null for an Admin.
         /// </summary>
-        public static void Update(int userId, string fullName, string role, string contact, string status)
+        public static void Update(int userId, string fullName, string role, string contact, string status,
+            string staffType)
         {
             DataRow current = GetById(userId);
             if (current == null)
@@ -141,14 +147,17 @@ namespace LittleEreseSystemV3.Data
                 role,
                 status);
 
+            string type = NormalizeStaffType(role, staffType);
+
             Db.Execute(
                 "UPDATE Users SET full_name = @full_name, role = @role, " +
-                "       contact_number = @contact_number, status = @status " +
+                "       contact_number = @contact_number, status = @status, staff_type = @staff_type " +
                 "WHERE user_id = @user_id",
                 Db.P("@full_name", fullName),
                 Db.P("@role", role),
                 Db.P("@contact_number", contact),
                 Db.P("@status", status),
+                Db.P("@staff_type", type),
                 Db.P("@user_id", userId));
         }
 
@@ -215,6 +224,65 @@ namespace LittleEreseSystemV3.Data
                 "SELECT user_id, full_name FROM Users " +
                 "WHERE role = 'Staff' AND status = 'Active' " +
                 "ORDER BY full_name");
+        }
+
+        /// <summary>
+        /// The technicians of one service category: Active Staff whose staff_type matches the
+        /// category ("Massage..." categories need a Massage Therapist, every other category an
+        /// Aesthetician). A staff member typed 'Other' or not typed at all appears in every list.
+        /// Returns user_id, full_name.
+        /// POLISH: nurses never appear here - an assessment dropdown uses GetActiveNurses instead.
+        /// </summary>
+        public static DataTable GetActiveStaffFor(string categoryName)
+        {
+            string wantedType = IsMassageCategoryName(categoryName) ? "Massage Therapist" : "Aesthetician";
+
+            return Db.Query(
+                "SELECT user_id, full_name FROM Users " +
+                "WHERE role = 'Staff' AND status = 'Active' " +
+                "  AND (staff_type = @staff_type OR staff_type = 'Other' OR staff_type IS NULL) " +
+                "ORDER BY full_name",
+                Db.P("@staff_type", wantedType));
+        }
+
+        /// <summary>
+        /// The nurses a service line may be assessed by: Active Staff with staff_type 'Nurse'.
+        /// Returns user_id, full_name.
+        /// </summary>
+        public static DataTable GetActiveNurses()
+        {
+            return Db.Query(
+                "SELECT user_id, full_name FROM Users " +
+                "WHERE role = 'Staff' AND status = 'Active' AND staff_type = 'Nurse' " +
+                "ORDER BY full_name");
+        }
+
+        /// <summary>
+        /// An Admin has no job type (the column stays NULL), a Staff account must have one
+        /// (the form asks for it, this is the second check the database rules need).
+        /// </summary>
+        private static string NormalizeStaffType(string role, string staffType)
+        {
+            if (IsAdminRole(role)) return null;
+
+            if (string.IsNullOrWhiteSpace(staffType))
+            {
+                throw new InvalidOperationException(Validators.StaffTypeRequiredMessage);
+            }
+
+            return staffType.Trim();
+        }
+
+        /// <summary>
+        /// True for a massage category. The category name is the only signal the schema has,
+        /// so this reads the same prefix AppointmentRepository uses for the opening hours.
+        /// </summary>
+        private static bool IsMassageCategoryName(string categoryName)
+        {
+            if (string.IsNullOrEmpty(categoryName)) return false;
+
+            return categoryName.Trim().StartsWith(AppointmentRepository.MassageCategoryPrefix,
+                StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>

@@ -30,6 +30,9 @@ namespace LittleEreseSystemV3.Helpers
         public const string MinimumClientAgeMessage =
             "For safety reasons, we do not accept clients under 15 years old.";
 
+        /// <summary>The one sentence shown (and thrown) when a Staff account has no job type.</summary>
+        public const string StaffTypeRequiredMessage = "Choose the job type.";
+
         /// <summary>True when the text has something other than spaces in it.</summary>
         public static bool IsRequired(string value)
         {

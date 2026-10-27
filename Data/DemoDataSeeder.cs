@@ -85,15 +85,15 @@ namespace LittleEreseSystemV3.Data
             {
                 EnsureAdminPassword();
 
-                // The schema has no job-title column, so the staff role title is part of the full name.
+                // The job type of each demo account matches its name (see EnsureStaff).
                 // POLISH: rename these demo staff accounts to the real employees in Staff Accounts.
-                EnsureStaff("Aesthetician 1", "aesthetician1");
-                EnsureStaff("Aesthetician 2", "aesthetician2");
-                EnsureStaff("Aesthetician 3", "aesthetician3");
-                EnsureStaff("Aesthetician 4", "aesthetician4");
-                EnsureStaff("Massage Therapist 1", "therapist1");
-                EnsureStaff("Massage Therapist 2", "therapist2");
-                EnsureStaff("Nurse 1", "nurse1");
+                EnsureStaff("Aesthetician 1", "aesthetician1", "Aesthetician");
+                EnsureStaff("Aesthetician 2", "aesthetician2", "Aesthetician");
+                EnsureStaff("Aesthetician 3", "aesthetician3", "Aesthetician");
+                EnsureStaff("Aesthetician 4", "aesthetician4", "Aesthetician");
+                EnsureStaff("Massage Therapist 1", "therapist1", "Massage Therapist");
+                EnsureStaff("Massage Therapist 2", "therapist2", "Massage Therapist");
+                EnsureStaff("Nurse 1", "nurse1", "Nurse");
             }
         }
 
@@ -1311,12 +1311,26 @@ ORDER BY r.capacity DESC, r.room_name",
             }
         }
 
-        /// <summary>Creates one staff account, but only when the username is not taken yet.</summary>
-        private static void EnsureStaff(string fullName, string username)
+        /// <summary>
+        /// Creates one staff account, but only when the username is not taken yet.
+        /// An account that already exists without a job type gets it here, because on a fresh
+        /// database the migrations run BEFORE this seeder and fill the column from the full name
+        /// only (an account created before 002 would otherwise stay NULL forever).
+        /// </summary>
+        private static void EnsureStaff(string fullName, string username, string staffType)
         {
-            if (UserRepository.UsernameExists(username)) return;
+            if (UserRepository.UsernameExists(username))
+            {
+                Db.Execute(
+                    "UPDATE Users SET staff_type = @staff_type " +
+                    "WHERE username = @username AND role = 'Staff' AND staff_type IS NULL",
+                    Db.P("@staff_type", staffType),
+                    Db.P("@username", username));
 
-            UserRepository.Create(fullName, username, StaffPassword, "Staff", null);
+                return;
+            }
+
+            UserRepository.Create(fullName, username, StaffPassword, "Staff", null, staffType);
         }
     }
 }
