@@ -54,7 +54,9 @@ namespace LittleEreseSystemV3.Controls
             _loading = true;
             try
             {
-                cboStatus.SelectedIndex = 0;   // "All"
+                // "Active" is first on purpose: the day list is the working list, and a cancelled
+                // or rescheduled appointment is not something the shop still has to do.
+                cboStatus.SelectedIndex = 0;   // "Active"
 
                 // StartDate is DateTime.MinValue when nobody set it, and that is not a real day.
                 dtpDate.Value = StartDate.Date > DateTime.MinValue.Date ? StartDate.Date : DateTime.Today;
@@ -75,7 +77,7 @@ namespace LittleEreseSystemV3.Controls
         /// </summary>
         private void LoadAppointments(int keepAppointmentId)
         {
-            string status = cboStatus.SelectedItem == null ? "All" : cboStatus.SelectedItem.ToString();
+            string status = cboStatus.SelectedItem == null ? "Active" : cboStatus.SelectedItem.ToString();
 
             // _loading stops SelectionChanged from filling the card while the grid rebinds.
             _loading = true;

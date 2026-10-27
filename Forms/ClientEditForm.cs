@@ -32,7 +32,8 @@ namespace LittleEreseSystemV3.Forms
             // Gender has no sensible default, so nothing is picked until the user picks it.
             cboGender.SelectedIndex = -1;
 
-            // A new client starts with an empty (unchecked) birth date, which means "not known".
+            // A new client starts with an empty (unchecked) birth date, and Save refuses it,
+            // because the shop must be able to check the minimum age.
             // The value is set BEFORE the tick is cleared, because assigning Value on a control
             // that is not checked would otherwise leave the box looking filled in.
             dtpBirthDate.Value = DateTime.Today;
@@ -125,11 +126,8 @@ namespace LittleEreseSystemV3.Forms
                 return;
             }
 
-            int years = today.Year - birth.Year;
-            // The birthday of this year has not happened yet, so one year must come off.
-            if (birth > today.AddYears(-years)) years--;
-
-            lblAge.Text = "Age: " + years;
+            // The birthday counting lives in Validators, so the label and the age rule agree.
+            lblAge.Text = "Age: " + Validators.AgeOn(birth, today);
         }
 
         private void btnSave_Click(object sender, EventArgs e)
@@ -218,8 +216,13 @@ namespace LittleEreseSystemV3.Forms
                 ok = false;
             }
 
-            // 3. A birth date is optional, but when it is given it must be real.
-            if (dtpBirthDate.Checked)
+            // 3. The birth date is REQUIRED, because the shop cannot check the minimum age without it.
+            if (!dtpBirthDate.Checked)
+            {
+                Validators.SetError(errorProvider1, dtpBirthDate, "Birth date is required.");
+                ok = false;
+            }
+            else
             {
                 DateTime birth = dtpBirthDate.Value.Date;
                 if (birth > DateTime.Today)
@@ -233,9 +236,17 @@ namespace LittleEreseSystemV3.Forms
                         "Please check the birth date: nobody is older than " + MaximumAge + ".");
                     ok = false;
                 }
+                // 4. The minimum age is a business rule, so the SAME check runs here and in
+                //    ClientRepository. The repository message is shown here, so the wording
+                //    can never drift apart between the two places.
+                else if (!Validators.IsAtLeastAge(birth, Validators.MinimumClientAge, DateTime.Today))
+                {
+                    Validators.SetError(errorProvider1, dtpBirthDate, Validators.MinimumClientAgeMessage);
+                    ok = false;
+                }
             }
 
-            // 4. Gender must be chosen (it is used for the treatment notes).
+            // 5. Gender must be chosen (it is used for the treatment notes).
             if (cboGender.SelectedIndex < 0)
             {
                 Validators.SetError(errorProvider1, cboGender, "Choose the client's gender.");

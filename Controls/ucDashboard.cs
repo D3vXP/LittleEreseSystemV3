@@ -141,7 +141,9 @@ namespace LittleEreseSystemV3.Controls
         /// <summary>The "Today" tab: the appointments of today and its heading.</summary>
         private void ShowTodayGrid(DateTime today)
         {
-            dgvToday.DataSource = AppointmentRepository.GetByDate(today, "All", string.Empty);
+            // "Active" keeps cancelled and rescheduled appointments out of the day list AND out of
+            // the count in the heading, because nobody has to act on them any more.
+            dgvToday.DataSource = AppointmentRepository.GetByDate(today, "Active", string.Empty);
 
             // POLISH: the heading follows the prompt wording; shorten it here if the owner prefers.
             lblTodayHeading.Text = "Today - " + today.ToString("MMM dd, yyyy") +
@@ -203,7 +205,8 @@ namespace LittleEreseSystemV3.Controls
         {
             try
             {
-                dgvDay.DataSource = AppointmentRepository.GetByDate(date, "All", string.Empty);
+                // Same rule as the Today tab: a cancelled or rescheduled visit is not work anymore.
+                dgvDay.DataSource = AppointmentRepository.GetByDate(date, "Active", string.Empty);
             }
             catch (Exception ex)
             {

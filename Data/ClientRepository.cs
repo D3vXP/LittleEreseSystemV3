@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using LittleEreseSystemV3.Helpers;
 
 namespace LittleEreseSystemV3.Data
 {
@@ -76,6 +77,8 @@ namespace LittleEreseSystemV3.Data
             string contact, string address, string allergies, string medicalHistory,
             string treatmentHistory, bool consentSigned)
         {
+            EnsureClientIsOldEnough(birthDate);
+
             object id = Db.Scalar(
                 "INSERT INTO Clients (first_name, last_name, birth_date, gender, contact_number, " +
                 "                     address, allergies, medical_history, treatment_history, " +
@@ -105,6 +108,8 @@ namespace LittleEreseSystemV3.Data
             string gender, string contact, string address, string allergies, string medicalHistory,
             string treatmentHistory, bool consentSigned)
         {
+            EnsureClientIsOldEnough(birthDate);
+
             Db.Execute(
                 "UPDATE Clients SET first_name = @first_name, last_name = @last_name, " +
                 "       birth_date = @birth_date, gender = @gender, contact_number = @contact_number, " +
@@ -214,6 +219,24 @@ namespace LittleEreseSystemV3.Data
         {
             if (string.IsNullOrWhiteSpace(value)) return null;
             return value.Trim();
+        }
+
+        /// <summary>
+        /// The minimum-age rule of PROJECT_RULES.md, in the one place every save passes through, so
+        /// no other screen can write a client the shop does not accept. Throws with the sentence the
+        /// user must read; the form also checks the same rule with Validators before it gets here.
+        /// </summary>
+        internal static void EnsureClientIsOldEnough(DateTime? birthDate)
+        {
+            if (!birthDate.HasValue)
+            {
+                throw new InvalidOperationException("Birth date is required.");
+            }
+
+            if (!Validators.IsAtLeastAge(birthDate.Value, Validators.MinimumClientAge, DateTime.Today))
+            {
+                throw new InvalidOperationException(Validators.MinimumClientAgeMessage);
+            }
         }
     }
 }

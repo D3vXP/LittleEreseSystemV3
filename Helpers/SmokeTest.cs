@@ -314,6 +314,11 @@ namespace LittleEreseSystemV3.Helpers
             // (it must not change the shop's database), so start the app once first.
             CheckSchemaVersionTable();
             CheckMigrationsListed();
+
+            // The two read-only minimum-age checks. Nothing is written: the rejected call stops
+            // inside ClientRepository BEFORE its INSERT, so no row is created and none has to
+            // be cleaned up afterwards (that is why the smoke test stays read-only here too).
+            CheckClientMinimumAge();
         }
 
         /// <summary>
@@ -380,6 +385,64 @@ namespace LittleEreseSystemV3.Helpers
             catch (Exception ex)
             {
                 Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// The minimum age of 15 (PROJECT_RULES.md) must be enforced by ClientRepository itself, so no
+        /// screen can bypass it. Both calls are refused BEFORE the INSERT, so nothing is written.
+        /// </summary>
+        private static void CheckClientMinimumAge()
+        {
+            DateTime today = DateTime.Today;
+
+            // 14 years old TODAY (the birthday is today, so the counting itself is exercised).
+            CheckClientAgeRefused("Client age: 14 years old today is rejected",
+                today.AddYears(-14));
+
+            // The same birthday one day later makes the person exactly 15, so it must be accepted.
+            CheckClientAgeAccepted("Client age: exactly 15 today is accepted",
+                today.AddYears(-15));
+        }
+
+        /// <summary>
+        /// PASS when ClientRepository.Add refuses this birth date with the minimum-age sentence.
+        /// WHY Add and not only the private guard: the save method itself must refuse, and it stops
+        /// BEFORE the INSERT, so the smoke test stays read-only and no row needs cleaning up.
+        /// </summary>
+        private static void CheckClientAgeRefused(string label, DateTime birthDate)
+        {
+            try
+            {
+                ClientRepository.Add("Test", "Smoke Age", birthDate, "Female", "09170000000",
+                    "", "", "", "", false);
+                Fail(label + " (the save was allowed)");
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message == Validators.MinimumClientAgeMessage) Pass(label + " - " + ex.Message);
+                else Fail(label + " (wrong message: " + ex.Message + ")");
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// PASS when ClientRepository allows this birth date. The guard is called directly here so the
+        /// check really writes nothing; Add runs the very same guard before its INSERT.
+        /// </summary>
+        private static void CheckClientAgeAccepted(string label, DateTime birthDate)
+        {
+            try
+            {
+                ClientRepository.EnsureClientIsOldEnough(birthDate);
+                Pass(label);
+            }
+            catch (Exception ex)
+            {
+                Fail(label + " (" + ex.Message + ")");
             }
         }
 

@@ -53,7 +53,8 @@ namespace LittleEreseSystemV3.Data
 
         /// <summary>
         /// The appointments of one day, ready for the grid.
-        ///   status - "All" means every status
+        ///   status - "All" means every status, "Active" means everything except Cancelled and
+        ///            Rescheduled (the working list of the day), any other value is one exact status
         ///   search - matches the client name (empty = everybody)
         /// Returns appointment_id, time_range ("10:00 AM - 11:30 AM"), client_name, services
         /// (comma separated, with " x2" for a doubled service), staff_names ("Unassigned" when
@@ -76,7 +77,9 @@ FROM Appointments a
 INNER JOIN Clients c ON c.client_id = a.client_id
 LEFT JOIN Billing b ON b.appointment_id = a.appointment_id
 WHERE a.appointment_date = @appointment_date
-  AND (@status = 'All' OR a.status = @status)
+  AND (@status = 'All'
+       OR (@status = 'Active' AND a.status NOT IN ('Cancelled', 'Rescheduled'))
+       OR (@status NOT IN ('All', 'Active') AND a.status = @status))
   AND (@search = ''
        OR (c.last_name + ', ' + c.first_name) LIKE @like
        OR c.first_name LIKE @like

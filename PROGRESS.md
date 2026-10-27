@@ -2,6 +2,61 @@
 
 Update this file at the end of every task.
 
+- Step 33 (this task): two business rules - a MINIMUM CLIENT AGE of 15 and CANCELLED (and
+  rescheduled) APPOINTMENTS DISAPPEARING from the working lists. No screen was redesigned.
+  - PART 1 - minimum age 15. Helpers\Validators.cs (the one place for input rules) now holds
+    MinimumClientAge = 15, MinimumClientAgeMessage ("For safety reasons, we do not accept clients
+    under 15 years old."), AgeOn(birth, day) (whole years, counting the birthday with AddYears, not
+    days / 365) and IsAtLeastAge(birth, minimum, day). The file also needed a new "using System"
+    because DateTime was not in scope there.
+  - Forms\ClientEditForm.cs: the birth date is REQUIRED now - an unticked picker shows
+    "Birth date is required." on dtpBirthDate - and a client younger than 15 gets the sentence above
+    from the same Validators constant. The old "optional birth date" block became
+    required -> not in the future -> not older than 120 -> at least 15. UpdateAge() uses
+    Validators.AgeOn, so the "Age: N" label and the rule can never disagree.
+  - Data\ClientRepository.cs: Add(...) and Update(...) both call the new internal
+    EnsureClientIsOldEnough(birthDate) BEFORE their SQL, which throws InvalidOperationException with
+    those two sentences. That is the save method of the client class, so no other code path can write
+    a client the shop does not accept. Existing clients are not touched or deleted.
+    EnsureClientIsOldEnough is internal (not private) only so the smoke test can call the accepted
+    case without writing a row.
+  - Helpers\SmokeTest.cs: CheckClientMinimumAge with two checks - "Client age: 14 years old today is
+    rejected" (calls ClientRepository.Add with today - 14 years; the guard throws BEFORE the INSERT,
+    so nothing is written and nothing has to be cleaned up, which keeps the smoke test read-only) and
+    "Client age: exactly 15 today is accepted" (calls the guard directly, so this one writes nothing
+    at all).
+  - PART 2 - cancelled appointments. Controls\ucAppointments.Designer.cs: "Active" is the FIRST item
+    of cboStatus (before "All", "Upcoming", "Ongoing", "Completed", "Cancelled"). The Designer file
+    only gained that one string; the look and the position of the box are unchanged.
+    Controls\ucAppointments.cs: Load selects index 0 ("Active") and LoadAppointments falls back to
+    "Active" when nothing is picked.
+    Data\AppointmentRepository.GetByDate: "Active" means status NOT IN ('Cancelled','Rescheduled'),
+    "All" still means every status and any other value is one exact status (one parameterised
+    condition, no SQL built from the screen).
+    Controls\ucDashboard.cs: both ShowTodayGrid and ShowSelectedDay now ask for "Active", so the two
+    grids AND their headings stop counting cancelled and rescheduled visits. Billing
+    (BillingRepository.GetQueue) and the capacity counts were NOT changed - they already skip
+    cancelled ones.
+  - ReportRepository.GetDashboardStats was checked and NOT changed: today_total already excludes
+    'Cancelled' but STILL COUNTS 'Rescheduled' (remaining / completed / today_sales / active_packages
+    do not count cancelled ones). Say the word if today_total must exclude Rescheduled too.
+  - PROJECT_RULES.md: two new business rules - "Minimum age" and "Cancelled and rescheduled
+    appointments are not work".
+  - LittleEreseSystemV3.csproj was NOT edited (no new file).
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 66 passed, 0 failed, 0 skipped (the two new age checks PASS; the age message compared
+  is the exact sentence). tools\DesignerAudit.ps1: 22 files, no problems, exit 0.
+  --preview ucAppointments: the Status box reads "Active" on open, the day grid shows the one
+  non-cancelled appointment (10:00 AM, Bautista, Jenny Lyn, Upcoming) and the toolbar, the details
+  card and the details grid are unchanged - no fix round was needed. The app was started normally
+  once and closed; no error.log.
+  - Known limits / assumptions: the rule counts the age on DateTime.Today (the day of saving), so a
+    client who turns 15 tomorrow cannot be saved today. Old rows with a NULL birth date stay in the
+    database and still open in ClientEditForm, but the form will not save them again until a birth
+    date is entered (the picker is required) - that is the point of the rule, not a bug.
+    GetByDate("Active") is the default of ONE screen only; the Appointments page still lets the user
+    pick "All" or "Cancelled" on purpose, because that is the only place a cancelled visit is shown.
+
 - Step 32 (this task): ONE money formatter for the whole app, so no screen can show 5,000.00
   while another shows the peso sign.
   - Helpers\Money.cs (NEW FILE, registered in LittleEreseSystemV3.csproj): internal static class

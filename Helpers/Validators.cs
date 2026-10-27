@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -22,10 +23,37 @@ namespace LittleEreseSystemV3.Helpers
 
         private const int MinimumPasswordLength = 8;
 
+        // A client must be at least this old on the day of saving (PROJECT_RULES.md).
+        public const int MinimumClientAge = 15;
+
+        /// <summary>The one sentence shown (and thrown) when a client is younger than MinimumClientAge.</summary>
+        public const string MinimumClientAgeMessage =
+            "For safety reasons, we do not accept clients under 15 years old.";
+
         /// <summary>True when the text has something other than spaces in it.</summary>
         public static bool IsRequired(string value)
         {
             return !string.IsNullOrWhiteSpace(value);
+        }
+
+        /// <summary>
+        /// Age in whole years on a given day. WHY not (today - birth).Days / 365: that is wrong for
+        /// every leap year, so the birthday is compared with AddYears instead.
+        /// </summary>
+        public static int AgeOn(DateTime birthDate, DateTime day)
+        {
+            int years = day.Year - birthDate.Year;
+
+            // The birthday of this year has not happened yet, so one year must come off.
+            if (birthDate.Date > day.Date.AddYears(-years)) years--;
+
+            return years < 0 ? 0 : years;
+        }
+
+        /// <summary>True when the person born on birthDate is at least minimumAge years old on day.</summary>
+        public static bool IsAtLeastAge(DateTime birthDate, int minimumAge, DateTime day)
+        {
+            return birthDate.Date <= day.Date.AddYears(-minimumAge);
         }
 
         /// <summary>True for a Philippine mobile number written as 09XXXXXXXXX or +639XXXXXXXXX.</summary>
