@@ -48,13 +48,12 @@ namespace LittleEreseSystemV3.Controls
             this.dgvPromotions = new System.Windows.Forms.DataGridView();
             this.colPromoId = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colName = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.colType = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.colValue = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colServices = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colRegularTotal = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colPromoPrice = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colStart = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colEnd = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.colAppliesTo = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.colConditions = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.pnlToolbar.SuspendLayout();
             this.pnlGrid.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvPromotions)).BeginInit();
@@ -277,13 +276,12 @@ namespace LittleEreseSystemV3.Controls
             this.dgvPromotions.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.colPromoId,
             this.colName,
-            this.colType,
-            this.colValue,
+            this.colServices,
+            this.colRegularTotal,
+            this.colPromoPrice,
             this.colStart,
             this.colEnd,
-            this.colStatus,
-            this.colAppliesTo,
-            this.colConditions});
+            this.colStatus});
             dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle2.BackColor = System.Drawing.Color.White;
             dataGridViewCellStyle2.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -326,33 +324,40 @@ namespace LittleEreseSystemV3.Controls
             this.colName.ReadOnly = true;
             this.colName.Width = 220;
             // 
-            // colType
+            // colServices
             // 
-            this.colType.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
-            this.colType.DataPropertyName = "discount_type";
-            this.colType.HeaderText = "Type";
-            this.colType.Name = "colType";
-            this.colType.ReadOnly = true;
-            this.colType.Width = 90;
+            this.colServices.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.colServices.DataPropertyName = "services_text";
+            this.colServices.HeaderText = "Services";
+            this.colServices.Name = "colServices";
+            this.colServices.ReadOnly = true;
             // 
-            // colValue
+            // colRegularTotal
             // 
-            this.colValue.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
+            this.colRegularTotal.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
             dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
             dataGridViewCellStyle3.BackColor = System.Drawing.Color.White;
             dataGridViewCellStyle3.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             dataGridViewCellStyle3.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            dataGridViewCellStyle3.Format = "N2";
             dataGridViewCellStyle3.Padding = new System.Windows.Forms.Padding(4, 0, 4, 0);
             dataGridViewCellStyle3.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(195)))), ((int)(((byte)(157)))), ((int)(((byte)(74)))));
             dataGridViewCellStyle3.SelectionForeColor = System.Drawing.Color.White;
             dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.colValue.DefaultCellStyle = dataGridViewCellStyle3;
-            this.colValue.DataPropertyName = "discount_value";
-            this.colValue.HeaderText = "Value";
-            this.colValue.Name = "colValue";
-            this.colValue.ReadOnly = true;
-            this.colValue.Width = 90;
+            this.colRegularTotal.DefaultCellStyle = dataGridViewCellStyle3;
+            this.colRegularTotal.DataPropertyName = "regular_total";
+            this.colRegularTotal.HeaderText = "Regular price";
+            this.colRegularTotal.Name = "colRegularTotal";
+            this.colRegularTotal.ReadOnly = true;
+            this.colRegularTotal.Width = 120;
+            // 
+            // colPromoPrice
+            // 
+            this.colPromoPrice.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
+            this.colPromoPrice.DataPropertyName = "promo_price_text";
+            this.colPromoPrice.HeaderText = "Promo price";
+            this.colPromoPrice.Name = "colPromoPrice";
+            this.colPromoPrice.ReadOnly = true;
+            this.colPromoPrice.Width = 120;
             // 
             // colStart
             // 
@@ -382,23 +387,6 @@ namespace LittleEreseSystemV3.Controls
             this.colStatus.Name = "colStatus";
             this.colStatus.ReadOnly = true;
             this.colStatus.Width = 90;
-            // 
-            // colAppliesTo
-            // 
-            this.colAppliesTo.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
-            this.colAppliesTo.DataPropertyName = "applies_to";
-            this.colAppliesTo.HeaderText = "Applies to";
-            this.colAppliesTo.Name = "colAppliesTo";
-            this.colAppliesTo.ReadOnly = true;
-            this.colAppliesTo.Width = 130;
-            // 
-            // colConditions
-            // 
-            this.colConditions.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            this.colConditions.DataPropertyName = "description";
-            this.colConditions.HeaderText = "Conditions";
-            this.colConditions.Name = "colConditions";
-            this.colConditions.ReadOnly = true;
             // 
             // ucPromotions
             // 
@@ -437,12 +425,11 @@ namespace LittleEreseSystemV3.Controls
         private System.Windows.Forms.DataGridView dgvPromotions;
         private System.Windows.Forms.DataGridViewTextBoxColumn colPromoId;
         private System.Windows.Forms.DataGridViewTextBoxColumn colName;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colType;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colValue;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colServices;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colRegularTotal;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colPromoPrice;
         private System.Windows.Forms.DataGridViewTextBoxColumn colStart;
         private System.Windows.Forms.DataGridViewTextBoxColumn colEnd;
         private System.Windows.Forms.DataGridViewTextBoxColumn colStatus;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colAppliesTo;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colConditions;
     }
 }

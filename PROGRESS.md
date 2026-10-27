@@ -2,6 +2,25 @@
 
 Update this file at the end of every task.
 
+- Step 37 (this task): LAYOUT ONLY of ucPromotions. The grid columns are now
+  colPromoId (hidden, promo_id) / colName "Promotion" (promo_name) / colServices "Services"
+  (services_text, Fill) / colRegularTotal "Regular price" (regular_total, money) /
+  colPromoPrice "Promo price" (promo_price_text) / colStart "Start" / colEnd "End"
+  (MMM dd, yyyy) / colStatus "Status". The old colAppliesTo ("Applies to"), colConditions
+  ("Conditions"), colType ("Type") and colValue ("Value") columns were removed together with
+  their Designer lines. Money.ApplyTo(colRegularTotal) was added in Load. PromotionRepository
+  was NOT touched, so services_text / regular_total / promo_price_text are filled by the next
+  prompt (S2-C3) and those cells stay empty for now.
+  Commented out with "// TODO(logic prompt)" in Controls\ucPromotions.cs:
+  the type / value / percentage reads and the discount sentence of UpdateSummary(), and the
+  colValue branch (percentage wording) of dgvPromotions_CellFormatting. The summary strip now
+  shows the description of the selected promotion plus the names of the services it covers; the
+  SAVING is still missing because it needs promo_price, which PromotionRepository does not return
+  yet (S2-C3). regularTotal is already summed from GetPickList for that step.
+  PROJECT_RULES.md was NOT edited (no business rule or value list changed). The .csproj was NOT
+  edited (no new file). Standard clean build 0 errors / 0 warnings, DesignerAudit 22 files exit 0,
+  --preview ucPromotions: the 7 headers read Promotion / Services / Regular price / Promo price /
+  Start / End / Status with no overlap and no empty column wrapper, 0 fix rounds.
 - Step 36 (this task): LAYOUT ONLY of PromotionEditForm. The dialog now holds only the name, the
   description, the services covered, the promotional price, the two dates, the status and the price
   preview. No repository, validation or business rule was touched; the parts that cannot compile

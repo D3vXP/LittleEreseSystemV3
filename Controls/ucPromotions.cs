@@ -27,6 +27,7 @@ namespace LittleEreseSystemV3.Controls
             if (DesignTime.IsDesignMode) return;
 
             Theme.StyleGrid(dgvPromotions);
+            Money.ApplyTo(colRegularTotal);
             Theme.StylePrimaryButton(btnAdd);
             Theme.StyleSecondaryButton(btnEdit);
             Theme.StyleSecondaryButton(btnRefresh);
@@ -251,10 +252,9 @@ namespace LittleEreseSystemV3.Controls
         }
 
         /// <summary>
-        /// Fills the summary strip under the grid for the selected promotion. Staff see exactly the
-        /// same sentence as an Admin. An empty summary means "nothing selected".
-        /// The money of a promo with linked services is the regular total of those services and the
-        /// discount the promotion gives them, computed with PromotionRepository.ComputeDiscount.
+        /// Fills the summary strip under the grid for the selected promotion: its description and the
+        /// services it covers. Staff see exactly the same sentence as an Admin.
+        /// An empty summary means "nothing selected".
         /// </summary>
         private void UpdateSummary()
         {
@@ -267,9 +267,10 @@ namespace LittleEreseSystemV3.Controls
                 return;
             }
 
-            string type = Db.Get<string>(row.Cells["colType"].Value, "Percentage");
-            decimal value = Db.Get<decimal>(row.Cells["colValue"].Value);
-            bool percentage = string.Equals(type, "Percentage", StringComparison.OrdinalIgnoreCase);
+            // The description of the promotion is one of the columns the grid is bound to already.
+            // TODO(logic prompt): add the saving, which needs promo_price from the repository (S2-C3).
+            DataRowView bound = row.DataBoundItem as DataRowView;
+            string description = bound == null ? string.Empty : Db.Get<string>(bound["description"]);
 
             List<string> names = new List<string>();
             decimal regularTotal = 0m;
@@ -292,32 +293,15 @@ namespace LittleEreseSystemV3.Controls
                 return;
             }
 
-            if (names.Count == 0)
-            {
-                // No linked services = the promotion applies to the whole bill.
-                lblPromoSummary.Text = percentage
-                    ? "Applies to every service. " +
-                      value.ToString("0.##", CultureInfo.InvariantCulture) + " % off the whole bill."
-                    : "Applies to every service. " + Money.Text(value) + " off the whole bill.";
-                return;
-            }
+            // The strip is short on purpose: the description of the promotion, then the services it
+            // covers. Nothing is computed here, so an unlinked promotion simply shows its description.
+            string nameList = names.Count == 0 ? string.Empty : ShortNameList(names);
 
-            decimal discount = PromotionRepository.ComputeDiscount(type, value, regularTotal);
-            string nameList = ShortNameList(names);
-
-            if (percentage)
-            {
-                lblPromoSummary.Text =
-                    "Applies to: " + nameList + ". Regular total " + Money.Text(regularTotal) +
-                    " -> promo total " + Money.Text(regularTotal - discount) +
-                    " (save " + Money.Text(discount) + ")";
-            }
-            else
-            {
-                // A fixed promo is taken off once, so the sentence says "off the combined" total.
-                lblPromoSummary.Text =
-                    Money.Text(discount) + " off the combined " + Money.Text(regularTotal) + " of: " + nameList;
-            }
+            // TODO(logic prompt): add the saving of the selected promo once the repository returns
+            // promo_price (S2-C3). regularTotal below is already the sum of the linked services.
+            lblPromoSummary.Text = string.IsNullOrEmpty(nameList)
+                ? description
+                : (string.IsNullOrEmpty(description) ? nameList : description + "   |   " + nameList);
         }
 
         /// <summary>The first few service names plus " +N more", so the strip stays one line of text.</summary>
@@ -346,23 +330,7 @@ namespace LittleEreseSystemV3.Controls
                 e.CellStyle.ForeColor = Theme.StatusColor(e.Value.ToString());
                 e.CellStyle.SelectionForeColor = System.Drawing.Color.White;
             }
-            else if (column == "colValue")
-            {
-                // A percentage shown as "15.00" looks like money, so the type decides the wording.
-                string type = Db.Get<string>(dgvPromotions.Rows[e.RowIndex].Cells["colType"].Value);
-                decimal amount = Db.Get<decimal>(e.Value);
-
-                if (string.Equals(type, "Percentage", StringComparison.OrdinalIgnoreCase))
-                {
-                    e.Value = amount.ToString("0.##", CultureInfo.InvariantCulture) + " %";
-                }
-                else
-                {
-                    e.Value = Money.Text(amount);
-                }
-
-                e.FormattingApplied = true;
-            }
+            // TODO(logic prompt): the Value column (with its percentage wording) was removed.
         }
     }
 }
