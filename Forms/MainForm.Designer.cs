@@ -1,4 +1,4 @@
-﻿namespace LittleEreseSystemV3.Forms
+namespace LittleEreseSystemV3.Forms
 {
     partial class MainForm
     {
@@ -31,8 +31,10 @@
             this.components = new System.ComponentModel.Container();
             this.pnlSidebar = new System.Windows.Forms.Panel();
             this.pnlNav = new System.Windows.Forms.Panel();
+            this.lblNavFiles = new System.Windows.Forms.Label();
             this.btnNavActivityLog = new System.Windows.Forms.Button();
             this.btnNavFileMaintenance = new System.Windows.Forms.Button();
+            this.lblNavOperations = new System.Windows.Forms.Label();
             this.btnNavStaff = new System.Windows.Forms.Button();
             this.btnNavReports = new System.Windows.Forms.Button();
             this.btnNavCommissions = new System.Windows.Forms.Button();
@@ -41,6 +43,7 @@
             this.btnNavServices = new System.Windows.Forms.Button();
             this.btnNavClients = new System.Windows.Forms.Button();
             this.btnNavAppointments = new System.Windows.Forms.Button();
+            this.lblNavStaffManagement = new System.Windows.Forms.Label();
             this.btnNavDashboard = new System.Windows.Forms.Button();
             this.pnlBrand = new System.Windows.Forms.Panel();
             this.picBrand = new System.Windows.Forms.PictureBox();
@@ -89,14 +92,17 @@
             this.pnlNav.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(42)))), ((int)(((byte)(36)))), ((int)(((byte)(32)))));
             this.pnlNav.Controls.Add(this.btnNavActivityLog);
             this.pnlNav.Controls.Add(this.btnNavFileMaintenance);
-            this.pnlNav.Controls.Add(this.btnNavStaff);
+            this.pnlNav.Controls.Add(this.lblNavFiles);
             this.pnlNav.Controls.Add(this.btnNavReports);
-            this.pnlNav.Controls.Add(this.btnNavCommissions);
-            this.pnlNav.Controls.Add(this.btnNavBilling);
             this.pnlNav.Controls.Add(this.btnNavPromotions);
             this.pnlNav.Controls.Add(this.btnNavServices);
             this.pnlNav.Controls.Add(this.btnNavClients);
+            this.pnlNav.Controls.Add(this.btnNavBilling);
             this.pnlNav.Controls.Add(this.btnNavAppointments);
+            this.pnlNav.Controls.Add(this.lblNavOperations);
+            this.pnlNav.Controls.Add(this.btnNavCommissions);
+            this.pnlNav.Controls.Add(this.btnNavStaff);
+            this.pnlNav.Controls.Add(this.lblNavStaffManagement);
             this.pnlNav.Controls.Add(this.btnNavDashboard);
             this.pnlNav.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pnlNav.Location = new System.Drawing.Point(0, 90);
@@ -104,6 +110,20 @@
             this.pnlNav.Size = new System.Drawing.Size(240, 602);
             this.pnlNav.TabIndex = 0;
             // 
+            // lblNavFiles
+            // 
+            this.lblNavFiles.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(42)))), ((int)(((byte)(36)))), ((int)(((byte)(32)))));
+            this.lblNavFiles.Dock = System.Windows.Forms.DockStyle.Top;
+            this.lblNavFiles.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblNavFiles.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.lblNavFiles.Location = new System.Drawing.Point(0, 376);
+            this.lblNavFiles.Name = "lblNavFiles";
+            this.lblNavFiles.Padding = new System.Windows.Forms.Padding(16, 6, 0, 0);
+            this.lblNavFiles.Size = new System.Drawing.Size(240, 26);
+            this.lblNavFiles.TabIndex = 13;
+            this.lblNavFiles.Text = "FILES";
+            this.lblNavFiles.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            //             // 
             // btnNavActivityLog
             // 
             this.btnNavActivityLog.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(42)))), ((int)(((byte)(36)))), ((int)(((byte)(32)))));
@@ -115,12 +135,12 @@
             this.btnNavActivityLog.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnNavActivityLog.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnNavActivityLog.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
-            this.btnNavActivityLog.Location = new System.Drawing.Point(0, 480);
+            this.btnNavActivityLog.Location = new System.Drawing.Point(0, 438);
             this.btnNavActivityLog.Name = "btnNavActivityLog";
             this.btnNavActivityLog.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnNavActivityLog.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnNavActivityLog.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
-            this.btnNavActivityLog.Size = new System.Drawing.Size(240, 48);
+            this.btnNavActivityLog.Size = new System.Drawing.Size(240, 36);
             this.btnNavActivityLog.TabIndex = 10;
             this.btnNavActivityLog.Text = "Activity Log";
             this.btnNavActivityLog.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -138,18 +158,32 @@
             this.btnNavFileMaintenance.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnNavFileMaintenance.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnNavFileMaintenance.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
-            this.btnNavFileMaintenance.Location = new System.Drawing.Point(0, 432);
+            this.btnNavFileMaintenance.Location = new System.Drawing.Point(0, 402);
             this.btnNavFileMaintenance.Name = "btnNavFileMaintenance";
             this.btnNavFileMaintenance.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnNavFileMaintenance.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnNavFileMaintenance.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
-            this.btnNavFileMaintenance.Size = new System.Drawing.Size(240, 48);
+            this.btnNavFileMaintenance.Size = new System.Drawing.Size(240, 36);
             this.btnNavFileMaintenance.TabIndex = 9;
             this.btnNavFileMaintenance.Text = "File Maintenance";
             this.btnNavFileMaintenance.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnNavFileMaintenance.UseVisualStyleBackColor = false;
             this.btnNavFileMaintenance.Click += new System.EventHandler(this.btnNavFileMaintenance_Click);
             // 
+            // lblNavOperations
+            // 
+            this.lblNavOperations.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(42)))), ((int)(((byte)(36)))), ((int)(((byte)(32)))));
+            this.lblNavOperations.Dock = System.Windows.Forms.DockStyle.Top;
+            this.lblNavOperations.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblNavOperations.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.lblNavOperations.Location = new System.Drawing.Point(0, 124);
+            this.lblNavOperations.Name = "lblNavOperations";
+            this.lblNavOperations.Padding = new System.Windows.Forms.Padding(16, 6, 0, 0);
+            this.lblNavOperations.Size = new System.Drawing.Size(240, 26);
+            this.lblNavOperations.TabIndex = 12;
+            this.lblNavOperations.Text = "OPERATIONS";
+            this.lblNavOperations.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            //             // 
             // btnNavStaff
             // 
             this.btnNavStaff.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(42)))), ((int)(((byte)(36)))), ((int)(((byte)(32)))));
@@ -161,12 +195,12 @@
             this.btnNavStaff.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnNavStaff.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnNavStaff.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
-            this.btnNavStaff.Location = new System.Drawing.Point(0, 384);
+            this.btnNavStaff.Location = new System.Drawing.Point(0, 62);
             this.btnNavStaff.Name = "btnNavStaff";
             this.btnNavStaff.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnNavStaff.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnNavStaff.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
-            this.btnNavStaff.Size = new System.Drawing.Size(240, 48);
+            this.btnNavStaff.Size = new System.Drawing.Size(240, 36);
             this.btnNavStaff.TabIndex = 8;
             this.btnNavStaff.Text = "Staff Accounts";
             this.btnNavStaff.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -184,12 +218,12 @@
             this.btnNavReports.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnNavReports.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnNavReports.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
-            this.btnNavReports.Location = new System.Drawing.Point(0, 336);
+            this.btnNavReports.Location = new System.Drawing.Point(0, 340);
             this.btnNavReports.Name = "btnNavReports";
             this.btnNavReports.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnNavReports.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnNavReports.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
-            this.btnNavReports.Size = new System.Drawing.Size(240, 48);
+            this.btnNavReports.Size = new System.Drawing.Size(240, 36);
             this.btnNavReports.TabIndex = 7;
             this.btnNavReports.Text = "Reports";
             this.btnNavReports.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -207,12 +241,12 @@
             this.btnNavCommissions.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnNavCommissions.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnNavCommissions.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
-            this.btnNavCommissions.Location = new System.Drawing.Point(0, 288);
+            this.btnNavCommissions.Location = new System.Drawing.Point(0, 98);
             this.btnNavCommissions.Name = "btnNavCommissions";
             this.btnNavCommissions.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnNavCommissions.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnNavCommissions.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
-            this.btnNavCommissions.Size = new System.Drawing.Size(240, 48);
+            this.btnNavCommissions.Size = new System.Drawing.Size(240, 36);
             this.btnNavCommissions.TabIndex = 6;
             this.btnNavCommissions.Text = "Commissions";
             this.btnNavCommissions.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -230,12 +264,12 @@
             this.btnNavBilling.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnNavBilling.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnNavBilling.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
-            this.btnNavBilling.Location = new System.Drawing.Point(0, 240);
+            this.btnNavBilling.Location = new System.Drawing.Point(0, 196);
             this.btnNavBilling.Name = "btnNavBilling";
             this.btnNavBilling.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnNavBilling.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnNavBilling.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
-            this.btnNavBilling.Size = new System.Drawing.Size(240, 48);
+            this.btnNavBilling.Size = new System.Drawing.Size(240, 36);
             this.btnNavBilling.TabIndex = 5;
             this.btnNavBilling.Text = "Billing";
             this.btnNavBilling.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -253,12 +287,12 @@
             this.btnNavPromotions.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnNavPromotions.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnNavPromotions.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
-            this.btnNavPromotions.Location = new System.Drawing.Point(0, 192);
+            this.btnNavPromotions.Location = new System.Drawing.Point(0, 304);
             this.btnNavPromotions.Name = "btnNavPromotions";
             this.btnNavPromotions.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnNavPromotions.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnNavPromotions.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
-            this.btnNavPromotions.Size = new System.Drawing.Size(240, 48);
+            this.btnNavPromotions.Size = new System.Drawing.Size(240, 36);
             this.btnNavPromotions.TabIndex = 4;
             this.btnNavPromotions.Text = "Promotions";
             this.btnNavPromotions.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -276,12 +310,12 @@
             this.btnNavServices.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnNavServices.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnNavServices.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
-            this.btnNavServices.Location = new System.Drawing.Point(0, 144);
+            this.btnNavServices.Location = new System.Drawing.Point(0, 268);
             this.btnNavServices.Name = "btnNavServices";
             this.btnNavServices.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnNavServices.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnNavServices.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
-            this.btnNavServices.Size = new System.Drawing.Size(240, 48);
+            this.btnNavServices.Size = new System.Drawing.Size(240, 36);
             this.btnNavServices.TabIndex = 3;
             this.btnNavServices.Text = "Services";
             this.btnNavServices.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -299,18 +333,32 @@
             this.btnNavClients.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnNavClients.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnNavClients.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
-            this.btnNavClients.Location = new System.Drawing.Point(0, 96);
+            this.btnNavClients.Location = new System.Drawing.Point(0, 232);
             this.btnNavClients.Name = "btnNavClients";
             this.btnNavClients.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnNavClients.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnNavClients.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
-            this.btnNavClients.Size = new System.Drawing.Size(240, 48);
+            this.btnNavClients.Size = new System.Drawing.Size(240, 36);
             this.btnNavClients.TabIndex = 2;
             this.btnNavClients.Text = "Clients";
             this.btnNavClients.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnNavClients.UseVisualStyleBackColor = false;
             this.btnNavClients.Click += new System.EventHandler(this.btnNavClients_Click);
             // 
+            // lblNavStaffManagement
+            // 
+            this.lblNavStaffManagement.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(42)))), ((int)(((byte)(36)))), ((int)(((byte)(32)))));
+            this.lblNavStaffManagement.Dock = System.Windows.Forms.DockStyle.Top;
+            this.lblNavStaffManagement.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblNavStaffManagement.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.lblNavStaffManagement.Location = new System.Drawing.Point(0, 36);
+            this.lblNavStaffManagement.Name = "lblNavStaffManagement";
+            this.lblNavStaffManagement.Padding = new System.Windows.Forms.Padding(16, 6, 0, 0);
+            this.lblNavStaffManagement.Size = new System.Drawing.Size(240, 26);
+            this.lblNavStaffManagement.TabIndex = 11;
+            this.lblNavStaffManagement.Text = "STAFF MANAGEMENT";
+            this.lblNavStaffManagement.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            //             // 
             // btnNavAppointments
             // 
             this.btnNavAppointments.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(42)))), ((int)(((byte)(36)))), ((int)(((byte)(32)))));
@@ -322,12 +370,12 @@
             this.btnNavAppointments.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnNavAppointments.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnNavAppointments.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(239)))), ((int)(((byte)(224)))));
-            this.btnNavAppointments.Location = new System.Drawing.Point(0, 48);
+            this.btnNavAppointments.Location = new System.Drawing.Point(0, 160);
             this.btnNavAppointments.Name = "btnNavAppointments";
             this.btnNavAppointments.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnNavAppointments.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnNavAppointments.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
-            this.btnNavAppointments.Size = new System.Drawing.Size(240, 48);
+            this.btnNavAppointments.Size = new System.Drawing.Size(240, 36);
             this.btnNavAppointments.TabIndex = 1;
             this.btnNavAppointments.Text = "Appointments";
             this.btnNavAppointments.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -350,7 +398,7 @@
             this.btnNavDashboard.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnNavDashboard.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnNavDashboard.Padding = new System.Windows.Forms.Padding(16, 0, 0, 0);
-            this.btnNavDashboard.Size = new System.Drawing.Size(240, 48);
+            this.btnNavDashboard.Size = new System.Drawing.Size(240, 36);
             this.btnNavDashboard.TabIndex = 0;
             this.btnNavDashboard.Text = "Dashboard";
             this.btnNavDashboard.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -614,6 +662,9 @@
         private System.Windows.Forms.PictureBox picBrand;
         private System.Windows.Forms.Label lblVersion;
         private System.Windows.Forms.Panel pnlNav;
+        private System.Windows.Forms.Label lblNavStaffManagement;
+        private System.Windows.Forms.Label lblNavOperations;
+        private System.Windows.Forms.Label lblNavFiles;
         private System.Windows.Forms.Button btnNavDashboard;
         private System.Windows.Forms.Button btnNavAppointments;
         private System.Windows.Forms.Button btnNavClients;

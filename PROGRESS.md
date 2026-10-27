@@ -2,6 +2,50 @@
 
 Update this file at the end of every task.
 
+- Step 31 (this task): GROUPED SIDEBAR with category headings. No page, icon, caption, shortcut or
+  role rule was changed - only the order and the grouping of the menu.
+  - Forms\MainForm.Designer.cs: three new Labels in pnlNav - lblNavStaffManagement
+    ("STAFF MANAGEMENT"), lblNavOperations ("OPERATIONS") and lblNavFiles ("FILES"). Each one is
+    Dock Top, Height 26, SmallFont (Segoe UI 8.5 pt) with the Theme.TextMuted colour as a literal
+    (122,114,102), Padding 16/6/0/0 (16 px left so the words line up with the button captions, 6 px
+    top so the gap above the heading is visible) and SidebarBack as BackgroundColor. A Label cannot be
+    clicked and is not in the NavButtons() list, so it is never highlighted or "selected".
+    Every nav button went from 48 px to 36 px high (11 buttons) and the Dock Top z-order was
+    rebuilt: Dashboard, STAFF MANAGEMENT, Staff Accounts, Commissions, OPERATIONS, Appointments,
+    Billing, Clients, Services, Promotions, Reports, FILES, File Maintenance, Activity Log.
+    Locations follow that order: 0, 36, 62, 98, 124, 160, 196, 232, 268, 304, 340, 376, 402, 438
+    (each row is the height of the control above it, 36 for a button and 26 for a heading).
+    TabIndex still follows reading order.
+    Settings was NOT a sidebar item and stays in the header (it was never in pnlNav).
+  - Forms\MainForm.cs: ApplyRoleVisibility() also hides lblNavStaffManagement and lblNavFiles for
+    Staff, because those groups hold only owner screens and a heading with no button under it is a
+    dead label. SetSidebarCollapsed() shows the headings only while the sidebar is expanded AND the
+    user is an Admin (a 68 px icon strip has no room for words). Nothing else changed: page keys,
+    CreatePage, PageTitle, IsAdminPage, HighlightNavButton, the icons and the role checks are the
+    same code as before.
+  - Fit rule: at 1280 x 720 the window is 720 px, pnlBrand 90 + lblVersion 28 + a 1 px header line
+    leave pnlNav 602 px; the Admin menu is 14 rows = 474 px, so it fits with about 128 px to spare
+    and NO scrolling is needed. pnlNav.AutoScroll was therefore left false (the rule allows making
+    it vertical-only AutoScroll if it ever stops fitting).
+  - PROJECT_RULES.md: new "Additions (Step 31) - the sidebar" section (the group order, the two
+    headings Staff must not see, the fact that a heading is a Label and never clickable, the 36/26
+    px sizes with the numbers behind the 1280 x 720 fit, and the AutoScroll fallback rule).
+  - LittleEreseSystemV3.csproj was NOT edited (no new file; both MainForm files were already
+    listed).
+- Standard clean build (bin and obj deleted first, MSBuild /t:Rebuild): 0 errors, 0 warnings.
+  --smoketest: 64 passed, 0 failed, 0 skipped. tools\DesignerAudit.ps1: 22 files, no problems,
+  exit 0. --preview MainForm (Admin): Dashboard alone on top, then STAFF MANAGEMENT / Staff
+  Accounts / Commissions, OPERATIONS / Appointments / Billing / Clients / Services / Promotions /
+  Reports, FILES / File Maintenance / Activity Log - every caption complete, nothing overlapping,
+  the whole menu visible without a scrollbar. --preview MainForm --role Staff: Dashboard, then
+  OPERATIONS with its six pages only; STAFF MANAGEMENT, FILES and Today's Sales card are all gone.
+  No fix round was needed (no overlap, no truncated text). The app was started normally once and
+  closed; no error.log.
+  - Known limits / assumptions: the headings are 8.5 pt muted grey on the dark sidebar on purpose
+    (POLISH: raise them to 9 pt or Theme.SidebarText if the owner wants them louder). The heading
+    text is upper case in the Designer, so it is not localised by code. A future page must be added
+    to the right group by hand in three places (Designer z-order, NavButtons(), NavButtonFor()).
+
 - Step 30 (this task): UPGRADING EXISTING DATABASES - numbered migration files that are applied
   automatically at startup, so a tester's LittleEresesDB gets new columns and tables without
   anything being deleted.

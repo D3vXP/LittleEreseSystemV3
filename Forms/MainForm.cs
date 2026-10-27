@@ -357,6 +357,11 @@ namespace LittleEreseSystemV3.Forms
             btnNavStaff.Visible = false;
             btnNavFileMaintenance.Visible = false;
             btnNavActivityLog.Visible = false;
+
+            // A heading with no button under it would be a dead label, so both group
+            // headings that only hold owner screens are hidden as well.
+            lblNavStaffManagement.Visible = false;
+            lblNavFiles.Visible = false;
         }
 
         /// <summary>
@@ -387,6 +392,10 @@ namespace LittleEreseSystemV3.Forms
 
             pnlBrand.Visible = !collapsed;
             lblVersion.Visible = !collapsed;
+
+            // The headings are words, so the icon strip has no room for them.
+            lblNavStaffManagement.Visible = !collapsed && Session.IsAdmin;
+            lblNavFiles.Visible = !collapsed && Session.IsAdmin;
 
             pnlSidebar.Width = collapsed ? SidebarCollapsedWidth : SidebarExpandedWidth;
 

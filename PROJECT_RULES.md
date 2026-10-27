@@ -145,3 +145,20 @@ Settings). A task from now on is usually a small change, so these rules apply.
   height) and take a fresh preview.
 - The smoke test and every `--preview` run must leave no file behind except bin\Debug\previews\ and
   smoketest.log, which .gitignore already covers.
+
+## Additions (Step 31) - the sidebar
+`Forms\MainForm.Designer.cs` builds the sidebar buttons (pnlNav) and `Forms\MainForm.cs` decides who
+sees them. The Admin menu is grouped, the Staff menu has no group it cannot use:
+- Dashboard has NO heading. Then STAFF MANAGEMENT (Staff Accounts, Commissions), OPERATIONS
+  (Appointments, Billing, Clients, Services, Promotions, Reports) and FILES (File Maintenance,
+  Activity Log). Settings stays in the header, not in the list.
+- Staff sees Dashboard + OPERATIONS only. `ApplyRoleVisibility` hides the Admin buttons AND the two
+  headings that hold only Admin buttons (STAFF MANAGEMENT, FILES), so a heading is never left alone.
+- A heading is a Label (lblNavStaffManagement, lblNavOperations, lblNavFiles), not a Button: it is
+  never clickable and never highlighted. SmallFont, Theme.TextMuted, 16 px left padding, a 26 px
+  height and a 6 px top padding give it the gap above and separate it from the buttons.
+- Sizes: a nav button is 36 px high (was 48) and a heading 26 px, so the whole Admin menu fits at
+  1280 x 720 (Dashboard + 3 headings + 11 buttons = 432 px inside the 602 px pnlNav). The headings
+  are hidden while the sidebar is collapsed, because the icon strip has no room for words.
+- pnlNav is NOT AutoScroll: the fit rule above must keep being true. If a future page is added and
+  the menu no longer fits, make pnlNav.AutoScroll true and leave the horizontal scrollbar off.
