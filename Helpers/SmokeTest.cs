@@ -315,6 +315,7 @@ namespace LittleEreseSystemV3.Helpers
             CheckSchemaVersionTable();
             CheckMigrationsListed();
             CheckMigration002Columns();
+            CheckMigration003Data();
 
             // A 'Promo Price' promotion without its price could never give a discount, so the
             // stored data is checked here (read-only).
@@ -572,6 +573,23 @@ namespace LittleEreseSystemV3.Helpers
                 "('AppointmentServices','assessed_by'),('Promotions','promo_price')," +
                 "('Clients','health_conditions')) v(t, c) " +
                 "WHERE COL_LENGTH('dbo.' + v.t, v.c) IS NOT NULL");
+        }
+
+        /// <summary>
+        /// The data of migration 003: every duration on the 30-minute grid, the three Tirzepatide
+        /// packages and the room/category links. Read-only; "at least" style for the added rows.
+        /// </summary>
+        private static void CheckMigration003Data()
+        {
+            CheckScalarZero("Services with a duration that is not a multiple of 30",
+                "SELECT COUNT(*) FROM Services WHERE duration_minutes % 30 <> 0");
+
+            CheckScalarAtLeast("Tirzepatide packages = ", 3,
+                "SELECT COUNT(*) FROM Services " +
+                "WHERE service_name LIKE 'Tirzepatide (%' AND default_total_sessions IN (4,6,8)");
+
+            CheckScalarAtLeast("Room category links = ", 10,
+                "SELECT COUNT(*) FROM RoomServiceCategories");
         }
 
         /// <summary>GetLog for the last 7 days must run and come back with the columns the grid needs.</summary>

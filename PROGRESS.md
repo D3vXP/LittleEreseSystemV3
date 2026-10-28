@@ -2,6 +2,27 @@
 
 Update this file at the end of every task.
 
+- Step 41 (this task): the DATA of tester feedback round 1 (migration 003).
+  - New file Database\Migrations\003_feedback_round1_data.sql (2748 bytes, every GO on its own
+    line): durations rounded UP to the 30-minute grid, Full Legs Hair Removal and Lash Lift w/ Tint
+    raised to 90, gluta drips (60 min and longer) get staff_busy_minutes = 15 only where it is
+    still NULL, "Tirzepatide" renamed to "Tirzepatide (4 sessions)" and the 6/8-session packages
+    inserted through NOT EXISTS, room capacities 10 / 3 / 3, Diode Machine Room set Unavailable,
+    and the 10 RoomServiceCategories links added through NOT EXISTS. No DROP TABLE, no TRUNCATE,
+    no DELETE - the only DROP in the round is not in this file.
+  - Helpers\SmokeTest.cs: new read-only CheckMigration003Data - "Services with a duration that is
+    not a multiple of 30" (CheckScalarZero), "Tirzepatide packages = 3" and
+    "Room category links = 10" (CheckScalarAtLeast).
+  - PROJECT_RULES.md: the Rooms sentence replaced with the agreed numbers (with the
+    // POLISH: owner confirms the numbers note) and the new rule "Every service duration is a
+    multiple of 30 minutes ... staff_busy_minutes ... gluta drips use 15."
+  - LittleEreseSystemV3.csproj was NOT edited: the Content wildcard Database\Migrations\*.sql
+    (PreserveNewest) copied 003 to bin\Debug\Database\Migrations.
+  - Checks: standard clean build 0 errors / 0 warnings; app started ONCE and applied 003
+    (SchemaVersion: 001 2026-10-27 10:07:30, 002 2026-10-27 11:17:07, 003 2026-10-28 09:00:29);
+    a SECOND start added no row and left applied_at unchanged (data unchanged too: Tirzepatide
+    rows still 3, RoomServiceCategories still 10, services off the grid still 0);
+    --smoketest 74 passed / 0 failed / 0 skipped; DesignerAudit 22 files exit 0; no error.log.
 - Step 39 (this task): CHECKED, nothing to change. The prompt repeated Step 30/31 work that is
   already in the repository, so no file was edited in this run.
   - CheckMaintenanceTableCounts already uses counts.Rows.Count >= MinimumTables (line 613) since
