@@ -127,6 +127,7 @@
     </Compile>
     <Compile Include="Data\ActivityRepository.cs" />
     <Compile Include="Data\AppointmentRepository.cs" />
+    <Compile Include="Data\AvailabilityRepository.cs" />
     <Compile Include="Data\BillingRepository.cs" />
     <Compile Include="Data\ClientRepository.cs" />
     <Compile Include="Data\CommissionRepository.cs" />

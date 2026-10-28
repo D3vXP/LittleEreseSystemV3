@@ -2,7 +2,24 @@
 
 Update this file at the end of every task.
 
-- Step 44 (this task): the three small hooks the new availability class needs, all in
+- Step 45 (this task): the new Data\AvailabilityRepository.cs (skeleton + two helpers).
+  - New file Data\AvailabilityRepository.cs: internal static class AvailabilityRepository in
+    LittleEreseSystemV3.Data, four usings (System, System.Collections.Generic, System.Data,
+    System.Data.SqlClient), the summary that explains WHY every method takes the
+    (SqlConnection, SqlTransaction) pair first (a query on a second connection would wait for the
+    rows the running transaction just inserted).
+  - Members: SlotMinutes = 30; LineEnd(start, durationMinutes, quantity) = start + duration x
+    Math.Max(quantity, 1) minutes; LineBusyEnd(start, durationMinutes, staffBusyMinutes,
+    quantity) = start + perUnit x Math.Max(quantity, 1) minutes, where perUnit is
+    staffBusyMinutes when 0 < staffBusyMinutes <= durationMinutes, else durationMinutes.
+    No query yet (nothing else was asked for).
+  - LittleEreseSystemV3.csproj WAS edited: one line, <Compile Include="Data\AvailabilityRepository.cs" />
+    after Data\AppointmentRepository.cs. Its UTF-8 BOM was removed by the first write and restored.
+  - PROJECT_RULES.md: no rule changed, so it was not edited.
+  - Checks: clean build 0 errors / 0 warnings; --smoketest 77 passed / 0 failed / 0 skipped;
+    DesignerAudit 22 files exit 0; app started once, stayed open, closed, no error.log.
+  - Next: the availability queries that use these helpers and the Step 44 hooks.
+- Step 44: the three small hooks the new availability class needs, all in
   Data\AppointmentRepository.cs and no new file.
   - Four new column-name constants after ColRoomName: ColStartTime ("start_time"), ColEndTime
     ("end_time"), ColBusyEndTime ("busy_end_time"), ColAssessedBy ("assessed_by").
