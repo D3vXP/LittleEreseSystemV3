@@ -385,5 +385,80 @@ WHERE a.client_id = @client_id
 
             return 0;
         }
+
+        /// <summary>
+        /// The lowest session number of that package that is still free, or 0 when every number
+        /// from 1 to totalSessions is taken. A cancelled session keeps no number, so a package
+        /// with a cancelled session can be completed instead of leaving a hole.
+        /// </summary>
+        public static int NextSessionNumber(SqlConnection connection, SqlTransaction transaction,
+            int packageId, int totalSessions)
+        {
+            if (totalSessions < 1) return 0;
+
+            DataTable used = Db.Query(connection, transaction,
+@"SELECT DISTINCT session_number
+FROM AppointmentServices
+WHERE package_id = @package_id AND status <> 'Cancelled' AND session_number IS NOT NULL",
+                Db.P("@package_id", packageId));
+
+            HashSet<int> taken = new HashSet<int>();
+            foreach (DataRow row in used.Rows)
+            {
+                taken.Add(Db.Get<int>(row["session_number"]));
+            }
+
+            for (int number = 1; number <= totalSessions; number++)
+            {
+                if (!taken.Contains(number)) return number;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// The sessions that come AFTER the first one of a package booking: one row per session
+        /// (number, date, start, whether it can be booked, the reason when it cannot).
+        /// Every session keeps the time of day of the first one and sits session_interval_days
+        /// apart, because a package is booked as weekly sessions.
+        /// </summary>
+        public static DataTable PlanSessions(SqlConnection connection, SqlTransaction transaction,
+            int clientId, int serviceId, DateTime firstDate, TimeSpan start, int firstSessionNumber,
+            int totalSessions, int excludeAppointmentId)
+        {
+            DataTable plan = new DataTable();
+            plan.Columns.Add("session_number", typeof(int));
+            plan.Columns.Add("session_date", typeof(DateTime));
+            plan.Columns.Add("start_time", typeof(TimeSpan));
+            plan.Columns.Add("ok", typeof(bool));
+            plan.Columns.Add("problem", typeof(string));
+
+            DataRow service = AppointmentRepository.GetServiceInfo(connection, transaction, serviceId);
+            if (service == null) return plan;
+
+            int intervalDays = Db.Get<int>(service["session_interval_days"], 7);
+            if (intervalDays < 1) intervalDays = 1;
+
+            for (int number = firstSessionNumber + 1; number <= totalSessions; number++)
+            {
+                DateTime sessionDate = firstDate.Date.AddDays((number - firstSessionNumber) * intervalDays);
+
+                string problem = WhyNotPossible(connection, transaction, sessionDate, serviceId, 1, start,
+                    0, clientId, excludeAppointmentId, null);
+
+                // The time check does not look at the day's limit, so the capacity is asked here.
+                if (problem == string.Empty &&
+                    AppointmentRepository.CountAppointmentsThatDay(connection, transaction, sessionDate,
+                        excludeAppointmentId) >= AppointmentRepository.MaxAppointmentsPerDay)
+                {
+                    problem = "That day already has " + AppointmentRepository.MaxAppointmentsPerDay +
+                        " appointments.";
+                }
+
+                plan.Rows.Add(number, sessionDate, start, problem == string.Empty, problem);
+            }
+
+            return plan;
+        }
     }
 }

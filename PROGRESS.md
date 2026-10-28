@@ -2,6 +2,29 @@
 
 Update this file at the end of every task.
 
+- Step 49 (this task): packages are booked as weekly sessions.
+  - Data\AvailabilityRepository.cs: NextSessionNumber(packageId, totalSessions) returns the lowest
+    free session number of a package (numbers of non-cancelled AppointmentServices rows are used, so
+    a cancelled session frees its number), or 0 when all are taken. PlanSessions returns one row per
+    session AFTER the first (session_number, session_date, start_time, ok, problem), each date
+    session_interval_days after the first, checked with WhyNotPossible and with the 30-a-day limit.
+  - Data\AppointmentRepository.cs: FindActivePackage now returns the first Active package that still
+    has a free session number (otherwise null, so a new package starts); TryGetPackagePlan and
+    ResolveLinePrices take the number from NextSessionNumber instead of sessions_completed + 1; the
+    price rule is unchanged (whole package price on session 1, 0.00 after). New SessionText(n, total)
+    returns "Session 2 of 4" and "Session 1 of 1" when a number is missing.
+  - Cancel() already sets the appointment's AppointmentServices rows to 'Cancelled', so nothing was
+    changed there.
+  - Helpers\SmokeTest.cs: CheckAvailability now also runs PlanSessions on today + 400 days
+    (3 sessions on +7/+14/+21, all ok) and SessionText(2,4) / SessionText(0,0). 87 passed now.
+  - PROJECT_RULES.md WAS edited: the "Packages" rule now says a package is booked as weekly sessions
+    created together, the first one carries the whole price, labels read "Session x of y", and a
+    cancelled session leaves a number that can be booked again.
+  - LittleEreseSystemV3.csproj was NOT edited.
+  - Checks: clean build 0 errors / 0 warnings; --smoketest 87 passed / 0 failed / 0 skipped;
+    DesignerAudit 22 files exit 0; app started once, stayed open, closed, no error.log.
+  - Next: use PlanSessions and SessionText when the booking screen creates the package sessions
+    (E2-B). Known issue: none.
 - Step 48 (this task): the free start times, the room and the technician a booking line needs.
   - Three new methods in Data\AvailabilityRepository.cs, one edit each. GetFreeStarts walks the
     category's opening hours every 30 minutes up to the last start that still ends before closing

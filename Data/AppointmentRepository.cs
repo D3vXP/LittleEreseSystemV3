@@ -397,7 +397,9 @@ ORDER BY asv.appointment_service_id",
 
             packageId = Db.Get<int>(existing["package_id"]);
             totalSessions = Db.Get<int>(existing["total_sessions"], defaultSessions);
-            sessionNumber = Db.Get<int>(existing["sessions_completed"]) + 1;
+            // The number comes from the sessions that are not cancelled, not from the count of
+            // completed ones, so a cancelled session can be booked again.
+            sessionNumber = AvailabilityRepository.NextSessionNumber(null, null, packageId, totalSessions);
             return true;
         }
 
@@ -418,6 +420,17 @@ ORDER BY asv.appointment_service_id",
             }
 
             return new TimeSpan(0, minutes, 0);
+        }
+
+        /// <summary>
+        /// The label of a package session ("Session 2 of 4"). A missing number (a single service)
+        /// reads "Session 1 of 1", so a label is never empty.
+        /// </summary>
+        public static string SessionText(int sessionNumber, int totalSessions)
+        {
+            if (sessionNumber <= 0 || totalSessions <= 0) return "Session 1 of 1";
+
+            return "Session " + sessionNumber + " of " + totalSessions;
         }
 
         /// <summary>The subtotal of a booking: every line's price times its quantity.</summary>
@@ -1106,7 +1119,8 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
                     {
                         packageId = Db.Get<int>(existing["package_id"]);
                         totalSessions = Db.Get<int>(existing["total_sessions"], defaultSessions);
-                        sessionNumber = Db.Get<int>(existing["sessions_completed"]) + 1;
+                        sessionNumber = AvailabilityRepository.NextSessionNumber(connection, transaction,
+                            packageId, totalSessions);
                         linePrice = sessionNumber == 1 ? servicePrice : 0m;
                     }
                 }
@@ -1250,19 +1264,36 @@ ORDER BY r.capacity DESC, r.room_name",
                 Db.P("@category_id", categoryId));
         }
 
-        /// <summary>The Active package of a client for one service, or null when there is none.</summary>
+        /// <summary>
+        /// The first Active package of a client for one service that still has a free session
+        /// number, or null when there is none (the caller then opens a new package).
+        /// </summary>
         private static DataRow FindActivePackage(SqlConnection connection, SqlTransaction transaction,
             int clientId, int serviceId)
         {
+            // The first Active package that still has a free session number, in purchase order.
+            // A package whose sessions are all booked has nothing left, so the next booking
+            // starts a new package instead of reusing a finished one.
             DataTable table = Db.Query(connection, transaction,
-@"SELECT TOP 1 package_id, total_sessions, sessions_completed
+@"SELECT package_id, total_sessions, sessions_completed
 FROM ClientPackages
 WHERE client_id = @client_id AND service_id = @service_id AND status = 'Active'
 ORDER BY purchase_date, package_id",
                 Db.P("@client_id", clientId),
                 Db.P("@service_id", serviceId));
 
-            return table.Rows.Count == 0 ? null : table.Rows[0];
+            foreach (DataRow row in table.Rows)
+            {
+                int totalSessions = Db.Get<int>(row["total_sessions"]);
+
+                if (AvailabilityRepository.NextSessionNumber(connection, transaction,
+                    Db.Get<int>(row["package_id"]), totalSessions) > 0)
+                {
+                    return row;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>

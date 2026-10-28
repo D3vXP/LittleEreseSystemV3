@@ -1079,6 +1079,9 @@ namespace LittleEreseSystemV3.Helpers
             CheckPickRoom(facialId, emptyDay);
             CheckPickTechnician(facialId, emptyDay);
             CheckGlutaBusyEnd();
+            CheckPlanSessions(emptyDay, new TimeSpan(10, 0, 0));
+            CheckSessionText(2, 4, "Session 2 of 4");
+            CheckSessionText(0, 0, "Session 1 of 1");
         }
 
         private static void Line(string text)
@@ -1320,6 +1323,93 @@ WHERE c.category_name = @name AND s.status = 'Active'";
                     ", technician free at " + AppointmentRepository.Clock(busyEnd) + ")";
 
                 if (busyEnd < end) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// A package is booked as weekly sessions: three more sessions follow the first one, each
+        /// session_interval_days later, and on an empty day every one of them fits.
+        /// </summary>
+        private static void CheckPlanSessions(DateTime firstDate, TimeSpan start)
+        {
+            const string label = "PlanSessions plans 3 weekly Tirzepatide sessions";
+            try
+            {
+                int serviceId = FindTirzepatideServiceId();
+
+                if (serviceId == 0)
+                {
+                    Skipped(label);
+                    return;
+                }
+
+                DataTable plan = AvailabilityRepository.PlanSessions(null, null, 0, serviceId, firstDate,
+                    start, 1, 4, 0);
+
+                string message = label + " (got " + plan.Rows.Count + " row(s))";
+
+                if (plan.Rows.Count != 3)
+                {
+                    Fail(message);
+                    return;
+                }
+
+                for (int index = 0; index < plan.Rows.Count; index++)
+                {
+                    DataRow row = plan.Rows[index];
+                    int expectedNumber = 2 + index;
+                    // Session 2 is 7 days after the first one, so the step is number - 1.
+                    DateTime expectedDate = firstDate.AddDays(7 * (expectedNumber - 1));
+
+                    bool numberOk = Db.Get<int>(row["session_number"]) == expectedNumber;
+                    bool dateOk = Db.Get<DateTime>(row["session_date"]).Date == expectedDate.Date;
+                    bool okOk = Db.Get<bool>(row["ok"]);
+
+                    if (!numberOk || !dateOk || !okOk)
+                    {
+                        Fail(message + " row " + expectedNumber + " is " +
+                            Db.Get<int>(row["session_number"]) + " on " +
+                            Db.Get<DateTime>(row["session_date"]).ToString("yyyy-MM-dd") + ", ok = " +
+                            okOk + " - " + Db.Get<string>(row["problem"]));
+                        return;
+                    }
+                }
+
+                Pass(message + " on " + plan.Rows[2]["session_date"]);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>The lowest Active "Tirzepatide (4 sessions)" service id, or 0 when it is gone.</summary>
+        private static int FindTirzepatideServiceId()
+        {
+            object id = Db.Scalar(
+                "SELECT TOP 1 service_id FROM Services " +
+                "WHERE service_name = @name AND status = 'Active' ORDER BY service_id",
+                Db.P("@name", "Tirzepatide (4 sessions)"));
+
+            return id == null || id == DBNull.Value ? 0 : Convert.ToInt32(id);
+        }
+
+        /// <summary>The session label of a package line, with "Session 1 of 1" for a plain service.</summary>
+        private static void CheckSessionText(int sessionNumber, int totalSessions, string expected)
+        {
+            string label = "AppointmentRepository.SessionText(" + sessionNumber + ", " +
+                totalSessions + ")";
+            try
+            {
+                string actual = AppointmentRepository.SessionText(sessionNumber, totalSessions);
+                string message = label + " = \"" + actual + "\" (expected \"" + expected + "\")";
+
+                if (actual == expected) Pass(message);
                 else Fail(message);
             }
             catch (Exception ex)
