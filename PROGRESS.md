@@ -2,6 +2,43 @@
 
 Update this file at the end of every task.
 
+- Step 51 (this task): booking Tirzepatide (4 sessions) also creates the 3 weekly sessions, so the
+  remaining 3 weeks are already scheduled. ValidateBooking and Create keep their signatures; the form
+  is untouched.
+  - ValidateBooking: after the per-line checks, every line whose service is a package
+    (default_total_sessions > 1) calls AvailabilityRepository.PlanSessions with the client, the
+    line's own start, the session number TryGetPackagePlan gives and the package size. Each session
+    row with ok = false becomes a problem "<service> session <n> on <MMM dd, yyyy>: <problem>", so a
+    booking is refused as a whole when one of its weekly sessions cannot be placed.
+  - Create: after the first appointment, its lines, its bill and its history row (all in the SAME
+    transaction), each package line calls PlanSessions again with the open connection and
+    transaction and creates ONE more appointment per returned session: Appointments (same client,
+    user and booking_source, status 'Upcoming', the session's date and time, notes NULL),
+    AppointmentServices (same service, quantity 1, price 0.00, same package_id, that
+    session_number, total_sessions, 'Pending', start/end/busy_end from the service, assessed_by
+    copied from the first session), AppointmentStaff (PickTechnician, 0 = no row), AppointmentRooms
+    (PickRoom, 0 = no row), Billing through BillingRepository.CreateBilling (0 subtotal, no promo, 0
+    discount, 0 downpayment, 'None', 0 total, 0 balance, 'Unpaid') and AppointmentHistory 'Created'
+    with "Session n of N of <service>, booked together with appointment #<first id>.". A row with
+    ok = false inside the transaction throws InvalidOperationException with its sentence and the
+    whole booking rolls back.
+  - Create still returns the FIRST appointment's id; ActivityRepository.Log now adds ", plus N
+    package session(s)." when sessions were created.
+  - Helpers\SmokeTest.cs: one new read-only check "ValidateBooking reports a taken weekly session".
+    It finds an upcoming appointment of a client without an Active package for the service and uses
+    that appointment's date as the SECOND weekly session, so ValidateBooking must report it (skip
+    with a note when no such appointment exists). 90 passed now. No write test was added.
+  - PROJECT_RULES.md WAS edited: the "Packages" rule now also says the later sessions are created in
+    the same transaction (the six tables for each) and that a session which cannot be placed rolls
+    the whole booking back. docs\POLISH_LIST.md line number for the room POLISH note was refreshed
+    (1284 -> 1451).
+  - LittleEreseSystemV3.csproj was NOT edited (no new file).
+  - Known issue for E2-C: the booking form still shows one time for the whole appointment and does
+    not preview the weekly sessions; it needs the per-line time pickers and the PlanSessions preview.
+    Reschedule still plans rooms with BuildRoomPlan and does not rewrite the line times.
+  - Checks: clean build 0 errors / 0 warnings; --smoketest 90 passed / 0 failed / 0 skipped;
+    DesignerAudit 22 files exit 0; app started once, stayed open, closed, no error.log.
+  - Next: E2-C, the booking screen (per-line time pickers, PackageForm session plan, reschedule).
 - Step 50 (this task): the booking is checked and saved LINE BY LINE. ValidateBooking and Create keep
   their signatures, so the booking form still works while the screen is rebuilt.
   - Data\AppointmentRepository.cs: new PrepareLines(connection, transaction, lines, firstStart)

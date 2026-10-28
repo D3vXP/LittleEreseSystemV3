@@ -641,6 +641,44 @@ ORDER BY asv.appointment_service_id",
                 }
             }
 
+            // A package is booked as weekly sessions, so every session AFTER the first one must
+            // fit as well. When one of them cannot be placed the whole booking is refused.
+            // The session number is the same one TryGetPackagePlan gives (1 for a new package).
+            foreach (DataRow row in prepared.Rows)
+            {
+                int serviceId = Db.Get<int>(row[ColServiceId]);
+
+                int packageId;
+                int sessionNumber;
+                int totalSessions;
+                bool isNewPackage;
+
+                if (!TryGetPackagePlan(clientId, serviceId,
+                    out packageId, out sessionNumber, out totalSessions, out isNewPackage))
+                {
+                    continue;   // not a package: default_total_sessions is 1
+                }
+
+                if (sessionNumber <= 0 || totalSessions <= 1) continue;
+
+                DataRow service = GetServiceInfo(null, null, serviceId);
+                string serviceName = service == null
+                    ? "Service #" + serviceId
+                    : Db.Get<string>(service["service_name"]);
+
+                DataTable plan = AvailabilityRepository.PlanSessions(null, null, clientId, serviceId,
+                    appointmentDate, ReadTime(row[ColStartTime]), sessionNumber, totalSessions, appointmentId);
+
+                foreach (DataRow session in plan.Rows)
+                {
+                    if (Db.Get<bool>(session["ok"])) continue;
+
+                    problems.Add(serviceName + " session " + Db.Get<int>(session["session_number"]) +
+                        " on " + Db.Get<DateTime>(session["session_date"]).ToString("MMM dd, yyyy") +
+                        ": " + Db.Get<string>(session["problem"]));
+                }
+            }
+
             // Daily capacity: at most 30 appointments a day, of which at most 10 contain a massage.
             int bookedThatDay = CountAppointmentsThatDay(null, null, appointmentDate, appointmentId);
             if (bookedThatDay >= MaxAppointmentsPerDay)
@@ -719,6 +757,10 @@ ORDER BY asv.appointment_service_id",
             }
 
             int newAppointmentId = 0;
+
+            // How many weekly sessions of a package were created after the first one, so the
+            // activity log can say it (the transaction cannot return a value).
+            int extraSessions = 0;
 
             Db.InTransaction(delegate (SqlConnection connection, SqlTransaction transaction)
             {
@@ -876,10 +918,135 @@ VALUES (@appointment_id, @changed_by, 'Created', 'Upcoming', @reason)",
                     Db.P("@appointment_id", newAppointmentId),
                     Db.P("@changed_by", userId),
                     Db.P("@reason", "Booked as a " + bookingSource + " appointment."));
+
+                // 9. A package is booked as weekly sessions: every session after the first one
+                // becomes its own appointment, in the SAME transaction, so the remaining weeks
+                // are already scheduled. When a session cannot be placed the whole booking rolls
+                // back (the exception leaves this delegate and Db.InTransaction rolls back).
+                foreach (DataRow row in prepared.Rows)
+                {
+                    int serviceId = Db.Get<int>(row[ColServiceId]);
+                    int packageId = Db.Get<int>(row[ColPackageId]);
+                    int sessionNumber = Db.Get<int>(row[ColSessionNumber]);
+                    int totalSessions = Db.Get<int>(row[ColTotalSessions]);
+                    int assessedBy = Db.Get<int>(row[ColAssessedBy]);
+
+                    if (packageId <= 0 || sessionNumber <= 0 || totalSessions <= 1) continue;
+
+                    TimeSpan lineStart = ReadTime(row[ColStartTime]);
+
+                    DataRow service = GetServiceInfo(connection, transaction, serviceId);
+                    if (service == null)
+                    {
+                        throw new InvalidOperationException(
+                            "One of the package services no longer exists. Add it again.");
+                    }
+
+                    string serviceName = Db.Get<string>(service["service_name"]);
+                    int duration = Db.Get<int>(service["duration_minutes"]);
+                    int staffBusyMinutes = Db.Get<int>(service["staff_busy_minutes"], 0);
+                    int categoryId = Db.Get<int>(service["category_id"]);
+
+                    DataTable plan = AvailabilityRepository.PlanSessions(connection, transaction, clientId,
+                        serviceId, appointmentDate, lineStart, sessionNumber, totalSessions, newAppointmentId);
+
+                    foreach (DataRow session in plan.Rows)
+                    {
+                        if (!Db.Get<bool>(session["ok"]))
+                        {
+                            throw new InvalidOperationException(Db.Get<string>(session["problem"]));
+                        }
+
+                        DateTime sessionDate = Db.Get<DateTime>(session["session_date"]).Date;
+                        int sessionNo = Db.Get<int>(session["session_number"]);
+
+                        TimeSpan sessionEnd = AvailabilityRepository.LineEnd(lineStart, duration, 1);
+                        TimeSpan sessionBusyEnd = AvailabilityRepository.LineBusyEnd(lineStart, duration,
+                            staffBusyMinutes, 1);
+
+                        // The technician and the room of that week are chosen for its own date.
+                        int sessionTechnicianId = AvailabilityRepository.PickTechnician(connection,
+                            transaction, sessionDate, serviceId, 1, lineStart, 0);
+
+                        string sessionRoomName;
+                        int sessionRoomId = AvailabilityRepository.PickRoom(connection, transaction,
+                            sessionDate, categoryId, lineStart, sessionEnd, 0, out sessionRoomName);
+
+                        object sessionAppointment = Db.Scalar(connection, transaction,
+@"INSERT INTO Appointments (client_id, user_id, appointment_date, start_time, end_time,
+                           booking_source, status, notes)
+VALUES (@client_id, @user_id, @appointment_date, CAST(@start_time AS time), CAST(@end_time AS time),
+        @booking_source, 'Upcoming', NULL);
+SELECT CAST(SCOPE_IDENTITY() AS int);",
+                            Db.P("@client_id", clientId),
+                            Db.P("@user_id", userId),
+                            Db.P("@appointment_date", sessionDate),
+                            Db.P("@start_time", SqlTime(lineStart)),
+                            Db.P("@end_time", SqlTime(sessionEnd)),
+                            Db.P("@booking_source", bookingSource));
+
+                        int sessionAppointmentId = Convert.ToInt32(sessionAppointment);
+
+                        object sessionLine = Db.Scalar(connection, transaction,
+@"INSERT INTO AppointmentServices (appointment_id, service_id, package_id, quantity, price,
+                                  session_number, total_sessions, status,
+                                  start_time, end_time, busy_end_time, assessed_by)
+VALUES (@appointment_id, @service_id, @package_id, 1, 0.00,
+        @session_number, @total_sessions, 'Pending',
+        CAST(@start_time AS time), CAST(@end_time AS time), CAST(@busy_end_time AS time), @assessed_by);
+SELECT CAST(SCOPE_IDENTITY() AS int);",
+                            Db.P("@appointment_id", sessionAppointmentId),
+                            Db.P("@service_id", serviceId),
+                            Db.P("@package_id", packageId),
+                            Db.P("@session_number", sessionNo),
+                            Db.P("@total_sessions", totalSessions),
+                            Db.P("@start_time", SqlTime(lineStart)),
+                            Db.P("@end_time", SqlTime(sessionEnd)),
+                            Db.P("@busy_end_time", SqlTime(sessionBusyEnd)),
+                            Db.P("@assessed_by", assessedBy > 0 ? (object)assessedBy : null));
+
+                        int sessionLineId = Convert.ToInt32(sessionLine);
+
+                        if (sessionTechnicianId > 0)
+                        {
+                            Db.Execute(connection, transaction,
+@"INSERT INTO AppointmentStaff (appointment_id, appointment_service_id, user_id, status)
+VALUES (@appointment_id, @appointment_service_id, @user_id, 'Assigned')",
+                                Db.P("@appointment_id", sessionAppointmentId),
+                                Db.P("@appointment_service_id", sessionLineId),
+                                Db.P("@user_id", sessionTechnicianId));
+                        }
+
+                        if (sessionRoomId > 0)
+                        {
+                            Db.Execute(connection, transaction,
+@"INSERT INTO AppointmentRooms (appointment_id, appointment_service_id, room_id, status)
+VALUES (@appointment_id, @appointment_service_id, @room_id, 'Reserved')",
+                                Db.P("@appointment_id", sessionAppointmentId),
+                                Db.P("@appointment_service_id", sessionLineId),
+                                Db.P("@room_id", sessionRoomId));
+                        }
+
+                        // A later session costs nothing: the whole package price sits on session 1.
+                        BillingRepository.CreateBilling(connection, transaction, sessionAppointmentId,
+                            0m, 0, 0m, 0m, 0m, "None", 0m, "Unpaid");
+
+                        Db.Execute(connection, transaction,
+@"INSERT INTO AppointmentHistory (appointment_id, changed_by, change_type, new_status, reason)
+VALUES (@appointment_id, @changed_by, 'Created', 'Upcoming', @reason)",
+                            Db.P("@appointment_id", sessionAppointmentId),
+                            Db.P("@changed_by", userId),
+                            Db.P("@reason", "Session " + sessionNo + " of " + totalSessions + " of " +
+                                serviceName + ", booked together with appointment #" + newAppointmentId + "."));
+
+                        extraSessions++;
+                    }
+                }
             });
 
             ActivityRepository.Log(userId, "Book Appointment", "Appointments",
-                "Appointment #" + newAppointmentId + " for client #" + clientId + " (" + bookingSource + ")");
+                "Appointment #" + newAppointmentId + " for client #" + clientId + " (" + bookingSource + ")" +
+                (extraSessions > 0 ? ", plus " + extraSessions + " package session(s)." : "."));
 
             return newAppointmentId;
         }

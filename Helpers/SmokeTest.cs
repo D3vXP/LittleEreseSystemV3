@@ -1087,6 +1087,7 @@ namespace LittleEreseSystemV3.Helpers
             // fit in the same appointment. Both checks only read (see the comment on each one).
             CheckValidateBookingLines(emptyDay, facialId, massageId);
             CheckValidateBookingMassageAtTen(emptyDay, massageId);
+            CheckValidateBookingTakenSession();
         }
 
         private static void Line(string text)
@@ -1522,6 +1523,103 @@ WHERE c.category_name = @name AND s.status = 'Active'";
                 }
 
                 if (mentionsBetween) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// A weekly session that is already taken must be reported by ValidateBooking, so a package
+        /// is never booked on top of an appointment the client already has. The scenario is READ
+        /// from the shop's own upcoming appointments (nothing is written): the second weekly
+        /// session lands exactly on an appointment that client already has.
+        /// </summary>
+        private static void CheckValidateBookingTakenSession()
+        {
+            const string label = "ValidateBooking reports a taken weekly session";
+            try
+            {
+                int serviceId = FindTirzepatideServiceId();
+
+                if (serviceId == 0)
+                {
+                    Skipped(label);
+                    return;
+                }
+
+                DataRow service = AppointmentRepository.GetServiceInfo(null, null, serviceId);
+                int intervalDays = Db.Get<int>(service["session_interval_days"], 7);
+                if (intervalDays < 1) intervalDays = 1;
+
+                string categoryName = Db.Get<string>(service["category_name"]);
+                bool massage = AppointmentRepository.IsMassageCategory(categoryName);
+
+                TimeSpan opens = massage ? AppointmentRepository.MassageOpening : AppointmentRepository.AestheticOpening;
+                TimeSpan closes = massage ? AppointmentRepository.MassageClosing : AppointmentRepository.AestheticClosing;
+                int duration = Db.Get<int>(service["duration_minutes"]);
+
+                // An upcoming appointment far enough away that the FIRST weekly session is still in
+                // the future; its date becomes the date of the SECOND session, so that session is
+                // already taken and the booking must be refused.
+                DataTable candidates = Db.Query(
+@"SELECT TOP 1 a.client_id, a.appointment_date, CAST(a.start_time AS time) AS start_time
+FROM Appointments a
+WHERE a.status = 'Upcoming'
+  AND a.appointment_date >= DATEADD(day, @days, CAST(GETDATE() AS date))
+  AND CAST(a.start_time AS time) >= CAST(@opens AS time)
+  AND CAST(a.start_time AS time) <= CAST(@last_start AS time)
+  AND NOT EXISTS (SELECT 1 FROM ClientPackages cp
+                  WHERE cp.client_id = a.client_id AND cp.service_id = @service_id
+                    AND cp.status = 'Active')
+ORDER BY a.appointment_date, a.appointment_id",
+                    Db.P("@days", intervalDays + 1),
+                    Db.P("@service_id", serviceId),
+                    Db.P("@opens", AppointmentRepository.SqlTime(opens)),
+                    Db.P("@last_start", AppointmentRepository.SqlTime(closes.Subtract(TimeSpan.FromMinutes(duration)))));
+
+                if (candidates.Rows.Count == 0)
+                {
+                    Skipped(label);
+                    return;
+                }
+
+                DataRow candidate = candidates.Rows[0];
+                int clientId = Db.Get<int>(candidate["client_id"]);
+                DateTime takenDate = Db.Get<DateTime>(candidate["appointment_date"]).Date;
+                TimeSpan start = AppointmentRepository.ReadTime(candidate["start_time"]);
+                DateTime firstDate = takenDate.AddDays(-intervalDays);
+
+                DataTable lines = new DataTable();
+                lines.Columns.Add(AppointmentRepository.ColServiceId, typeof(int));
+                lines.Columns.Add(AppointmentRepository.ColServiceName, typeof(string));
+                lines.Columns.Add(AppointmentRepository.ColQuantity, typeof(int));
+                lines.Columns.Add(AppointmentRepository.ColPrice, typeof(decimal));
+                lines.Columns.Add(AppointmentRepository.ColDuration, typeof(int));
+                lines.Columns.Add(AppointmentRepository.ColTechnicianId, typeof(int));
+                lines.Columns.Add(AppointmentRepository.ColStartTime, typeof(TimeSpan));
+
+                AddLine(lines, serviceId, start);
+
+                List<string> problems = AppointmentRepository.ValidateBooking(0, clientId, firstDate,
+                    start, "Walk-in", lines, 0, 0m, "Cash", string.Empty, false);
+
+                string message = label + " (session " + takenDate.ToString("MMM dd, yyyy") + " at " +
+                    AppointmentRepository.Clock(start) + ", got " + problems.Count + " problem(s))";
+
+                string taken = string.Empty;
+                foreach (string problem in problems)
+                {
+                    if (problem.IndexOf("session", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        taken = problem;
+                        break;
+                    }
+                }
+
+                if (taken != string.Empty) Pass(message + " - " + taken);
                 else Fail(message);
             }
             catch (Exception ex)

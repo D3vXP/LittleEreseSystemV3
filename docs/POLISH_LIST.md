@@ -19,7 +19,7 @@ Total: **27 comments** in **13 files**.
 
 | File | Line | Text |
 |---|---|---|
-| Data\AppointmentRepository.cs | 1284 | when a category has no room linked in RoomServiceCategories, nothing is assigned and no problem is raised - otherwise no booking would be possible until the owner links the rooms of the shop. |
+| Data\AppointmentRepository.cs | 1451 | when a category has no room linked in RoomServiceCategories, nothing is assigned and no problem is raised - otherwise no booking would be possible until the owner links the rooms of the shop. |
 | Data\DemoDataSeeder.cs | 22 | set to false before the shop uses the system for real. |
 | Data\DemoDataSeeder.cs | 25 | the owner can change these demo passwords here (or delete the accounts in Staff Accounts). |
 | Data\DemoDataSeeder.cs | 89 | rename these demo staff accounts to the real employees in Staff Accounts. |
