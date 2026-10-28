@@ -642,41 +642,46 @@ ORDER BY asv.appointment_service_id",
                 }
             }
 
-            // A package is booked as weekly sessions, so every session AFTER the first one must
-            // fit as well. When one of them cannot be placed the whole booking is refused.
-            // The session number is the same one TryGetPackagePlan gives (1 for a new package).
-            foreach (DataRow row in prepared.Rows)
+            // A reschedule moves one existing appointment; the later sessions of a package already
+            // exist as their own appointments, so they are not planned again.
+            if (appointmentId == 0)
             {
-                int serviceId = Db.Get<int>(row[ColServiceId]);
-
-                int packageId;
-                int sessionNumber;
-                int totalSessions;
-                bool isNewPackage;
-
-                if (!TryGetPackagePlan(clientId, serviceId,
-                    out packageId, out sessionNumber, out totalSessions, out isNewPackage))
+                // A package is booked as weekly sessions, so every session AFTER the first one must
+                // fit as well. When one of them cannot be placed the whole booking is refused.
+                // The session number is the same one TryGetPackagePlan gives (1 for a new package).
+                foreach (DataRow row in prepared.Rows)
                 {
-                    continue;   // not a package: default_total_sessions is 1
-                }
+                    int serviceId = Db.Get<int>(row[ColServiceId]);
 
-                if (sessionNumber <= 0 || totalSessions <= 1) continue;
+                    int packageId;
+                    int sessionNumber;
+                    int totalSessions;
+                    bool isNewPackage;
 
-                DataRow service = GetServiceInfo(null, null, serviceId);
-                string serviceName = service == null
-                    ? "Service #" + serviceId
-                    : Db.Get<string>(service["service_name"]);
+                    if (!TryGetPackagePlan(clientId, serviceId,
+                        out packageId, out sessionNumber, out totalSessions, out isNewPackage))
+                    {
+                        continue;   // not a package: default_total_sessions is 1
+                    }
 
-                DataTable plan = AvailabilityRepository.PlanSessions(null, null, clientId, serviceId,
-                    appointmentDate, ReadTime(row[ColStartTime]), sessionNumber, totalSessions, appointmentId);
+                    if (sessionNumber <= 0 || totalSessions <= 1) continue;
 
-                foreach (DataRow session in plan.Rows)
-                {
-                    if (Db.Get<bool>(session["ok"])) continue;
+                    DataRow service = GetServiceInfo(null, null, serviceId);
+                    string serviceName = service == null
+                        ? "Service #" + serviceId
+                        : Db.Get<string>(service["service_name"]);
 
-                    problems.Add(serviceName + " session " + Db.Get<int>(session["session_number"]) +
-                        " on " + Db.Get<DateTime>(session["session_date"]).ToString("MMM dd, yyyy") +
-                        ": " + Db.Get<string>(session["problem"]));
+                    DataTable plan = AvailabilityRepository.PlanSessions(null, null, clientId, serviceId,
+                        appointmentDate, ReadTime(row[ColStartTime]), sessionNumber, totalSessions, appointmentId);
+
+                    foreach (DataRow session in plan.Rows)
+                    {
+                        if (Db.Get<bool>(session["ok"])) continue;
+
+                        problems.Add(serviceName + " session " + Db.Get<int>(session["session_number"]) +
+                            " on " + Db.Get<DateTime>(session["session_date"]).ToString("MMM dd, yyyy") +
+                            ": " + Db.Get<string>(session["problem"]));
+                    }
                 }
             }
 

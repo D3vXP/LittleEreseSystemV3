@@ -2,7 +2,21 @@
 
 Update this file at the end of every task.
 
-- Step 52 (this task): Reschedule(appointmentId, newDate, newStart, reason) keeps its signature but
+- Step 53 (this task): the weekly-session check of a package now runs ONLY for a NEW booking.
+  - Data\AppointmentRepository.cs, ValidateBooking: the loop that calls TryGetPackagePlan and
+    AvailabilityRepository.PlanSessions is wrapped in `if (appointmentId == 0)`, with a comment
+    saying a reschedule moves one existing appointment and the later sessions already exist as
+    their own appointments, so they are not planned again. Nothing else changed (Create,
+    Reschedule and the smoke tests are untouched).
+  - This closes the known issue of Step 52 (a rescheduled package session could be refused because
+    its own later sessions made the client "busy").
+  - PROJECT_RULES.md WAS edited: the Packages rule now says the weekly-session check runs only for
+    a new booking and never during a reschedule.
+  - LittleEreseSystemV3.csproj was NOT edited.
+  - Checks: clean build 0 errors / 0 warnings; --smoketest 90 passed / 0 failed / 0 skipped;
+    DesignerAudit 22 files exit 0; app started once, stayed open, closed, no error.log.
+  - Next: E2-C, the booking screen (per-line time pickers, PackageForm session plan, reschedule UI).
+- Step 52: Reschedule(appointmentId, newDate, newStart, reason) keeps its signature but
   now moves ALL the lines of the appointment by the same amount. newStart is the new start of the
   EARLIEST line; every other line keeps the distance it had from it.
   - Data\AppointmentRepository.cs, Reschedule: lines = GetLinesForBooking (which now also returns
