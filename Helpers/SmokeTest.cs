@@ -936,8 +936,7 @@ namespace LittleEreseSystemV3.Helpers
                 lines.Columns.Add("technician_id", typeof(int));
 
                 List<string> problems = AppointmentRepository.ValidateBooking(0, 0,
-                    DateTime.Today.AddDays(1), new TimeSpan(14, 0, 0), "Walk-in", lines, 0,
-                    0m, "Cash", string.Empty, false);
+                    DateTime.Today.AddDays(1), new TimeSpan(14, 0, 0), "Walk-in", lines, 0);
 
                 string message = label + " (got " + problems.Count + " problem(s))";
 
@@ -1455,7 +1454,7 @@ WHERE c.category_name = @name AND s.status = 'Active'";
                 AddLine(lines, massageId, new TimeSpan(13, 0, 0));
 
                 List<string> problems = AppointmentRepository.ValidateBooking(0, clientId, date,
-                    new TimeSpan(10, 0, 0), "Walk-in", lines, 0, 0m, "Cash", string.Empty, false);
+                    new TimeSpan(10, 0, 0), "Walk-in", lines, 0);
 
                 string message = label + " (got " + problems.Count + " problem(s))";
                 string unwanted = string.Empty;
@@ -1508,7 +1507,7 @@ WHERE c.category_name = @name AND s.status = 'Active'";
                 AddLine(lines, massageId, new TimeSpan(10, 0, 0));
 
                 List<string> problems = AppointmentRepository.ValidateBooking(0, clientId, date,
-                    new TimeSpan(10, 0, 0), "Walk-in", lines, 0, 0m, "Cash", string.Empty, false);
+                    new TimeSpan(10, 0, 0), "Walk-in", lines, 0);
 
                 string message = label + " (got " + problems.Count + " problem(s))";
 
@@ -1604,7 +1603,7 @@ ORDER BY a.appointment_date, a.appointment_id",
                 AddLine(lines, serviceId, start);
 
                 List<string> problems = AppointmentRepository.ValidateBooking(0, clientId, firstDate,
-                    start, "Walk-in", lines, 0, 0m, "Cash", string.Empty, false);
+                    start, "Walk-in", lines, 0);
 
                 string message = label + " (session " + takenDate.ToString("MMM dd, yyyy") + " at " +
                     AppointmentRepository.Clock(start) + ", got " + problems.Count + " problem(s))";

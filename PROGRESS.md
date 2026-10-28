@@ -2,7 +2,37 @@
 
 Update this file at the end of every task.
 
-- Step 53 (this task): the weekly-session check of a package now runs ONLY for a NEW booking.
+- Step 54 (this task): the booking takes no money any more; the 50% down payment is taken in
+  Billing right after it (prompt B1). The two safety rules are enforced for a NEW booking.
+  - AppointmentRepository.RequiredNow(string, decimal, decimal) is now
+    DownpaymentDue(decimal subtotal, decimal discount): total = max(subtotal - discount, 0); a
+    promotion (discount > 0) is the FULL total, otherwise Math.Round(total / 2, 2,
+    MidpointRounding.AwayFromZero). Every booking source pays 50%, a walk-in too.
+  - ValidateBooking and Create lost amountPaid / paymentMethod / paymentReference /
+    paymentVerified, and the whole "Money" block of ValidateBooking is gone. Create writes the bill
+    with downpayment 0, downpayment_status 'None', balance_due = total and payment_status 'Unpaid',
+    and writes NO Payments row. ReadPaymentInfo and NeedsReference are removed (nothing else used
+    them). Reschedule passes the shorter list (and still passes the promo id of the bill).
+  - New, only when appointmentId = 0: (a) ClientRepository.GetById must have consent_status = 1,
+    else "This client has not signed the consent form yet. Open Clients, tick that the signed form
+    is on file, then book again."; (b) every line whose service has requires_assessment = 1 needs
+    ColAssessedBy from UserRepository.GetActiveNurses(), else "Choose the nurse who assessed the
+    client for <service>." (only when that list has at least one row, one message per service).
+  - Forms\AppointmentForm.cs: the calls use the new shapes (DownpaymentDue(_subtotal, _discount)),
+    the payment controls stay in place but their values go nowhere, and SaveNewBooking shows
+    "Appointment #n was booked. Next: take the down payment of <amount> in Billing.".
+  - Helpers\SmokeTest.cs: the four ValidateBooking calls use the new signature.
+  - PROJECT_RULES.md WAS edited: the Booking rule now reads "Every appointment needs a 50% down
+    payment (a promo needs the full total), taken in Billing right after the booking. The booking
+    dialog takes no money. Consent must be signed before a booking. A service with
+    requires_assessment needs the assessing nurse (assessed_by)."
+  - Known issue: the booking dialog still shows the old payment group (it will be removed in
+    E2-E) and it cannot pick a nurse yet, so an assessment service is refused until that UI exists.
+  - LittleEreseSystemV3.csproj was NOT edited (no new file).
+  - Checks: clean build 0 errors / 0 warnings; --smoketest 90 passed / 0 failed / 0 skipped;
+    DesignerAudit 22 files exit 0; app started once, stayed open, closed, no error.log.
+  - Next: E2-C, the booking screen (per-line time pickers, PackageForm session plan, reschedule UI).
+- Step 53: the weekly-session check of a package now runs ONLY for a NEW booking.
   - Data\AppointmentRepository.cs, ValidateBooking: the loop that calls TryGetPackagePlan and
     AvailabilityRepository.PlanSessions is wrapped in `if (appointmentId == 0)`, with a comment
     saying a reschedule moves one existing appointment and the later sessions already exist as

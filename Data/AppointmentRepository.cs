@@ -472,25 +472,21 @@ ORDER BY asv.appointment_service_id",
         }
 
         /// <summary>
-        /// How much money the shop asks for right now:
+        /// The down payment the front desk takes in Billing right after a booking:
         ///   - a promotion needs the FULL total, because promos are paid in full upfront
-        ///   - otherwise a booking from Messenger / Text / Phone needs 50% of the subtotal
-        ///   - a walk-in without a promotion pays at the counter, so nothing is required now
-        /// The form and the validator both call this, so the amount can never differ between them.
+        ///   - otherwise EVERY booking needs 50% of the total, a walk-in included
+        /// The booking dialog takes no money any more, so nothing else asks for this amount.
         /// </summary>
-        public static decimal RequiredNow(string bookingSource, decimal subtotal, decimal discount)
+        public static decimal DownpaymentDue(decimal subtotal, decimal discount)
         {
             decimal total = subtotal - discount;
             if (total < 0m) total = 0m;
 
             // WHY the promotion is checked first: a promo is never an installment, so the whole
-            // total is due now whichever way the client booked (PROJECT_RULES, "Promos").
+            // total is due (PROJECT_RULES, "Promos").
             if (discount > 0m) return total;
 
-            bool walkIn = string.Equals(bookingSource, "Walk-in", StringComparison.OrdinalIgnoreCase);
-            if (walkIn) return 0m;
-
-            decimal half = Math.Round(subtotal / 2m, 2, MidpointRounding.AwayFromZero);
+            decimal half = Math.Round(total / 2m, 2, MidpointRounding.AwayFromZero);
             return half;
         }
 
@@ -572,12 +568,13 @@ ORDER BY asv.appointment_service_id",
         ///   appointmentId - 0 for a new booking, or the id being rescheduled, so the appointment
         ///                   does not count itself in the daily capacity or against the rooms
         ///   lines         - service_id, quantity, price, duration_minutes, technician_id per line
-        ///   amountPaid    - the money handed over now (0 for a walk-in without promotion)
+        /// The booking dialog takes no money: the 50% down payment is taken in Billing afterwards.
+        /// The safety rules (a signed consent form and the nurse of an invasive service) are only
+        /// checked for a NEW booking, because a reschedule changes no client and no nurse.
         /// Every message is a sentence a staff member can understand.
         /// </summary>
         public static List<string> ValidateBooking(int appointmentId, int clientId, DateTime appointmentDate,
-            TimeSpan startTime, string bookingSource, DataTable lines, int promoId,
-            decimal amountPaid, string paymentMethod, string paymentReference, bool paymentVerified)
+            TimeSpan startTime, string bookingSource, DataTable lines, int promoId)
         {
             List<string> problems = new List<string>();
 
@@ -700,11 +697,10 @@ ORDER BY asv.appointment_service_id",
             }
 
             // Promotion: it must be valid today AND apply to at least one service of this booking.
-            decimal discount = 0m;
             if (promoId > 0)
             {
                 string promoMessage;
-                discount = PromotionRepository.CalculateDiscount(promoId, BuildPromoLines(lines), out promoMessage);
+                PromotionRepository.CalculateDiscount(promoId, BuildPromoLines(lines), out promoMessage);
 
                 if (!string.IsNullOrEmpty(promoMessage))
                 {
@@ -712,29 +708,50 @@ ORDER BY asv.appointment_service_id",
                 }
             }
 
-            // Money: the upfront payment must reach what the shop asks for and must be verifiable.
-            decimal subtotal = Subtotal(lines);
-            decimal required = RequiredNow(bookingSource, subtotal, discount);
-
-            if (required > 0m && amountPaid < required)
+            // Safety, checked for a NEW booking only: the signed consent form must be on file and
+            // an invasive service needs the nurse who assessed the client. A reschedule changes
+            // neither the client nor the nurse, so it must not ask for them again.
+            if (appointmentId == 0)
             {
-                problems.Add("This " + bookingSource + " booking needs " + Money.Text(required) +
-                    " paid now" + (discount > 0m
-                        ? " (a promotion is always paid in full)."
-                        : " (50% of the " + Money.Text(subtotal) + " subtotal)."));
-            }
-
-            if (amountPaid > 0m && NeedsReference(paymentMethod))
-            {
-                if (string.IsNullOrWhiteSpace(paymentReference))
+                if (clientId > 0)
                 {
-                    problems.Add("Type the " + paymentMethod + " reference number.");
+                    DataRow client = ClientRepository.GetById(clientId);
+                    int consent = client == null ? 0 : Db.Get<int>(client["consent_status"]);
+
+                    if (consent != 1)
+                    {
+                        problems.Add("This client has not signed the consent form yet. Open Clients, " +
+                            "tick that the signed form is on file, then book again.");
+                    }
                 }
 
-                if (!paymentVerified)
+                DataTable nurses = UserRepository.GetActiveNurses();
+
+                // WHY the "at least one nurse" condition: a shop with no nurse on the list cannot
+                // name one, so the booking goes through instead of being blocked forever.
+                if (nurses.Rows.Count > 0)
                 {
-                    problems.Add("Tick 'I verified this payment in the GCash / bank app' before saving a " +
-                        paymentMethod + " payment.");
+                    HashSet<int> nurseIds = new HashSet<int>();
+                    foreach (DataRow nurse in nurses.Rows)
+                    {
+                        nurseIds.Add(Db.Get<int>(nurse["user_id"]));
+                    }
+
+                    List<string> alreadyReported = new List<string>();
+
+                    foreach (DataRow row in prepared.Rows)
+                    {
+                        DataRow service = GetServiceInfo(null, null, Db.Get<int>(row[ColServiceId]));
+                        if (service == null || !Db.Get<bool>(service["requires_assessment"])) continue;
+
+                        if (nurseIds.Contains(Db.Get<int>(row[ColAssessedBy]))) continue;
+
+                        string serviceName = Db.Get<string>(service["service_name"]);
+                        if (alreadyReported.Contains(serviceName)) continue;
+
+                        alreadyReported.Add(serviceName);
+                        problems.Add("Choose the nurse who assessed the client for " + serviceName + ".");
+                    }
                 }
             }
 
@@ -748,14 +765,14 @@ ORDER BY asv.appointment_service_id",
         /// <summary>
         /// Books an appointment and everything that belongs to it in ONE transaction:
         /// the appointment, its service lines (with the package rules applied), the technicians,
-        /// the rooms, the bill, the upfront payment, the history row and the activity log entry.
+        /// the rooms, the bill, the history row and the activity log entry.
+        /// The bill starts unpaid with no down payment on it: the 50% is taken in Billing.
         /// Returns the new appointment_id.
         /// The rules are checked again here (through ValidateBooking by the caller) but the prices
         /// are always read from the database, so a changed service price can never be bypassed.
         /// </summary>
         public static int Create(int clientId, int userId, DateTime appointmentDate, TimeSpan startTime,
-            string bookingSource, string notes, DataTable lines, int promoId,
-            decimal amountPaid, string paymentMethod, string paymentReference, bool paymentVerified)
+            string bookingSource, string notes, DataTable lines, int promoId)
         {
             if (lines == null || lines.Rows.Count == 0)
             {
@@ -903,21 +920,13 @@ VALUES (@appointment_id, @appointment_service_id, @room_id, 'Reserved')",
                 decimal total = subtotal - discount;
                 if (total < 0m) total = 0m;
 
-                // 6. The bill. A deposit is 'Held'; a promotion is paid in full, so it is 'Applied'.
-                string downpaymentStatus = amountPaid > 0m ? (promoId > 0 ? "Applied" : "Held") : "None";
+                // 6. The bill starts unpaid with nothing on it: the 50% down payment (or the whole
+                // total of a promotion) is taken in Billing right after the booking, so no
+                // Payments row is written here.
+                BillingRepository.CreateBilling(connection, transaction, newAppointmentId,
+                    subtotal, promoId, discount, total, 0m, "None", total, "Unpaid");
 
-                int billingId = BillingRepository.CreateBilling(connection, transaction, newAppointmentId,
-                    subtotal, promoId, discount, total, amountPaid, downpaymentStatus, total, "Unpaid");
-
-                // 7. The money paid now. Promos are a Final payment, deposits a Downpayment.
-                if (amountPaid > 0m)
-                {
-                    BillingRepository.AddPayment(connection, transaction, billingId, userId,
-                        promoId > 0 ? "Final" : "Downpayment", paymentMethod, paymentReference,
-                        amountPaid, paymentVerified ? "Verified" : "Pending");
-                }
-
-                // 8. History: the appointment was created.
+                // 7. History: the appointment was created.
                 Db.Execute(connection, transaction,
 @"INSERT INTO AppointmentHistory (appointment_id, changed_by, change_type, new_status, reason)
 VALUES (@appointment_id, @changed_by, 'Created', 'Upcoming', @reason)",
@@ -925,7 +934,7 @@ VALUES (@appointment_id, @changed_by, 'Created', 'Upcoming', @reason)",
                     Db.P("@changed_by", userId),
                     Db.P("@reason", "Booked as a " + bookingSource + " appointment."));
 
-                // 9. A package is booked as weekly sessions: every session after the first one
+                // 8. A package is booked as weekly sessions: every session after the first one
                 // becomes its own appointment, in the SAME transaction, so the remaining weeks
                 // are already scheduled. When a session cannot be placed the whole booking rolls
                 // back (the exception leaves this delegate and Db.InTransaction rolls back).
@@ -1159,21 +1168,13 @@ VALUES (@appointment_id, @changed_by, 'Created', 'Upcoming', @reason)",
             int clientId = Db.Get<int>(appointment["client_id"]);
             string bookingSource = Db.Get<string>(appointment["booking_source"]);
 
-            // A reschedule keeps the money that is already held, so the payment rule is checked
-            // against what was really received (and normally passes without a word).
+            // The promotion of the bill is passed on, so the discount rule is checked again.
+            // No money is checked here: the down payment was taken in Billing, not by the booking.
             DataRow billing = BillingRepository.GetByAppointment(appointmentId);
-            decimal paid = billing == null ? 0m : Db.Get<decimal>(billing["paid_amount"]);
             int promoId = billing == null ? 0 : Db.Get<int>(billing["promo_id"]);
 
-            // A reschedule keeps the money that is already held, so the payment rule is checked
-            // against what was really received (that is why it normally passes without a word).
-            string method;
-            string reference;
-            bool verified;
-            ReadPaymentInfo(appointmentId, out method, out reference, out verified);
-
             List<string> problems = ValidateBooking(appointmentId, clientId, newDate, newStart, bookingSource,
-                preparedLines, promoId, paid, method, reference, verified);
+                preparedLines, promoId);
 
             if (problems.Count > 0)
             {
@@ -1636,40 +1637,6 @@ WHERE a.appointment_date = @appointment_date
                 Db.P("@user_id", userId));
 
             return table.Rows.Count == 0 ? "The selected technician" : Db.Get<string>(table.Rows[0]["full_name"]);
-        }
-
-        /// <summary>
-        /// The method and the reference of the last payment of an appointment.
-        /// WHY verified is always true here: the money is already recorded on this booking, so a
-        /// reschedule only re-checks the amount and the reference and must not ask for the
-        /// "verified" tick all over again.
-        /// </summary>
-        private static void ReadPaymentInfo(int appointmentId, out string method, out string reference, out bool verified)
-        {
-            method = "Cash";
-            reference = string.Empty;
-            verified = true;
-
-            DataTable table = Db.Query(
-@"SELECT TOP 1 p.payment_method, p.reference_number
-FROM Payments p
-INNER JOIN Billing b ON b.billing_id = p.billing_id
-WHERE b.appointment_id = @appointment_id AND p.verification_status <> 'Rejected'
-ORDER BY p.payment_id DESC",
-                Db.P("@appointment_id", appointmentId));
-
-            if (table.Rows.Count == 0) return;
-
-            DataRow row = table.Rows[0];
-            method = Db.Get<string>(row["payment_method"], "Cash");
-            reference = Db.Get<string>(row["reference_number"]);
-        }
-
-        /// <summary>True when the payment method needs a reference number and a verified tick.</summary>
-        private static bool NeedsReference(string paymentMethod)
-        {
-            return string.Equals(paymentMethod, "GCash", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(paymentMethod, "Bank Transfer", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>True when the category name means "massage" (they open later and close later).</summary>

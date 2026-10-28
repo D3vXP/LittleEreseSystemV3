@@ -932,7 +932,7 @@ namespace LittleEreseSystemV3.Forms
             decimal total = _subtotal - _discount;
             if (total < 0m) total = 0m;
 
-            _required = AppointmentRepository.RequiredNow(SelectedSource(), _subtotal, _discount);
+            _required = AppointmentRepository.DownpaymentDue(_subtotal, _discount);
 
             TimeSpan duration = AppointmentRepository.TotalDuration(_lines);
             TimeSpan start = SelectedStartTime();
@@ -1047,8 +1047,7 @@ namespace LittleEreseSystemV3.Forms
             try
             {
                 problems = AppointmentRepository.ValidateBooking(RescheduleId, SelectedClientId(),
-                    dtpDate.Value.Date, SelectedStartTime(), SelectedSource(), _lines, SelectedPromoId(),
-                    PaymentAmount(), SelectedPaymentMethod(), txtPayReference.Text, chkPayVerified.Checked);
+                    dtpDate.Value.Date, SelectedStartTime(), SelectedSource(), _lines, SelectedPromoId());
             }
             catch (Exception ex)
             {
@@ -1135,8 +1134,7 @@ namespace LittleEreseSystemV3.Forms
             try
             {
                 problems = AppointmentRepository.ValidateBooking(0, SelectedClientId(), dtpDate.Value.Date,
-                    SelectedStartTime(), SelectedSource(), _lines, SelectedPromoId(), PaymentAmount(),
-                    SelectedPaymentMethod(), txtPayReference.Text, chkPayVerified.Checked);
+                    SelectedStartTime(), SelectedSource(), _lines, SelectedPromoId());
             }
             catch (Exception ex)
             {
@@ -1156,8 +1154,7 @@ namespace LittleEreseSystemV3.Forms
             {
                 appointmentId = AppointmentRepository.Create(SelectedClientId(), Session.UserId,
                     dtpDate.Value.Date, SelectedStartTime(), SelectedSource(), txtNotes.Text, _lines,
-                    SelectedPromoId(), PaymentAmount(), SelectedPaymentMethod(), txtPayReference.Text,
-                    chkPayVerified.Checked);
+                    SelectedPromoId());
             }
             catch (Exception ex)
             {
@@ -1168,8 +1165,9 @@ namespace LittleEreseSystemV3.Forms
             SavedAppointmentId = appointmentId;
             SavedAppointmentDate = dtpDate.Value.Date;
 
-            Messages.Info("Appointment #" + appointmentId + " was booked for " +
-                dtpDate.Value.ToString("MMM dd, yyyy") + " at " + Clock(SelectedStartTime()) + ".");
+            // The booking takes no money, so the desk is told where the down payment goes next.
+            Messages.Info("Appointment #" + appointmentId + " was booked. Next: take the down payment of " +
+                Money.Text(_required) + " in Billing.");
 
             DialogResult = DialogResult.OK;
             Close();
