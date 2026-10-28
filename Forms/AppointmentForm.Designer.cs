@@ -50,11 +50,8 @@ namespace LittleEreseSystemV3.Forms
             this.flpSchedule = new System.Windows.Forms.FlowLayoutPanel();
             this.lblDate = new System.Windows.Forms.Label();
             this.dtpDate = new System.Windows.Forms.DateTimePicker();
-            this.lblTime = new System.Windows.Forms.Label();
-            this.cboTime = new System.Windows.Forms.ComboBox();
             this.lblSource = new System.Windows.Forms.Label();
             this.cboSource = new System.Windows.Forms.ComboBox();
-            this.lblEndTime = new System.Windows.Forms.Label();
             this.lblSlotInfo = new System.Windows.Forms.Label();
             this.flpCatalogHeader = new System.Windows.Forms.FlowLayoutPanel();
             this.lblCategoryFilter = new System.Windows.Forms.Label();
@@ -75,11 +72,21 @@ namespace LittleEreseSystemV3.Forms
             this.colSelQty = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colSelPrice = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colSelDuration = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colSelStart = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colSelEnd = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colSelTechnician = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colSelNurse = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colSelPackage = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.colSelTechnician = new System.Windows.Forms.DataGridViewComboBoxColumn();
-            this.flpPromo = new System.Windows.Forms.FlowLayoutPanel();
-            this.lblPromo = new System.Windows.Forms.Label();
-            this.cboPromo = new System.Windows.Forms.ComboBox();
+            this.grpLine = new System.Windows.Forms.GroupBox();
+            this.lblLineService = new System.Windows.Forms.Label();
+            this.lblLineTime = new System.Windows.Forms.Label();
+            this.cboLineTime = new System.Windows.Forms.ComboBox();
+            this.lblLineTech = new System.Windows.Forms.Label();
+            this.cboLineTech = new System.Windows.Forms.ComboBox();
+            this.lblLineNurse = new System.Windows.Forms.Label();
+            this.cboLineNurse = new System.Windows.Forms.ComboBox();
+            this.lblLineNote = new System.Windows.Forms.Label();
+            this.lblSessionPlan = new System.Windows.Forms.Label();
             this.lblPromoNote = new System.Windows.Forms.Label();
             this.flpSubtotal = new System.Windows.Forms.FlowLayoutPanel();
             this.lblSubtotal = new System.Windows.Forms.Label();
@@ -89,15 +96,6 @@ namespace LittleEreseSystemV3.Forms
             this.lblTotal = new System.Windows.Forms.Label();
             this.flpRequired = new System.Windows.Forms.FlowLayoutPanel();
             this.lblRequired = new System.Windows.Forms.Label();
-            this.grpPayment = new System.Windows.Forms.GroupBox();
-            this.lblPayMethod = new System.Windows.Forms.Label();
-            this.cboPayMethod = new System.Windows.Forms.ComboBox();
-            this.lblPayReference = new System.Windows.Forms.Label();
-            this.txtPayReference = new System.Windows.Forms.TextBox();
-            this.lblPayAmount = new System.Windows.Forms.Label();
-            this.txtPayAmount = new System.Windows.Forms.TextBox();
-            this.chkPayVerified = new System.Windows.Forms.CheckBox();
-            this.lblPayNote = new System.Windows.Forms.Label();
             this.lblNotes = new System.Windows.Forms.Label();
             this.txtNotes = new System.Windows.Forms.TextBox();
             this.pnlFooter = new System.Windows.Forms.Panel();
@@ -116,12 +114,11 @@ namespace LittleEreseSystemV3.Forms
             this.flpServiceButtons.SuspendLayout();
             this.pnlSelected.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvSelected)).BeginInit();
-            this.flpPromo.SuspendLayout();
             this.flpSubtotal.SuspendLayout();
             this.flpDiscount.SuspendLayout();
             this.flpTotal.SuspendLayout();
             this.flpRequired.SuspendLayout();
-            this.grpPayment.SuspendLayout();
+            this.grpLine.SuspendLayout();
             this.pnlFooter.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider1)).BeginInit();
             this.SuspendLayout();
@@ -183,13 +180,13 @@ namespace LittleEreseSystemV3.Forms
             this.tlpContent.Controls.Add(this.pnlCatalog, 0, 5);
             this.tlpContent.Controls.Add(this.flpServiceButtons, 0, 6);
             this.tlpContent.Controls.Add(this.pnlSelected, 0, 7);
-            this.tlpContent.Controls.Add(this.flpPromo, 0, 8);
-            this.tlpContent.Controls.Add(this.lblPromoNote, 0, 9);
-            this.tlpContent.Controls.Add(this.flpSubtotal, 0, 10);
-            this.tlpContent.Controls.Add(this.flpDiscount, 0, 11);
-            this.tlpContent.Controls.Add(this.flpTotal, 0, 12);
-            this.tlpContent.Controls.Add(this.flpRequired, 0, 13);
-            this.tlpContent.Controls.Add(this.grpPayment, 0, 14);
+            this.tlpContent.Controls.Add(this.grpLine, 0, 8);
+            this.tlpContent.Controls.Add(this.lblSessionPlan, 0, 9);
+            this.tlpContent.Controls.Add(this.lblPromoNote, 0, 10);
+            this.tlpContent.Controls.Add(this.flpSubtotal, 0, 11);
+            this.tlpContent.Controls.Add(this.flpDiscount, 0, 12);
+            this.tlpContent.Controls.Add(this.flpTotal, 0, 13);
+            this.tlpContent.Controls.Add(this.flpRequired, 0, 14);
             this.tlpContent.Controls.Add(this.lblNotes, 0, 15);
             this.tlpContent.Controls.Add(this.txtNotes, 0, 16);
             this.tlpContent.Dock = System.Windows.Forms.DockStyle.Top;
@@ -206,16 +203,16 @@ namespace LittleEreseSystemV3.Forms
             this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 152F));
             this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 42F));
             this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 170F));
-            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 32F));
+            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 118F));
+            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 34F));
             this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 34F));
             this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
             this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
             this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26F));
             this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26F));
-            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 176F));
             this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
             this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 78F));
-            this.tlpContent.Size = new System.Drawing.Size(963, 988);
+            this.tlpContent.Size = new System.Drawing.Size(963, 936);
             this.tlpContent.TabIndex = 0;
             // 
             // flpClient
@@ -284,7 +281,7 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.lblClientInfo.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblClientInfo.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblClientInfo.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.lblClientInfo.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
             this.lblClientInfo.Location = new System.Drawing.Point(12, 32);
             this.lblClientInfo.Margin = new System.Windows.Forms.Padding(0);
             this.lblClientInfo.Name = "lblClientInfo";
@@ -301,15 +298,12 @@ namespace LittleEreseSystemV3.Forms
             this.flpSchedule.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.flpSchedule.Controls.Add(this.lblDate);
             this.flpSchedule.Controls.Add(this.dtpDate);
-            this.flpSchedule.Controls.Add(this.lblTime);
-            this.flpSchedule.Controls.Add(this.cboTime);
             this.flpSchedule.Controls.Add(this.lblSource);
             this.flpSchedule.Controls.Add(this.cboSource);
-            this.flpSchedule.Controls.Add(this.lblEndTime);
             this.flpSchedule.Location = new System.Drawing.Point(12, 59);
             this.flpSchedule.Margin = new System.Windows.Forms.Padding(0);
             this.flpSchedule.Name = "flpSchedule";
-            this.flpSchedule.Size = new System.Drawing.Size(707, 30);
+            this.flpSchedule.Size = new System.Drawing.Size(394, 30);
             this.flpSchedule.TabIndex = 2;
             this.flpSchedule.WrapContents = false;
             // 
@@ -337,41 +331,16 @@ namespace LittleEreseSystemV3.Forms
             this.dtpDate.TabIndex = 1;
             this.dtpDate.ValueChanged += new System.EventHandler(this.dtpDate_ValueChanged);
             // 
-            // lblTime
-            // 
-            this.lblTime.AutoSize = true;
-            this.lblTime.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblTime.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.lblTime.Location = new System.Drawing.Point(191, 8);
-            this.lblTime.Margin = new System.Windows.Forms.Padding(0, 8, 8, 0);
-            this.lblTime.Name = "lblTime";
-            this.lblTime.Size = new System.Drawing.Size(38, 19);
-            this.lblTime.TabIndex = 2;
-            this.lblTime.Text = "Time";
-            this.lblTime.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // cboTime
-            // 
-            this.cboTime.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cboTime.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cboTime.FormattingEnabled = true;
-            this.cboTime.Location = new System.Drawing.Point(237, 3);
-            this.cboTime.Margin = new System.Windows.Forms.Padding(0, 3, 16, 0);
-            this.cboTime.Name = "cboTime";
-            this.cboTime.Size = new System.Drawing.Size(110, 25);
-            this.cboTime.TabIndex = 3;
-            this.cboTime.SelectedIndexChanged += new System.EventHandler(this.cboTime_SelectedIndexChanged);
-            // 
             // lblSource
             // 
             this.lblSource.AutoSize = true;
             this.lblSource.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblSource.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.lblSource.Location = new System.Drawing.Point(363, 8);
+            this.lblSource.Location = new System.Drawing.Point(191, 8);
             this.lblSource.Margin = new System.Windows.Forms.Padding(0, 8, 8, 0);
             this.lblSource.Name = "lblSource";
             this.lblSource.Size = new System.Drawing.Size(49, 19);
-            this.lblSource.TabIndex = 4;
+            this.lblSource.TabIndex = 2;
             this.lblSource.Text = "Source";
             this.lblSource.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
@@ -385,25 +354,12 @@ namespace LittleEreseSystemV3.Forms
             "Messenger",
             "Text",
             "Phone"});
-            this.cboSource.Location = new System.Drawing.Point(420, 3);
+            this.cboSource.Location = new System.Drawing.Point(248, 3);
             this.cboSource.Margin = new System.Windows.Forms.Padding(0, 3, 16, 0);
             this.cboSource.Name = "cboSource";
             this.cboSource.Size = new System.Drawing.Size(130, 25);
-            this.cboSource.TabIndex = 5;
+            this.cboSource.TabIndex = 3;
             this.cboSource.SelectedIndexChanged += new System.EventHandler(this.cboSource_SelectedIndexChanged);
-            // 
-            // lblEndTime
-            // 
-            this.lblEndTime.AutoSize = true;
-            this.lblEndTime.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblEndTime.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
-            this.lblEndTime.Location = new System.Drawing.Point(566, 8);
-            this.lblEndTime.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
-            this.lblEndTime.Name = "lblEndTime";
-            this.lblEndTime.Size = new System.Drawing.Size(141, 19);
-            this.lblEndTime.TabIndex = 6;
-            this.lblEndTime.Text = "Ends 11:30 AM";
-            this.lblEndTime.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // lblSlotInfo
             // 
@@ -661,8 +617,11 @@ namespace LittleEreseSystemV3.Forms
             this.colSelQty,
             this.colSelPrice,
             this.colSelDuration,
-            this.colSelPackage,
-            this.colSelTechnician});
+            this.colSelStart,
+            this.colSelEnd,
+            this.colSelTechnician,
+            this.colSelNurse,
+            this.colSelPackage});
             dataGridViewCellStyle6.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle6.BackColor = System.Drawing.Color.White;
             dataGridViewCellStyle6.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -742,76 +701,184 @@ namespace LittleEreseSystemV3.Forms
             // 
             // colSelPackage
             // 
-            this.colSelPackage.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            this.colSelPackage.DataPropertyName = "package_label";
-            this.colSelPackage.FillWeight = 18F;
-            this.colSelPackage.HeaderText = "Package";
-            this.colSelPackage.MinimumWidth = 100;
-            this.colSelPackage.Name = "colSelPackage";
-            this.colSelPackage.ReadOnly = true;
+            this.colSelStart.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.colSelStart.DataPropertyName = "start_text";
+            this.colSelStart.FillWeight = 10F;
+            this.colSelStart.HeaderText = "Start";
+            this.colSelStart.MinimumWidth = 78;
+            this.colSelStart.Name = "colSelStart";
+            this.colSelStart.ReadOnly = true;
+            // 
+            // colSelEnd
+            // 
+            this.colSelEnd.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.colSelEnd.DataPropertyName = "end_text";
+            this.colSelEnd.FillWeight = 10F;
+            this.colSelEnd.HeaderText = "End";
+            this.colSelEnd.MinimumWidth = 78;
+            this.colSelEnd.Name = "colSelEnd";
+            this.colSelEnd.ReadOnly = true;
             // 
             // colSelTechnician
             // 
             this.colSelTechnician.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            this.colSelTechnician.DataPropertyName = "technician_id";
-            this.colSelTechnician.DisplayStyle = System.Windows.Forms.DataGridViewComboBoxDisplayStyle.DropDownButton;
-            this.colSelTechnician.FillWeight = 22F;
-            this.colSelTechnician.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.colSelTechnician.DataPropertyName = "technician_name";
+            this.colSelTechnician.FillWeight = 14F;
             this.colSelTechnician.HeaderText = "Technician";
-            this.colSelTechnician.MinimumWidth = 130;
+            this.colSelTechnician.MinimumWidth = 110;
             this.colSelTechnician.Name = "colSelTechnician";
+            this.colSelTechnician.ReadOnly = true;
             // 
-            // flpPromo
+            // colSelNurse
             // 
-            this.flpPromo.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.flpPromo.AutoSize = true;
-            this.flpPromo.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.flpPromo.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
-            this.flpPromo.Controls.Add(this.lblPromo);
-            this.flpPromo.Controls.Add(this.cboPromo);
-            this.flpPromo.Location = new System.Drawing.Point(12, 525);
-            this.flpPromo.Margin = new System.Windows.Forms.Padding(0);
-            this.flpPromo.Name = "flpPromo";
-            this.flpPromo.Size = new System.Drawing.Size(443, 30);
-            this.flpPromo.TabIndex = 8;
-            this.flpPromo.WrapContents = false;
+            this.colSelNurse.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.colSelNurse.DataPropertyName = "nurse_name";
+            this.colSelNurse.FillWeight = 14F;
+            this.colSelNurse.HeaderText = "Nurse";
+            this.colSelNurse.MinimumWidth = 110;
+            this.colSelNurse.Name = "colSelNurse";
+            this.colSelNurse.ReadOnly = true;
             // 
-            // lblPromo
+            // colSelPackage
             // 
-            this.lblPromo.AutoSize = true;
-            this.lblPromo.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblPromo.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.lblPromo.Location = new System.Drawing.Point(0, 8);
-            this.lblPromo.Margin = new System.Windows.Forms.Padding(0, 8, 8, 0);
-            this.lblPromo.Name = "lblPromo";
-            this.lblPromo.Size = new System.Drawing.Size(78, 19);
-            this.lblPromo.TabIndex = 0;
-            this.lblPromo.Text = "Promotion";
-            this.lblPromo.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.colSelPackage.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.colSelPackage.DataPropertyName = "package_label";
+            this.colSelPackage.FillWeight = 10F;
+            this.colSelPackage.HeaderText = "Session";
+            this.colSelPackage.MinimumWidth = 80;
+            this.colSelPackage.Name = "colSelPackage";
+            this.colSelPackage.ReadOnly = true;
             // 
-            // cboPromo
+            // grpLine
             // 
-            this.cboPromo.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cboPromo.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cboPromo.FormattingEnabled = true;
-            this.cboPromo.Location = new System.Drawing.Point(86, 3);
-            this.cboPromo.Margin = new System.Windows.Forms.Padding(0, 3, 0, 0);
-            this.cboPromo.Name = "cboPromo";
-            this.cboPromo.Size = new System.Drawing.Size(357, 25);
-            this.cboPromo.TabIndex = 1;
-            this.cboPromo.SelectedIndexChanged += new System.EventHandler(this.cboPromo_SelectedIndexChanged);
+            this.grpLine.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
+            this.grpLine.Controls.Add(this.lblLineService);
+            this.grpLine.Controls.Add(this.lblLineTime);
+            this.grpLine.Controls.Add(this.cboLineTime);
+            this.grpLine.Controls.Add(this.lblLineTech);
+            this.grpLine.Controls.Add(this.cboLineTech);
+            this.grpLine.Controls.Add(this.lblLineNurse);
+            this.grpLine.Controls.Add(this.cboLineNurse);
+            this.grpLine.Controls.Add(this.lblLineNote);
+            this.grpLine.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.grpLine.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.grpLine.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
+            this.grpLine.Location = new System.Drawing.Point(12, 524);
+            this.grpLine.Margin = new System.Windows.Forms.Padding(0);
+            this.grpLine.Name = "grpLine";
+            this.grpLine.Size = new System.Drawing.Size(939, 118);
+            this.grpLine.TabIndex = 8;
+            this.grpLine.TabStop = false;
+            this.grpLine.Text = "Selected service";
+            // 
+            // lblLineService
+            // 
+            this.lblLineService.AutoSize = true;
+            this.lblLineService.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblLineService.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
+            this.lblLineService.Location = new System.Drawing.Point(12, 25);
+            this.lblLineService.Name = "lblLineService";
+            this.lblLineService.Size = new System.Drawing.Size(171, 19);
+            this.lblLineService.TabIndex = 0;
+            this.lblLineService.Text = "No service selected";
+            // 
+            // lblLineTime
+            // 
+            this.lblLineTime.AutoSize = true;
+            this.lblLineTime.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblLineTime.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
+            this.lblLineTime.Location = new System.Drawing.Point(12, 55);
+            this.lblLineTime.Name = "lblLineTime";
+            this.lblLineTime.Size = new System.Drawing.Size(70, 19);
+            this.lblLineTime.TabIndex = 1;
+            this.lblLineTime.Text = "Start time";
+            // 
+            // cboLineTime
+            // 
+            this.cboLineTime.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cboLineTime.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cboLineTime.FormattingEnabled = true;
+            this.cboLineTime.Location = new System.Drawing.Point(110, 52);
+            this.cboLineTime.Name = "cboLineTime";
+            this.cboLineTime.Size = new System.Drawing.Size(110, 25);
+            this.cboLineTime.TabIndex = 2;
+            // 
+            // lblLineTech
+            // 
+            this.lblLineTech.AutoSize = true;
+            this.lblLineTech.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblLineTech.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
+            this.lblLineTech.Location = new System.Drawing.Point(240, 55);
+            this.lblLineTech.Name = "lblLineTech";
+            this.lblLineTech.Size = new System.Drawing.Size(70, 19);
+            this.lblLineTech.TabIndex = 3;
+            this.lblLineTech.Text = "Technician";
+            // 
+            // cboLineTech
+            // 
+            this.cboLineTech.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cboLineTech.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cboLineTech.FormattingEnabled = true;
+            this.cboLineTech.Location = new System.Drawing.Point(330, 52);
+            this.cboLineTech.Name = "cboLineTech";
+            this.cboLineTech.Size = new System.Drawing.Size(190, 25);
+            this.cboLineTech.TabIndex = 4;
+            // 
+            // lblLineNurse
+            // 
+            this.lblLineNurse.AutoSize = true;
+            this.lblLineNurse.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblLineNurse.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
+            this.lblLineNurse.Location = new System.Drawing.Point(540, 55);
+            this.lblLineNurse.Name = "lblLineNurse";
+            this.lblLineNurse.Size = new System.Drawing.Size(130, 19);
+            this.lblLineNurse.TabIndex = 5;
+            this.lblLineNurse.Text = "Assessed by (nurse)";
+            // 
+            // cboLineNurse
+            // 
+            this.cboLineNurse.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cboLineNurse.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cboLineNurse.FormattingEnabled = true;
+            this.cboLineNurse.Location = new System.Drawing.Point(680, 52);
+            this.cboLineNurse.Name = "cboLineNurse";
+            this.cboLineNurse.Size = new System.Drawing.Size(200, 25);
+            this.cboLineNurse.TabIndex = 6;
+            // 
+            // lblLineNote
+            // 
+            this.lblLineNote.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblLineNote.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.lblLineNote.Location = new System.Drawing.Point(12, 84);
+            this.lblLineNote.Name = "lblLineNote";
+            this.lblLineNote.Size = new System.Drawing.Size(915, 28);
+            this.lblLineNote.TabIndex = 7;
+            this.lblLineNote.Text = "Select a service above to set its own start time, its technician and, when the " +
+    "service needs an assessment, the nurse who assessed the client.";
+            // 
+            // lblSessionPlan
+            // 
+            this.lblSessionPlan.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblSessionPlan.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblSessionPlan.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.lblSessionPlan.Location = new System.Drawing.Point(12, 642);
+            this.lblSessionPlan.Margin = new System.Windows.Forms.Padding(0);
+            this.lblSessionPlan.Name = "lblSessionPlan";
+            this.lblSessionPlan.Size = new System.Drawing.Size(939, 34);
+            this.lblSessionPlan.TabIndex = 9;
             // 
             // lblPromoNote
             // 
             this.lblPromoNote.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblPromoNote.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblPromoNote.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblPromoNote.Location = new System.Drawing.Point(12, 555);
+            this.lblPromoNote.Location = new System.Drawing.Point(12, 676);
             this.lblPromoNote.Margin = new System.Windows.Forms.Padding(0);
             this.lblPromoNote.Name = "lblPromoNote";
             this.lblPromoNote.Size = new System.Drawing.Size(939, 34);
-            this.lblPromoNote.TabIndex = 9;
+            this.lblPromoNote.TabIndex = 10;
             this.lblPromoNote.Text = "The promotion note shows which services it applies to.";
+            this.lblPromoNote.Visible = false;
             // 
             // flpSubtotal
             // 
@@ -820,11 +887,11 @@ namespace LittleEreseSystemV3.Forms
             this.flpSubtotal.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flpSubtotal.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.flpSubtotal.Controls.Add(this.lblSubtotal);
-            this.flpSubtotal.Location = new System.Drawing.Point(12, 589);
+            this.flpSubtotal.Location = new System.Drawing.Point(12, 710);
             this.flpSubtotal.Margin = new System.Windows.Forms.Padding(0);
             this.flpSubtotal.Name = "flpSubtotal";
             this.flpSubtotal.Size = new System.Drawing.Size(121, 24);
-            this.flpSubtotal.TabIndex = 10;
+            this.flpSubtotal.TabIndex = 11;
             this.flpSubtotal.WrapContents = false;
             // 
             // lblSubtotal
@@ -847,11 +914,11 @@ namespace LittleEreseSystemV3.Forms
             this.flpDiscount.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flpDiscount.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.flpDiscount.Controls.Add(this.lblDiscount);
-            this.flpDiscount.Location = new System.Drawing.Point(12, 613);
+            this.flpDiscount.Location = new System.Drawing.Point(12, 734);
             this.flpDiscount.Margin = new System.Windows.Forms.Padding(0);
             this.flpDiscount.Name = "flpDiscount";
             this.flpDiscount.Size = new System.Drawing.Size(124, 24);
-            this.flpDiscount.TabIndex = 11;
+            this.flpDiscount.TabIndex = 12;
             this.flpDiscount.WrapContents = false;
             // 
             // lblDiscount
@@ -874,11 +941,11 @@ namespace LittleEreseSystemV3.Forms
             this.flpTotal.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flpTotal.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.flpTotal.Controls.Add(this.lblTotal);
-            this.flpTotal.Location = new System.Drawing.Point(12, 637);
+            this.flpTotal.Location = new System.Drawing.Point(12, 758);
             this.flpTotal.Margin = new System.Windows.Forms.Padding(0);
             this.flpTotal.Name = "flpTotal";
             this.flpTotal.Size = new System.Drawing.Size(94, 26);
-            this.flpTotal.TabIndex = 12;
+            this.flpTotal.TabIndex = 13;
             this.flpTotal.WrapContents = false;
             // 
             // lblTotal
@@ -901,11 +968,11 @@ namespace LittleEreseSystemV3.Forms
             this.flpRequired.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flpRequired.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.flpRequired.Controls.Add(this.lblRequired);
-            this.flpRequired.Location = new System.Drawing.Point(12, 663);
+            this.flpRequired.Location = new System.Drawing.Point(12, 784);
             this.flpRequired.Margin = new System.Windows.Forms.Padding(0);
             this.flpRequired.Name = "flpRequired";
             this.flpRequired.Size = new System.Drawing.Size(170, 26);
-            this.flpRequired.TabIndex = 13;
+            this.flpRequired.TabIndex = 14;
             this.flpRequired.WrapContents = false;
             // 
             // lblRequired
@@ -918,119 +985,8 @@ namespace LittleEreseSystemV3.Forms
             this.lblRequired.Name = "lblRequired";
             this.lblRequired.Size = new System.Drawing.Size(170, 19);
             this.lblRequired.TabIndex = 0;
-            this.lblRequired.Text = "Required now: -";
+            this.lblRequired.Text = "Down payment due after saving";
             this.lblRequired.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // grpPayment
-            // 
-            this.grpPayment.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
-            this.grpPayment.Controls.Add(this.lblPayMethod);
-            this.grpPayment.Controls.Add(this.cboPayMethod);
-            this.grpPayment.Controls.Add(this.lblPayReference);
-            this.grpPayment.Controls.Add(this.txtPayReference);
-            this.grpPayment.Controls.Add(this.lblPayAmount);
-            this.grpPayment.Controls.Add(this.txtPayAmount);
-            this.grpPayment.Controls.Add(this.chkPayVerified);
-            this.grpPayment.Controls.Add(this.lblPayNote);
-            this.grpPayment.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.grpPayment.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.grpPayment.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
-            this.grpPayment.Location = new System.Drawing.Point(12, 689);
-            this.grpPayment.Margin = new System.Windows.Forms.Padding(0);
-            this.grpPayment.Name = "grpPayment";
-            this.grpPayment.Size = new System.Drawing.Size(939, 176);
-            this.grpPayment.TabIndex = 14;
-            this.grpPayment.TabStop = false;
-            this.grpPayment.Text = "Payment now";
-            // 
-            // lblPayMethod
-            // 
-            this.lblPayMethod.AutoSize = true;
-            this.lblPayMethod.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblPayMethod.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.lblPayMethod.Location = new System.Drawing.Point(12, 30);
-            this.lblPayMethod.Name = "lblPayMethod";
-            this.lblPayMethod.Size = new System.Drawing.Size(55, 19);
-            this.lblPayMethod.TabIndex = 0;
-            this.lblPayMethod.Text = "Method";
-            this.lblPayMethod.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // cboPayMethod
-            // 
-            this.cboPayMethod.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cboPayMethod.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cboPayMethod.FormattingEnabled = true;
-            this.cboPayMethod.Items.AddRange(new object[] {
-            "Cash",
-            "GCash",
-            "Bank Transfer"});
-            this.cboPayMethod.Location = new System.Drawing.Point(150, 27);
-            this.cboPayMethod.Name = "cboPayMethod";
-            this.cboPayMethod.Size = new System.Drawing.Size(180, 25);
-            this.cboPayMethod.TabIndex = 1;
-            this.cboPayMethod.SelectedIndexChanged += new System.EventHandler(this.cboPayMethod_SelectedIndexChanged);
-            // 
-            // lblPayReference
-            // 
-            this.lblPayReference.AutoSize = true;
-            this.lblPayReference.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblPayReference.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.lblPayReference.Location = new System.Drawing.Point(12, 66);
-            this.lblPayReference.Name = "lblPayReference";
-            this.lblPayReference.Size = new System.Drawing.Size(91, 19);
-            this.lblPayReference.TabIndex = 2;
-            this.lblPayReference.Text = "Reference no.";
-            this.lblPayReference.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // txtPayReference
-            // 
-            this.txtPayReference.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtPayReference.Location = new System.Drawing.Point(150, 63);
-            this.txtPayReference.Name = "txtPayReference";
-            this.txtPayReference.Size = new System.Drawing.Size(250, 25);
-            this.txtPayReference.TabIndex = 3;
-            // 
-            // lblPayAmount
-            // 
-            this.lblPayAmount.AutoSize = true;
-            this.lblPayAmount.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblPayAmount.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.lblPayAmount.Location = new System.Drawing.Point(420, 66);
-            this.lblPayAmount.Name = "lblPayAmount";
-            this.lblPayAmount.Size = new System.Drawing.Size(86, 19);
-            this.lblPayAmount.TabIndex = 4;
-            this.lblPayAmount.Text = "Amount paid";
-            this.lblPayAmount.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // txtPayAmount
-            // 
-            this.txtPayAmount.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtPayAmount.Location = new System.Drawing.Point(540, 63);
-            this.txtPayAmount.Name = "txtPayAmount";
-            this.txtPayAmount.Size = new System.Drawing.Size(150, 25);
-            this.txtPayAmount.TabIndex = 5;
-            // 
-            // chkPayVerified
-            // 
-            this.chkPayVerified.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.chkPayVerified.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.chkPayVerified.Location = new System.Drawing.Point(150, 96);
-            this.chkPayVerified.Name = "chkPayVerified";
-            this.chkPayVerified.Size = new System.Drawing.Size(540, 24);
-            this.chkPayVerified.TabIndex = 6;
-            this.chkPayVerified.Text = "I verified this payment in the GCash / bank app";
-            this.chkPayVerified.UseVisualStyleBackColor = true;
-            // 
-            // lblPayNote
-            // 
-            this.lblPayNote.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblPayNote.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblPayNote.Location = new System.Drawing.Point(12, 128);
-            this.lblPayNote.Name = "lblPayNote";
-            this.lblPayNote.Size = new System.Drawing.Size(910, 38);
-            this.lblPayNote.TabIndex = 7;
-            this.lblPayNote.Text = "GCash and bank transfers need a reference number and a verified tick. A walk-in " +
-    "booking needs no downpayment.";
             // 
             // lblNotes
             // 
@@ -1038,7 +994,7 @@ namespace LittleEreseSystemV3.Forms
             this.lblNotes.AutoSize = true;
             this.lblNotes.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblNotes.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
-            this.lblNotes.Location = new System.Drawing.Point(12, 867);
+            this.lblNotes.Location = new System.Drawing.Point(12, 810);
             this.lblNotes.Margin = new System.Windows.Forms.Padding(0);
             this.lblNotes.Name = "lblNotes";
             this.lblNotes.Size = new System.Drawing.Size(48, 19);
@@ -1049,7 +1005,7 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.txtNotes.Dock = System.Windows.Forms.DockStyle.Fill;
             this.txtNotes.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtNotes.Location = new System.Drawing.Point(12, 889);
+            this.txtNotes.Location = new System.Drawing.Point(12, 832);
             this.txtNotes.Margin = new System.Windows.Forms.Padding(0);
             this.txtNotes.Multiline = true;
             this.txtNotes.Name = "txtNotes";
@@ -1155,8 +1111,8 @@ namespace LittleEreseSystemV3.Forms
             this.flpServiceButtons.ResumeLayout(false);
             this.pnlSelected.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvSelected)).EndInit();
-            this.flpPromo.ResumeLayout(false);
-            this.flpPromo.PerformLayout();
+            this.grpLine.ResumeLayout(false);
+            this.grpLine.PerformLayout();
             this.flpSubtotal.ResumeLayout(false);
             this.flpSubtotal.PerformLayout();
             this.flpDiscount.ResumeLayout(false);
@@ -1165,8 +1121,6 @@ namespace LittleEreseSystemV3.Forms
             this.flpTotal.PerformLayout();
             this.flpRequired.ResumeLayout(false);
             this.flpRequired.PerformLayout();
-            this.grpPayment.ResumeLayout(false);
-            this.grpPayment.PerformLayout();
             this.pnlFooter.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider1)).EndInit();
             this.ResumeLayout(false);
@@ -1188,11 +1142,8 @@ namespace LittleEreseSystemV3.Forms
         private System.Windows.Forms.FlowLayoutPanel flpSchedule;
         private System.Windows.Forms.Label lblDate;
         private System.Windows.Forms.DateTimePicker dtpDate;
-        private System.Windows.Forms.Label lblTime;
-        private System.Windows.Forms.ComboBox cboTime;
         private System.Windows.Forms.Label lblSource;
         private System.Windows.Forms.ComboBox cboSource;
-        private System.Windows.Forms.Label lblEndTime;
         private System.Windows.Forms.Label lblSlotInfo;
         private System.Windows.Forms.FlowLayoutPanel flpCatalogHeader;
         private System.Windows.Forms.Label lblCategoryFilter;
@@ -1213,11 +1164,21 @@ namespace LittleEreseSystemV3.Forms
         private System.Windows.Forms.DataGridViewTextBoxColumn colSelQty;
         private System.Windows.Forms.DataGridViewTextBoxColumn colSelPrice;
         private System.Windows.Forms.DataGridViewTextBoxColumn colSelDuration;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colSelStart;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colSelEnd;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colSelTechnician;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colSelNurse;
         private System.Windows.Forms.DataGridViewTextBoxColumn colSelPackage;
-        private System.Windows.Forms.DataGridViewComboBoxColumn colSelTechnician;
-        private System.Windows.Forms.FlowLayoutPanel flpPromo;
-        private System.Windows.Forms.Label lblPromo;
-        private System.Windows.Forms.ComboBox cboPromo;
+        private System.Windows.Forms.GroupBox grpLine;
+        private System.Windows.Forms.Label lblLineService;
+        private System.Windows.Forms.Label lblLineTime;
+        private System.Windows.Forms.ComboBox cboLineTime;
+        private System.Windows.Forms.Label lblLineTech;
+        private System.Windows.Forms.ComboBox cboLineTech;
+        private System.Windows.Forms.Label lblLineNurse;
+        private System.Windows.Forms.ComboBox cboLineNurse;
+        private System.Windows.Forms.Label lblLineNote;
+        private System.Windows.Forms.Label lblSessionPlan;
         private System.Windows.Forms.Label lblPromoNote;
         private System.Windows.Forms.FlowLayoutPanel flpSubtotal;
         private System.Windows.Forms.Label lblSubtotal;
@@ -1227,15 +1188,6 @@ namespace LittleEreseSystemV3.Forms
         private System.Windows.Forms.Label lblTotal;
         private System.Windows.Forms.FlowLayoutPanel flpRequired;
         private System.Windows.Forms.Label lblRequired;
-        private System.Windows.Forms.GroupBox grpPayment;
-        private System.Windows.Forms.Label lblPayMethod;
-        private System.Windows.Forms.ComboBox cboPayMethod;
-        private System.Windows.Forms.Label lblPayReference;
-        private System.Windows.Forms.TextBox txtPayReference;
-        private System.Windows.Forms.Label lblPayAmount;
-        private System.Windows.Forms.TextBox txtPayAmount;
-        private System.Windows.Forms.CheckBox chkPayVerified;
-        private System.Windows.Forms.Label lblPayNote;
         private System.Windows.Forms.Label lblNotes;
         private System.Windows.Forms.TextBox txtNotes;
         private System.Windows.Forms.Panel pnlFooter;

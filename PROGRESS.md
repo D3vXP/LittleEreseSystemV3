@@ -2,7 +2,49 @@
 
 Update this file at the end of every task.
 
-- Step 54 (this task): the booking takes no money any more; the 50% down payment is taken in
+- Step 55 (this task): the NEW layout of the booking dialog (no logic). ClientSize stays 980 x 640,
+  pnlScroll still scrolls vertically.
+  - Schedule row: lblTime, cboTime and lblEndTime are gone; lblDate, dtpDate, lblSource, cboSource
+    stay, and lblSlotInfo keeps the availability message.
+  - flpPromo, lblPromo and cboPromo are gone (promos become categories of cboCategoryFilter).
+    lblPromoNote took the place of flpPromo, wraps its text and is hidden while empty.
+  - dgvSelected columns, in order: colSelServiceId (hidden), colSelName, colSelQty, colSelPrice,
+    colSelDuration, colSelStart, colSelEnd, colSelTechnician, colSelNurse, colSelPackage. The
+    technician combo column became a read-only TEXT column of the same name (technician_name);
+    Start/End are text columns (start_text / end_text), Nurse is nurse_name, Session is
+    package_label.
+  - New grpLine "Selected service" under the grid: lblLineService (bold), lblLineTime +
+    cboLineTime, lblLineTech + cboLineTech, lblLineNurse + cboLineNurse, lblLineNote (wrapping,
+    muted), and the wrapping muted lblSessionPlan for the weekly sessions.
+  - grpPayment and its seven controls (cboPayMethod, txtPayReference, txtPayAmount, chkPayVerified
+    and the three labels plus the note) are removed. lblRequired stays and reads "Down payment due
+    after saving".
+  - Totals, txtNotes and the footer buttons stay. Tab order follows the visual order; the form has
+    no red text (lblClientInfo uses the normal dark text color). The content is 936 px tall, so it
+    scrolls inside the 520 px pnlScroll and everything fits 1280 x 720.
+  - Forms\AppointmentForm.cs only compiles the new shapes. Places marked // TODO(logic prompt):
+    the constants NoPromo / AnyTechnician, the _promoIds field, FillTechnicians (commented),
+    EnsureTechnicianInList (commented), FillPromotions (commented), FillPaymentMethods
+    (commented), ShowSavedPromo (commented), cboTime_SelectedIndexChanged,
+    cboPromo_SelectedIndexChanged, cboPayMethod_SelectedIndexChanged, UpdatePaymentFields,
+    SelectedPromoId, SelectedPaymentMethod, PaymentAmount, the promo block and the end-time line
+    of Recalculate, the payment group switch and the txtPayAmount fill of Recalculate, and the
+    amount check of ValidateInput. The ValidateBooking / Create calls pass promo 0 for now, and
+    SelectedStartTime reads cboLineTime.
+  - Known issue: the dialog builds its lines table with the old column order (the grid shows the
+    technician id as text until the logic prompt fills technician_name / nurse_name / start_text /
+    end_text), and the promo category of cboCategoryFilter is not wired yet, so a promo booking
+    gets no discount in this dialog.
+  - LittleEreseSystemV3.csproj was NOT edited (no new file). No database change, no new rule, so
+    PROJECT_RULES.md is unchanged.
+  - docs\screenshots\AppointmentForm.png was regenerated.
+  - Checks: clean build 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --preview
+    AppointmentForm checked (grid headers readable, nothing clipped, the lower part reached by
+    scrolling); --smoketest 90 passed / 0 failed / 0 skipped; app started once, stayed open,
+    closed, no error.log.
+  - Next: E2-C, the booking logic (per-line time pickers, PackageForm session plan, reschedule UI)
+    fills the // TODO(logic prompt) places above.
+- Step 54: the booking takes no money any more; the 50% down payment is taken in
   Billing right after it (prompt B1). The two safety rules are enforced for a NEW booking.
   - AppointmentRepository.RequiredNow(string, decimal, decimal) is now
     DownpaymentDue(decimal subtotal, decimal discount): total = max(subtotal - discount, 0); a
