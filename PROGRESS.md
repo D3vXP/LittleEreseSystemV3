@@ -2,6 +2,28 @@
 
 Update this file at the end of every task.
 
+- Step 42 (this task): staff busy time and days between sessions on the service form.
+  - Forms\ServiceEditForm.Designer.cs: new lblBusy "Staff busy (min, optional)" + nudBusy (0..240,
+    step 5, 0 = empty) under the Duration row, and lblInterval "Days between sessions" +
+    nudInterval (1..60, default 7) under the Sessions row. Duration became a 30..240 box in steps
+    of 30. pnlContent 452 and ClientSize 460 x 572, so the dialog still fits a 768 px screen.
+    TabIndex order now equals the visual order (Status moved to 17/18).
+  - Data\ServiceRepository.cs: GetById returns staff_busy_minutes and session_interval_days;
+    Add and Update take staffBusyMinutes and sessionIntervalDays, and the new private BusyValue()
+    writes NULL when the busy time is empty or 0. GetServices (the list) is unchanged.
+  - Helpers\Validators.cs: DurationStepMessage ("Choose a duration in steps of 30 minutes."),
+    IsValidDuration (30..240, multiple of 30), IsValidStaffBusy (5..duration, 0 = not given) and
+    IsValidSessions (1..30).
+  - Forms\ServiceEditForm.cs: the new boxes are loaded and saved, validation rules 4-6 use the
+    Validators methods with errorProvider1, and UpdateIntervalState() disables the interval box
+    while the service has 1 session (nudSessions_ValueChanged).
+  - Helpers\SmokeTest.cs: one read-only check, "ServiceRepository.GetById returns busy minutes and
+    interval".
+  - PROJECT_RULES.md: no rule or value list changed, so it was not edited.
+    LittleEreseSystemV3.csproj was NOT edited (no new file).
+  - Checks: clean build 0 errors / 0 warnings; DesignerAudit 22 files exit 0; app started once and
+    closed with no error.log; --smoketest 75 passed / 0 failed / 0 skipped; --preview
+    ServiceEditForm: 1 fix round (the interval label was clipped, moved to x = 242).
 - Step 41 (this task): the DATA of tester feedback round 1 (migration 003).
   - New file Database\Migrations\003_feedback_round1_data.sql (2748 bytes, every GO on its own
     line): durations rounded UP to the 30-minute grid, Full Legs Hair Removal and Lash Lift w/ Tint

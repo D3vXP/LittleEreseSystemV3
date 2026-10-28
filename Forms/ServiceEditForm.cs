@@ -46,6 +46,7 @@ namespace LittleEreseSystemV3.Forms
 
             FillCategories();
             cboStatus.SelectedIndex = 0; // "Active" for a new service
+            nudInterval.Enabled = false;  // only a package (more than 1 session) has an interval
 
             if (EditId > 0) LoadService(EditId);
         }
@@ -104,6 +105,9 @@ namespace LittleEreseSystemV3.Forms
             txtPrice.Text = Db.Get<decimal>(row["price"]).ToString("0.00");
             nudDuration.Value = ClampNumeric(nudDuration, Db.Get<int>(row["duration_minutes"]));
             nudSessions.Value = ClampNumeric(nudSessions, Db.Get<int>(row["default_total_sessions"]));
+            nudBusy.Value = ClampNumeric(nudBusy, Db.Get<int>(row["staff_busy_minutes"], 0));
+            nudInterval.Value = ClampNumeric(nudInterval, Db.Get<int>(row["session_interval_days"], 7));
+            UpdateIntervalState();
 
             string status = Db.Get<string>(row["status"], "Active");
             cboStatus.SelectedItem = status;
@@ -132,6 +136,20 @@ namespace LittleEreseSystemV3.Forms
             return number;
         }
 
+        /// <summary>
+        /// The days between sessions only mean something for a package, so the box follows the
+        /// sessions count: 1 session (a single visit) disables it.
+        /// </summary>
+        private void UpdateIntervalState()
+        {
+            nudInterval.Enabled = Convert.ToInt32(nudSessions.Value) > 1;
+        }
+
+        private void nudSessions_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateIntervalState();
+        }
+
         private void btnSave_Click(object sender, EventArgs e)
         {
             errorProvider1.Clear();
@@ -148,12 +166,14 @@ namespace LittleEreseSystemV3.Forms
 
                 int duration = Convert.ToInt32(nudDuration.Value);
                 int sessions = Convert.ToInt32(nudSessions.Value);
+                int busy = Convert.ToInt32(nudBusy.Value);
+                int interval = Convert.ToInt32(nudInterval.Value);
                 string status = cboStatus.SelectedItem.ToString();
 
                 if (EditId > 0)
                 {
                     ServiceRepository.Update(EditId, category.Id, name, description, price,
-                        duration, sessions, status);
+                        duration, sessions, status, busy, interval);
                     SavedServiceId = EditId;
 
                     ActivityRepository.Log(Session.UserId, "Edit", "Services", name);
@@ -161,7 +181,7 @@ namespace LittleEreseSystemV3.Forms
                 else
                 {
                     SavedServiceId = ServiceRepository.Add(category.Id, name, description, price,
-                        duration, sessions, status);
+                        duration, sessions, status, busy, interval);
 
                     ActivityRepository.Log(Session.UserId, "Add", "Services", name);
                 }
@@ -224,7 +244,32 @@ namespace LittleEreseSystemV3.Forms
                 ok = false;
             }
 
-            // Duration and sessions are NumericUpDown boxes, so their limits are already guaranteed.
+            // 4. The duration must sit on the 30-minute grid the booking screen uses.
+            //    The box only offers 30..240 in steps of 30, but the rule is checked anyway so a
+            //    stored value that came from elsewhere cannot slip through unnoticed.
+            int duration = Convert.ToInt32(nudDuration.Value);
+            if (!Validators.IsValidDuration(duration))
+            {
+                Validators.SetError(errorProvider1, nudDuration, Validators.DurationStepMessage);
+                ok = false;
+            }
+
+            // 5. Staff busy is optional (0 = empty); when given it must fit inside the service.
+            int busy = Convert.ToInt32(nudBusy.Value);
+            if (!Validators.IsValidStaffBusy(busy, duration))
+            {
+                Validators.SetError(errorProvider1, nudBusy,
+                    "The staff busy time must be 5 minutes at least and not longer than the service.");
+                ok = false;
+            }
+
+            // 6. A package has 1 to 30 sessions.
+            if (!Validators.IsValidSessions(Convert.ToInt32(nudSessions.Value)))
+            {
+                Validators.SetError(errorProvider1, nudSessions, "Enter 1 to 30 sessions.");
+                ok = false;
+            }
+
             return ok;
         }
 

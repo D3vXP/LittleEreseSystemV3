@@ -51,7 +51,8 @@ namespace LittleEreseSystemV3.Data
         {
             DataTable table = Db.Query(
                 "SELECT service_id, category_id, service_name, description, price, " +
-                "       duration_minutes, default_total_sessions, status " +
+                "       duration_minutes, default_total_sessions, status, " +
+                "       staff_busy_minutes, session_interval_days " +
                 "FROM Services WHERE service_id = @service_id",
                 Db.P("@service_id", serviceId));
 
@@ -93,9 +94,13 @@ namespace LittleEreseSystemV3.Data
             return Convert.ToInt32(count) > 0;
         }
 
-        /// <summary>Inserts a service and returns its new service_id.</summary>
+        /// <summary>
+        /// Inserts a service and returns its new service_id.
+        /// staffBusyMinutes 0 means "no separate busy time" and is stored as NULL (empty column).
+        /// </summary>
         public static int Add(int categoryId, string serviceName, string description, decimal price,
-            int durationMinutes, int defaultTotalSessions, string status)
+            int durationMinutes, int defaultTotalSessions, string status,
+            int staffBusyMinutes, int sessionIntervalDays)
         {
             string name = serviceName == null ? string.Empty : serviceName.Trim();
 
@@ -108,9 +113,11 @@ namespace LittleEreseSystemV3.Data
 
             object id = Db.Scalar(
                 "INSERT INTO Services (category_id, service_name, description, price, " +
-                "                      duration_minutes, default_total_sessions, status) " +
+                "                      duration_minutes, default_total_sessions, status, " +
+                "                      staff_busy_minutes, session_interval_days) " +
                 "VALUES (@category_id, @service_name, @description, @price, " +
-                "        @duration_minutes, @default_total_sessions, @status); " +
+                "        @duration_minutes, @default_total_sessions, @status, " +
+                "        @staff_busy_minutes, @session_interval_days); " +
                 "SELECT CAST(SCOPE_IDENTITY() AS int);",
                 Db.P("@category_id", categoryId),
                 Db.P("@service_name", name),
@@ -118,14 +125,17 @@ namespace LittleEreseSystemV3.Data
                 Db.P("@price", price),
                 Db.P("@duration_minutes", durationMinutes),
                 Db.P("@default_total_sessions", defaultTotalSessions),
-                Db.P("@status", status));
+                Db.P("@status", status),
+                Db.P("@staff_busy_minutes", BusyValue(staffBusyMinutes)),
+                Db.P("@session_interval_days", sessionIntervalDays));
 
             return Convert.ToInt32(id);
         }
 
         /// <summary>Updates a service. The service_id is not changed.</summary>
         public static void Update(int serviceId, int categoryId, string serviceName, string description,
-            decimal price, int durationMinutes, int defaultTotalSessions, string status)
+            decimal price, int durationMinutes, int defaultTotalSessions, string status,
+            int staffBusyMinutes, int sessionIntervalDays)
         {
             string name = serviceName == null ? string.Empty : serviceName.Trim();
 
@@ -139,7 +149,9 @@ namespace LittleEreseSystemV3.Data
                 "UPDATE Services SET category_id = @category_id, service_name = @service_name, " +
                 "       description = @description, price = @price, " +
                 "       duration_minutes = @duration_minutes, " +
-                "       default_total_sessions = @default_total_sessions, status = @status " +
+                "       default_total_sessions = @default_total_sessions, status = @status, " +
+                "       staff_busy_minutes = @staff_busy_minutes, " +
+                "       session_interval_days = @session_interval_days " +
                 "WHERE service_id = @service_id",
                 Db.P("@category_id", categoryId),
                 Db.P("@service_name", name),
@@ -148,7 +160,15 @@ namespace LittleEreseSystemV3.Data
                 Db.P("@duration_minutes", durationMinutes),
                 Db.P("@default_total_sessions", defaultTotalSessions),
                 Db.P("@status", status),
+                Db.P("@staff_busy_minutes", BusyValue(staffBusyMinutes)),
+                Db.P("@session_interval_days", sessionIntervalDays),
                 Db.P("@service_id", serviceId));
+        }
+
+        /// <summary>0 busy minutes means "not filled in", so the column stays NULL.</summary>
+        private static object BusyValue(int staffBusyMinutes)
+        {
+            return staffBusyMinutes > 0 ? (object)staffBusyMinutes : DBNull.Value;
         }
 
         /// <summary>Archives ('Archived') or restores ('Active') a service.</summary>

@@ -134,6 +134,35 @@ namespace LittleEreseSystemV3.Helpers
             return amount > 0m && amount <= 100m;
         }
 
+        /// <summary>The one sentence shown when a service duration is not on the 30-minute grid.</summary>
+        public const string DurationStepMessage = "Choose a duration in steps of 30 minutes.";
+
+        /// <summary>
+        /// A service lasts 30 to 240 minutes and always a whole number of 30-minute slots, because
+        /// start times are booked on 30-minute marks (PROJECT_RULES.md).
+        /// </summary>
+        public static bool IsValidDuration(int minutes)
+        {
+            return minutes >= 30 && minutes <= 240 && minutes % 30 == 0;
+        }
+
+        /// <summary>
+        /// The technician is busy 5 minutes at least and never longer than the whole service.
+        /// 0 means "no separate busy time", so the service itself is the busy time.
+        /// </summary>
+        public static bool IsValidStaffBusy(int busyMinutes, int durationMinutes)
+        {
+            if (busyMinutes <= 0) return true;
+
+            return busyMinutes >= 5 && busyMinutes <= durationMinutes;
+        }
+
+        /// <summary>A package has 1 to 30 sessions (0 or more would break the session counter).</summary>
+        public static bool IsValidSessions(int sessions)
+        {
+            return sessions >= 1 && sessions <= 30;
+        }
+
         // POLISH: widen the length range or allow "-" if a bank starts using longer or dashed
         // POLISH: reference numbers; the payment screens use this one rule.
         /// <summary>

@@ -329,6 +329,42 @@ namespace LittleEreseSystemV3.Helpers
 
             // The three read-only job-type checks. Nothing is written or changed here.
             CheckStaffForCategory();
+
+            // The read-only service-scheduling check. Nothing is written or changed here.
+            CheckServiceScheduleColumns();
+        }
+
+        /// <summary>
+        /// ServiceRepository.GetById must hand back the two columns the edit form saves
+        /// (staff_busy_minutes, session_interval_days). Read-only: only a SELECT is run.
+        /// </summary>
+        private static void CheckServiceScheduleColumns()
+        {
+            try
+            {
+                DataRow row = ServiceRepository.GetById(1);
+                string label = "ServiceRepository.GetById returns busy minutes and interval";
+
+                if (row == null)
+                {
+                    Fail(label + " (no service with id 1)");
+                    return;
+                }
+
+                if (row.Table.Columns.Contains("staff_busy_minutes")
+                    && row.Table.Columns.Contains("session_interval_days"))
+                {
+                    Pass(label);
+                }
+                else
+                {
+                    Fail(label + " (a column is missing)");
+                }
+            }
+            catch (Exception ex)
+            {
+                Fail("ServiceRepository.GetById schedule columns", ex);
+            }
         }
 
         /// <summary>

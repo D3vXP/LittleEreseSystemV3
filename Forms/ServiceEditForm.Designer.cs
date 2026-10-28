@@ -34,6 +34,10 @@ namespace LittleEreseSystemV3.Forms
             this.lblStatus = new System.Windows.Forms.Label();
             this.nudSessions = new System.Windows.Forms.NumericUpDown();
             this.lblSessions = new System.Windows.Forms.Label();
+            this.nudInterval = new System.Windows.Forms.NumericUpDown();
+            this.lblInterval = new System.Windows.Forms.Label();
+            this.nudBusy = new System.Windows.Forms.NumericUpDown();
+            this.lblBusy = new System.Windows.Forms.Label();
             this.nudDuration = new System.Windows.Forms.NumericUpDown();
             this.lblDuration = new System.Windows.Forms.Label();
             this.lblHint = new System.Windows.Forms.Label();
@@ -55,6 +59,8 @@ namespace LittleEreseSystemV3.Forms
             this.errorProvider1 = new System.Windows.Forms.ErrorProvider(this.components);
             this.pnlContent.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nudSessions)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudInterval)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudBusy)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudDuration)).BeginInit();
             this.pnlFooter.SuspendLayout();
             this.pnlHeader.SuspendLayout();
@@ -66,6 +72,10 @@ namespace LittleEreseSystemV3.Forms
             this.pnlContent.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.pnlContent.Controls.Add(this.cboStatus);
             this.pnlContent.Controls.Add(this.lblStatus);
+            this.pnlContent.Controls.Add(this.nudInterval);
+            this.pnlContent.Controls.Add(this.lblInterval);
+            this.pnlContent.Controls.Add(this.nudBusy);
+            this.pnlContent.Controls.Add(this.lblBusy);
             this.pnlContent.Controls.Add(this.nudSessions);
             this.pnlContent.Controls.Add(this.lblSessions);
             this.pnlContent.Controls.Add(this.nudDuration);
@@ -82,7 +92,7 @@ namespace LittleEreseSystemV3.Forms
             this.pnlContent.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pnlContent.Location = new System.Drawing.Point(0, 56);
             this.pnlContent.Name = "pnlContent";
-            this.pnlContent.Size = new System.Drawing.Size(460, 401);
+            this.pnlContent.Size = new System.Drawing.Size(460, 452);
             this.pnlContent.TabIndex = 1;
             // 
             // cboStatus
@@ -93,19 +103,19 @@ namespace LittleEreseSystemV3.Forms
             this.cboStatus.Items.AddRange(new object[] {
             "Active",
             "Archived"});
-            this.cboStatus.Location = new System.Drawing.Point(16, 366);
+            this.cboStatus.Location = new System.Drawing.Point(16, 415);
             this.cboStatus.Name = "cboStatus";
             this.cboStatus.Size = new System.Drawing.Size(160, 25);
-            this.cboStatus.TabIndex = 14;
+            this.cboStatus.TabIndex = 18;
             // 
             // lblStatus
             // 
             this.lblStatus.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblStatus.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblStatus.Location = new System.Drawing.Point(16, 346);
+            this.lblStatus.Location = new System.Drawing.Point(16, 395);
             this.lblStatus.Name = "lblStatus";
             this.lblStatus.Size = new System.Drawing.Size(200, 18);
-            this.lblStatus.TabIndex = 13;
+            this.lblStatus.TabIndex = 17;
             this.lblStatus.Text = "Status";
             this.lblStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
@@ -131,6 +141,7 @@ namespace LittleEreseSystemV3.Forms
             0,
             0,
             0});
+            this.nudSessions.ValueChanged += new System.EventHandler(this.nudSessions_ValueChanged);
             // 
             // lblSessions
             // 
@@ -143,22 +154,85 @@ namespace LittleEreseSystemV3.Forms
             this.lblSessions.Text = "Sessions";
             this.lblSessions.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
+            // nudBusy
+            // 
+            this.nudBusy.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.nudBusy.Increment = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
+            this.nudBusy.Location = new System.Drawing.Point(16, 366);
+            this.nudBusy.Maximum = new decimal(new int[] {
+            240,
+            0,
+            0,
+            0});
+            this.nudBusy.Name = "nudBusy";
+            this.nudBusy.Size = new System.Drawing.Size(110, 25);
+            this.nudBusy.TabIndex = 14;
+            // 
+            // lblBusy
+            // 
+            this.lblBusy.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblBusy.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.lblBusy.Location = new System.Drawing.Point(16, 346);
+            this.lblBusy.Name = "lblBusy";
+            this.lblBusy.Size = new System.Drawing.Size(200, 18);
+            this.lblBusy.TabIndex = 13;
+            this.lblBusy.Text = "Staff busy (min, optional)";
+            this.lblBusy.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // nudInterval
+            // 
+            this.nudInterval.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.nudInterval.Location = new System.Drawing.Point(242, 366);
+            this.nudInterval.Maximum = new decimal(new int[] {
+            60,
+            0,
+            0,
+            0});
+            this.nudInterval.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.nudInterval.Name = "nudInterval";
+            this.nudInterval.Size = new System.Drawing.Size(110, 25);
+            this.nudInterval.TabIndex = 16;
+            this.nudInterval.Value = new decimal(new int[] {
+            7,
+            0,
+            0,
+            0});
+            // 
+            // lblInterval
+            // 
+            this.lblInterval.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblInterval.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.lblInterval.Location = new System.Drawing.Point(242, 346);
+            this.lblInterval.Name = "lblInterval";
+            this.lblInterval.Size = new System.Drawing.Size(186, 18);
+            this.lblInterval.TabIndex = 15;
+            this.lblInterval.Text = "Days between sessions";
+            this.lblInterval.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
             // nudDuration
             // 
             this.nudDuration.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.nudDuration.Increment = new decimal(new int[] {
-            5,
+            30,
             0,
             0,
             0});
             this.nudDuration.Location = new System.Drawing.Point(16, 317);
             this.nudDuration.Maximum = new decimal(new int[] {
-            480,
+            240,
             0,
             0,
             0});
             this.nudDuration.Minimum = new decimal(new int[] {
-            5,
+            30,
             0,
             0,
             0});
@@ -280,7 +354,7 @@ namespace LittleEreseSystemV3.Forms
             this.pnlFooter.Controls.Add(this.btnSave);
             this.pnlFooter.Controls.Add(this.pnlFooterLine);
             this.pnlFooter.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.pnlFooter.Location = new System.Drawing.Point(0, 457);
+            this.pnlFooter.Location = new System.Drawing.Point(0, 508);
             this.pnlFooter.Name = "pnlFooter";
             this.pnlFooter.Size = new System.Drawing.Size(460, 64);
             this.pnlFooter.TabIndex = 2;
@@ -375,7 +449,7 @@ namespace LittleEreseSystemV3.Forms
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(460, 521);
+            this.ClientSize = new System.Drawing.Size(460, 572);
             this.Controls.Add(this.pnlContent);
             this.Controls.Add(this.pnlFooter);
             this.Controls.Add(this.pnlHeader);
@@ -388,6 +462,8 @@ namespace LittleEreseSystemV3.Forms
             this.Load += new System.EventHandler(this.ServiceEditForm_Load);
             this.pnlContent.ResumeLayout(false);
             this.pnlContent.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nudInterval)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudBusy)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudSessions)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudDuration)).EndInit();
             this.pnlFooter.ResumeLayout(false);
@@ -416,6 +492,10 @@ namespace LittleEreseSystemV3.Forms
         private System.Windows.Forms.NumericUpDown nudDuration;
         private System.Windows.Forms.Label lblSessions;
         private System.Windows.Forms.NumericUpDown nudSessions;
+        private System.Windows.Forms.Label lblBusy;
+        private System.Windows.Forms.NumericUpDown nudBusy;
+        private System.Windows.Forms.Label lblInterval;
+        private System.Windows.Forms.NumericUpDown nudInterval;
         private System.Windows.Forms.Label lblStatus;
         private System.Windows.Forms.ComboBox cboStatus;
         private System.Windows.Forms.Panel pnlFooter;
