@@ -358,7 +358,7 @@ WHERE a.client_id = @client_id
 
         /// <summary>
         /// The first room of the category that still has a free seat, in the same order as
-        /// AppointmentRepository.BuildRoomPlan (GetRoomsForCategory). Returns 0 and an empty
+        /// AppointmentRepository.GetRoomsForCategory. Returns 0 and an empty
         /// name when no room is linked to the category or none is free.
         /// </summary>
         public static int PickRoom(SqlConnection connection, SqlTransaction transaction, DateTime date,

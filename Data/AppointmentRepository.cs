@@ -46,6 +46,7 @@ namespace LittleEreseSystemV3.Data
         public const string ColTotalSessions = "total_sessions";
         public const string ColRoomId = "room_id";
         public const string ColRoomName = "room_name";
+        public const string ColAppointmentServiceId = "appointment_service_id";
         public const string ColStartTime = "start_time";
         public const string ColEndTime = "end_time";
         public const string ColBusyEndTime = "busy_end_time";
@@ -359,8 +360,8 @@ WHERE a.appointment_id = @appointment_id",
         public static DataTable GetLinesForBooking(int appointmentId)
         {
             return Db.Query(
-@"SELECT asv.service_id, s.service_name, asv.quantity, asv.price, s.duration_minutes,
-         s.default_total_sessions, ISNULL(ast.user_id, 0) AS technician_id,
+@"SELECT asv.appointment_service_id, asv.service_id, s.service_name, asv.quantity, asv.price,
+         s.duration_minutes, s.default_total_sessions, ISNULL(ast.user_id, 0) AS technician_id,
          ISNULL(asv.package_id, 0) AS package_id,
          ISNULL(asv.session_number, 0) AS session_number,
          ISNULL(asv.total_sessions, 0) AS total_sessions,
@@ -1099,7 +1100,57 @@ VALUES (@appointment_id, @changed_by, 'Created', 'Upcoming', @reason)",
                 throw new InvalidOperationException("This appointment has no services, so it cannot be moved.");
             }
 
-            TimeSpan endTime = newStart + TotalDuration(lines);
+            // Every line moves by the SAME amount: newStart is the new start of the earliest line,
+            // so the other lines keep their distance from it (a massage at 1:00 PM stays after a
+            // facial at 10:00 AM). A shifted time that lands in the past is simply handed to the
+            // checks, which report it like any other problem.
+            TimeSpan earliestStart = TimeSpan.Zero;
+            bool earliestFound = false;
+
+            foreach (DataRow line in lines.Rows)
+            {
+                TimeSpan lineStart = ReadTime(line[ColStartTime]);
+
+                // A line with no start of its own is skipped here instead of dragging the earliest
+                // start to midnight; PrepareLines places it right after the line above it.
+                if (lineStart == TimeSpan.Zero) continue;
+
+                if (!earliestFound || lineStart < earliestStart) earliestStart = lineStart;
+                earliestFound = true;
+            }
+
+            TimeSpan delta = newStart - earliestStart;
+
+            DataTable shifted = lines.Copy();
+            foreach (DataRow line in shifted.Rows)
+            {
+                TimeSpan lineStart = ReadTime(line[ColStartTime]);
+
+                // A line with no time of its own stays empty, so PrepareLines places it right after
+                // the line above it, exactly as it does for a new booking.
+                if (lineStart == TimeSpan.Zero) continue;
+
+                line[ColStartTime] = lineStart + delta;
+            }
+
+            // The end and the busy end of every line come from its service, exactly as in a booking.
+            DataTable preparedLines = PrepareLines(null, null, shifted, newStart);
+
+            // The appointment keeps the earliest line start and the latest line end.
+            TimeSpan firstLineStart = newStart;
+            TimeSpan lastLineEnd = newStart;
+            bool firstPreparedLine = true;
+
+            foreach (DataRow line in preparedLines.Rows)
+            {
+                TimeSpan lineStart = ReadTime(line[ColStartTime]);
+                TimeSpan lineEnd = ReadTime(line[ColEndTime]);
+
+                if (firstPreparedLine || lineStart < firstLineStart) firstLineStart = lineStart;
+                if (firstPreparedLine || lineEnd > lastLineEnd) lastLineEnd = lineEnd;
+                firstPreparedLine = false;
+            }
+
             int clientId = Db.Get<int>(appointment["client_id"]);
             string bookingSource = Db.Get<string>(appointment["booking_source"]);
 
@@ -1117,7 +1168,7 @@ VALUES (@appointment_id, @changed_by, 'Created', 'Upcoming', @reason)",
             ReadPaymentInfo(appointmentId, out method, out reference, out verified);
 
             List<string> problems = ValidateBooking(appointmentId, clientId, newDate, newStart, bookingSource,
-                lines, promoId, paid, method, reference, verified);
+                preparedLines, promoId, paid, method, reference, verified);
 
             if (problems.Count > 0)
             {
@@ -1138,35 +1189,50 @@ SET appointment_date = @appointment_date, start_time = CAST(@start_time AS time)
     end_time = CAST(@end_time AS time), updated_at = GETDATE()
 WHERE appointment_id = @appointment_id",
                             Db.P("@appointment_date", newDate.Date),
-                            Db.P("@start_time", SqlTime(newStart)),
-                            Db.P("@end_time", SqlTime(endTime)),
+                            Db.P("@start_time", SqlTime(firstLineStart)),
+                            Db.P("@end_time", SqlTime(lastLineEnd)),
                             Db.P("@appointment_id", appointmentId));
 
+                        // Every line keeps its own new window, so the room and technician rules
+                        // read the right times for each service.
+                        foreach (DataRow line in preparedLines.Rows)
+                        {
+                            Db.Execute(connection, transaction,
+@"UPDATE AppointmentServices
+SET start_time = CAST(@start_time AS time), end_time = CAST(@end_time AS time),
+    busy_end_time = CAST(@busy_end_time AS time)
+WHERE appointment_service_id = @appointment_service_id",
+                                Db.P("@start_time", SqlTime(ReadTime(line[ColStartTime]))),
+                                Db.P("@end_time", SqlTime(ReadTime(line[ColEndTime]))),
+                                Db.P("@busy_end_time", SqlTime(ReadTime(line[ColBusyEndTime]))),
+                                Db.P("@appointment_service_id", Db.Get<int>(line[ColAppointmentServiceId])));
+                        }
+
                         // The old room reservations are not valid for the new time, so they are
-                        // replaced by a fresh plan (the same helper the booking uses).
+                        // planned again line by line, each for its own window.
                         Db.Execute(connection, transaction,
                             "DELETE FROM AppointmentRooms WHERE appointment_id = @appointment_id",
                             Db.P("@appointment_id", appointmentId));
 
-                        List<string> roomProblems = new List<string>();
-                        DataTable plan = BuildRoomPlan(connection, transaction, newDate, newStart, endTime,
-                            lines, appointmentId, roomProblems);
-
-                        foreach (DataRow row in plan.Rows)
+                        foreach (DataRow line in preparedLines.Rows)
                         {
-                            int roomId = Db.Get<int>(row[ColRoomId]);
+                            int serviceId = Db.Get<int>(line[ColServiceId]);
+
+                            DataRow serviceInfo = GetServiceInfo(connection, transaction, serviceId);
+                            if (serviceInfo == null) continue;
+
+                            string roomName;
+                            int roomId = AvailabilityRepository.PickRoom(connection, transaction, newDate,
+                                Db.Get<int>(serviceInfo["category_id"]), ReadTime(line[ColStartTime]),
+                                ReadTime(line[ColEndTime]), appointmentId, out roomName);
+
                             if (roomId <= 0) continue;
 
                             Db.Execute(connection, transaction,
 @"INSERT INTO AppointmentRooms (appointment_id, appointment_service_id, room_id, status)
-SELECT @appointment_id, asv.appointment_service_id, @room_id, 'Reserved'
-FROM AppointmentServices asv
-WHERE asv.appointment_id = @appointment_id AND asv.service_id = @service_id
-  AND asv.status <> 'Cancelled'
-  AND NOT EXISTS (SELECT 1 FROM AppointmentRooms ar
-                  WHERE ar.appointment_service_id = asv.appointment_service_id)",
+VALUES (@appointment_id, @appointment_service_id, @room_id, 'Reserved')",
                                 Db.P("@appointment_id", appointmentId),
-                                Db.P("@service_id", Db.Get<int>(row[ColServiceId])),
+                                Db.P("@appointment_service_id", Db.Get<int>(line[ColAppointmentServiceId])),
                                 Db.P("@room_id", roomId));
                         }
 
@@ -1441,67 +1507,6 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
             // validator already approved. A line without one is placed after the line above.
             table.Columns.Add(ColStartTime, typeof(TimeSpan));
             return table;
-        }
-
-        /// <summary>
-        /// Chooses a room for every line: the first room linked to the service category whose
-        /// overlapping reservations are still below its capacity. The result is a COPY of the
-        /// lines table with room_id / room_name filled in, so the caller can insert them.
-        /// Every problem found is added to <paramref name="problems"/>.
-        /// POLISH: when a category has no room linked in RoomServiceCategories, nothing is
-        /// assigned and no problem is raised - otherwise no booking would be possible until the
-        /// owner links the rooms of the shop.
-        /// </summary>
-        private static DataTable BuildRoomPlan(SqlConnection connection, SqlTransaction transaction,
-            DateTime appointmentDate, TimeSpan startTime, TimeSpan endTime, DataTable lines,
-            int excludeAppointmentId, List<string> problems)
-        {
-            DataTable plan = lines.Copy();
-
-            if (!plan.Columns.Contains(ColRoomId)) plan.Columns.Add(ColRoomId, typeof(int));
-            if (!plan.Columns.Contains(ColRoomName)) plan.Columns.Add(ColRoomName, typeof(string));
-
-            foreach (DataRow row in plan.Rows)
-            {
-                row[ColRoomId] = 0;
-                row[ColRoomName] = string.Empty;
-
-                DataRow service = GetServiceInfo(connection, transaction, Db.Get<int>(row[ColServiceId]));
-                if (service == null) continue;
-
-                int categoryId = Db.Get<int>(service["category_id"]);
-                DataTable rooms = GetRoomsForCategory(connection, transaction, categoryId);
-
-                // No room is linked to this category yet, so the room rule cannot be applied.
-                if (rooms.Rows.Count == 0) continue;
-
-                bool placed = false;
-
-                foreach (DataRow room in rooms.Rows)
-                {
-                    int roomId = Db.Get<int>(room["room_id"]);
-                    int capacity = Db.Get<int>(room["capacity"], 1);
-
-                    int used = AvailabilityRepository.RoomUsage(connection, transaction, roomId,
-                        appointmentDate, startTime, endTime, excludeAppointmentId);
-
-                    if (used < capacity)
-                    {
-                        row[ColRoomId] = roomId;
-                        row[ColRoomName] = Db.Get<string>(room["room_name"]);
-                        placed = true;
-                        break;
-                    }
-                }
-
-                if (!placed)
-                {
-                    problems.Add("No '" + Db.Get<string>(service["category_name"]) + "' room is free from " +
-                        Clock(startTime) + " to " + Clock(endTime) + ". Choose another time or another date.");
-                }
-            }
-
-            return plan;
         }
 
         /// <summary>The lines of a booking as the discount formula wants them (service_id + amount).</summary>

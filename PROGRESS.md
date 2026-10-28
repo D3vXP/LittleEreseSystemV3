@@ -2,6 +2,36 @@
 
 Update this file at the end of every task.
 
+- Step 52 (this task): Reschedule(appointmentId, newDate, newStart, reason) keeps its signature but
+  now moves ALL the lines of the appointment by the same amount. newStart is the new start of the
+  EARLIEST line; every other line keeps the distance it had from it.
+  - Data\AppointmentRepository.cs, Reschedule: lines = GetLinesForBooking (which now also returns
+    appointment_service_id), delta = newStart - (earliest line start), a COPY of the lines is
+    shifted by delta and PrepareLines recalculates end / busy end from each service. A shifted time
+    that lands in the past is passed to the checks like any other problem.
+  - Validation: ValidateBooking(appointmentId, ..., preparedLines, ...) exactly as before, so the
+    appointment does not count itself. The 3-day rule, the reason rule and the AppointmentHistory
+    row are unchanged.
+  - Update, in the same transaction: Appointments.appointment_date, start_time (earliest line) and
+    end_time (latest line) + updated_at; every AppointmentServices line gets its new start_time,
+    end_time and busy_end_time (by appointment_service_id); the AppointmentRooms of the appointment
+    are deleted and re-planned LINE BY LINE with AvailabilityRepository.PickRoom (excluding this
+    appointment) for each line's own window. Technicians are not touched (validation already
+    refused a busy one).
+  - BuildRoomPlan is DELETED (no caller left; CountRoomUsage and HasTechnicianOverlap were already
+    gone). The PickRoom summary no longer mentions it.
+  - A rescheduled package session moves only that session; the other sessions keep their dates.
+  - PROJECT_RULES.md WAS edited: the "Cancel / reschedule" rule now says a reschedule moves every
+    line by the same amount, rewrites each line's times and re-plans the rooms per line, and that a
+    package session moves alone.
+  - LittleEreseSystemV3.csproj was NOT edited (no new file). The booking form was not touched.
+  - Known issue (from Step 51, still open): ValidateBooking plans the weekly sessions of a package
+    line. During a reschedule of one package session that plan is made from the NEW date, so an
+    already-booked later session can make the client "busy" and refuse the move. Not changed here
+    because the prompt said to validate exactly as today.
+  - Checks: clean build 0 errors / 0 warnings; --smoketest 90 passed / 0 failed / 0 skipped;
+    DesignerAudit 22 files exit 0; app started once, stayed open, closed, no error.log.
+  - Next: E2-C, the booking screen (per-line time pickers, PackageForm session plan, reschedule UI).
 - Step 51 (this task): booking Tirzepatide (4 sessions) also creates the 3 weekly sessions, so the
   remaining 3 weeks are already scheduled. ValidateBooking and Create keep their signatures; the form
   is untouched.
