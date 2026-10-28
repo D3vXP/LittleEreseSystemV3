@@ -2,6 +2,21 @@
 
 Update this file at the end of every task.
 
+- Step 46 (this task): the three availability queries in Data\AvailabilityRepository.cs.
+  - RoomUsage(room, date, start, end, excludeAppointment) counts the DISTINCT service lines that
+    hold the room in the window (released rooms, cancelled lines and cancelled / rescheduled
+    appointments skipped).
+  - TechnicianBusy(user, date, start, busyEnd, excludeAppointment) counts the 'Assigned' staff rows
+    overlapping the window; it uses busy_end_time first, then end_time, then the appointment end.
+  - ClientBusy(client, date, start, end, excludeAppointment) counts the client's other active lines.
+  - Every query takes (SqlConnection, SqlTransaction) first, passes them to Db.Scalar, sends times
+    through AppointmentRepository.SqlTime with CAST(@x AS time) and falls back to the appointment
+    times with ISNULL for old rows that have NULL line times.
+  - PROJECT_RULES.md: no rule changed, so it was not edited. LittleEreseSystemV3.csproj was NOT
+    edited (the Step 45 Compile line already covers this file).
+  - Checks: clean build 0 errors / 0 warnings; --smoketest 77 passed / 0 failed / 0 skipped;
+    DesignerAudit 22 files exit 0; app started once, stayed open, closed, no error.log.
+  - Next: use these three checks from the booking wizard line loop.
 - Step 45 (this task): the new Data\AvailabilityRepository.cs (skeleton + two helpers).
   - New file Data\AvailabilityRepository.cs: internal static class AvailabilityRepository in
     LittleEreseSystemV3.Data, four usings (System, System.Collections.Generic, System.Data,
