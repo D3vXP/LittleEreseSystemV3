@@ -2,6 +2,44 @@
 
 Update this file at the end of every task.
 
+- Step 38 (this task): the PROMO PRICE logic (S2-C3). A promotion is now a set of services sold
+  for one promotional price.
+  - Data\PromotionRepository.cs: GetById / GetPromotions / GetActiveValid return promo_price too.
+    GetPromotions and GetActiveValid add four display columns built in C# (no STRING_AGG):
+    services_text (linked service names, "All services" when none), regular_total (sum of their
+    prices), promo_price_text ("P 3,000.00" for a Promo Price promo, "15 % off" / "P 200.00 off"
+    for an old one) and saving. AddAppliesToColumn / BuildAppliesTo were REPLACED by
+    AddListColumns (the removed "Applies to" column was the only user).
+    SavePromotion takes promoPrice, stores discount_type 'Promo Price' with discount_value 0 and
+    the price (an old type keeps a NULL promo_price), in the same transaction as the links.
+    CalculateDiscount is still the ONLY discount entry point: for 'Promo Price' it goes to the
+    new private PromoPriceDiscount - every linked service must be on the booking (otherwise 0 and
+    "This promotion needs: <names>."), and the discount is the regular price of those services
+    (ONE unit each, read from the DB) minus promo_price, never below 0, once per appointment.
+    The Percentage and Fixed branches are unchanged (ComputeDiscount untouched).
+  - Forms\PromotionEditForm.cs: the price preview shows the regular total, the promo price note and
+    the saving (regular total - promo price, never below 0) and follows txtPromoPrice as well as the
+    ticks. Save always writes 'Promo Price' with discount_value 0, so an old Percentage / Fixed
+    promotion asks for a promo price when edited and is converted on save. Validation: name +
+    unique name, at least one ticked service, promo price above 0 and LOWER than the regular total
+    ("The promo price must be lower than the regular price of the services (P x)."), end date on or
+    after start. Every "// TODO(logic prompt)" of the layout step is gone: ApplyApplyAllState,
+    ShowTotals and the type/value placeholders were removed with the removed controls.
+  - Controls\ucPromotions.cs: the summary strip shows the description, the saving ("Customers save
+    P x") and the first service names. New private CellText() reads a cell through the bound row, so
+    a column the grid has not visited yet (or a hidden one) is never read as empty.
+  - Controls\ucBilling.cs / Forms\AppointmentForm.cs (only the promo caption of the two combo
+    boxes, so a Promo Price promo reads "Name - P 3,000.00" instead of "P 0.00 off"):
+    if (discount_type = 'Promo Price') the caption is its promo_price. Nothing else changed there.
+  - Helpers\SmokeTest.cs: one new read-only check, "Promotions of type 'Promo Price' with a NULL
+    promo_price" (CheckScalarZero).
+  - PROJECT_RULES.md: the Promos rule rewritten exactly as asked. LittleEreseSystemV3.csproj was NOT
+    edited (no new file).
+  - Checks: standard clean build 0 errors / 0 warnings, DesignerAudit 22 files exit 0, app started
+    once and closed with no error.log, --smoketest 71 passed / 0 failed, --preview ucPromotions and
+    PromotionEditForm: the grid headers read Promotion / Services / Regular price / Promo price /
+    Start / End / Status with no "$" and no overlap, the dialog shows Promotional price, the preview
+    with "Regular price of the services" and "Customers save", 0 fix rounds.
 - Step 37 (this task): LAYOUT ONLY of ucPromotions. The grid columns are now
   colPromoId (hidden, promo_id) / colName "Promotion" (promo_name) / colServices "Services"
   (services_text, Fill) / colRegularTotal "Regular price" (regular_total, money) /

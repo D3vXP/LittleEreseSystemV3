@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Globalization;
 using System.Windows.Forms;
 using LittleEreseSystemV3.Data;
 using LittleEreseSystemV3.Helpers;
@@ -17,6 +16,10 @@ namespace LittleEreseSystemV3.Forms
         public int SavedPromoId { get; private set; }
 
         private const string AllCategories = "All categories";
+
+        // The one discount type this dialog saves (PROJECT_RULES.md: a promotion is a set of
+        // services sold for a promotional price).
+        private const string PromotionPriceType = "Promo Price";
 
         // The ticked service ids live here, NOT in the grid, so a tick survives the search and
         // the category filter (the grid only shows the services that match them right now).
@@ -43,14 +46,11 @@ namespace LittleEreseSystemV3.Forms
 
             // The money columns (the designer only sets N2) go through the one formatter of the app.
             Money.ApplyTo(colPrevRegular);
-            // TODO(logic prompt) Money.ApplyTo(colPrevPromo);
-            // TODO(logic prompt) Money.ApplyTo(colPrevSaving);
             Money.ApplyTo(colPickPrice);
 
             _loading = true;
             try
             {
-                // TODO(logic prompt) cboType.SelectedIndex = 0; // "Percentage" by default
                 cboStatus.SelectedIndex = 0; // "Active"
 
                 // A new promo starts today and runs for a month; the owner can change both.
@@ -64,16 +64,12 @@ namespace LittleEreseSystemV3.Forms
                 {
                     LoadPromotion(EditId);
                 }
-
-                // TODO(logic prompt) a brand-new promotion used to start as "applies to all
-                // TODO(logic prompt) services"; that checkbox was removed from the layout.
             }
             finally
             {
                 _loading = false;
             }
 
-            ApplyApplyAllState();
             UpdateSelectedCount();
             UpdatePreview();
         }
@@ -214,12 +210,9 @@ namespace LittleEreseSystemV3.Forms
             txtName.Text = Db.Get<string>(row["promo_name"]);
             txtConditions.Text = Db.Get<string>(row["description"]);
 
-            // TODO(logic prompt) string type = Db.Get<string>(row["discount_type"], "Percentage");
-            // TODO(logic prompt) cboType.SelectedItem = type;
-            // TODO(logic prompt) if (cboType.SelectedIndex < 0) cboType.SelectedIndex = 0;
-
-            // TODO(logic prompt) txtValue.Text = Db.Get<decimal>(row["discount_value"]).ToString("0.00");
-            // TODO(logic prompt) txtPromoPrice.Text = Money.Text-plain of row["promo_price"];
+            // Every promotion is saved as a promotional price now, so an old Percentage or Fixed
+            // promotion asks for one here and is converted when it is saved (see btnSave_Click).
+            txtPromoPrice.Text = Db.Get<decimal>(row["promo_price"]).ToString("0.00");
 
             DateTime start = Db.Get<DateTime>(row["start_date"], DateTime.Today);
             DateTime end = Db.Get<DateTime>(row["end_date"], start);
@@ -229,74 +222,27 @@ namespace LittleEreseSystemV3.Forms
             string status = Db.Get<string>(row["status"], "Active");
             cboStatus.SelectedItem = status;
             if (cboStatus.SelectedIndex < 0) cboStatus.SelectedIndex = 0;
-        }
 
-        /// <summary>
-        /// "Apply to all services" locks the picker, because a promotion without linked services
-        /// applies to the whole bill.
-        /// </summary>
-        private void ApplyApplyAllState()
-        {
-            // TODO(logic prompt) bool applyAll = chkApplyAll.Checked;
-
-            // TODO(logic prompt) txtServiceSearch.Enabled = !applyAll;
-            // TODO(logic prompt) cboServiceCategory.Enabled = !applyAll;
-            // TODO(logic prompt) dgvServicePick.Enabled = !applyAll;
-
-            // TODO(logic prompt) if (!applyAll) return;
-
-            // TODO(logic prompt) nothing is ticked while it applies to everything, so the count
-            // TODO(logic prompt) cannot lie. The "apply to all services" checkbox was removed.
-            // TODO(logic prompt) lblSelectedCount.Text = "Applies to every service";
-            // TODO(logic prompt) dgvServicePick.ClearSelection();
+            UpdatePreview();
         }
 
         /// <summary>The "N services selected" line under the pick grid.</summary>
         private void UpdateSelectedCount()
         {
-            // TODO(logic prompt) if (chkApplyAll.Checked) return;
-
             int count = _selectedServiceIds.Count;
             lblSelectedCount.Text = count + (count == 1 ? " service selected" : " services selected");
         }
 
         /// <summary>
-        /// Rebuilds the price preview and the three totals from the ticked services, the discount
-        /// type and the value. Every calculation goes through PromotionRepository.ComputeDiscount,
-        /// so the formula is never written a second time.
+        /// Rebuilds the price preview from the ticked services and the promotional price typed in
+        /// txtPromoPrice: the regular total, what the customer saves, and a short note.
+        /// The saving is the regular total minus the promo price and is never below zero.
         /// </summary>
         private void UpdatePreview()
         {
             DataTable preview = new DataTable();
             preview.Columns.Add("service_name", typeof(string));
             preview.Columns.Add("regular_price", typeof(decimal));
-            preview.Columns.Add("promo_price", typeof(object));
-            preview.Columns.Add("saving", typeof(object));
-
-            // TODO(logic prompt) bool applyAll = chkApplyAll.Checked;
-            // TODO(logic prompt) string type = cboType.SelectedItem == null ? "Percentage" : cboType.SelectedItem.ToString();
-
-            // TODO(logic prompt) decimal value;
-            // TODO(logic prompt) if (!Validators.TryMoney(txtValue.Text, out value)) value = 0m;
-
-            // The two values above came from the removed discount type combo and value box. They are
-            // kept as plain locals so this file still compiles; the promo price replaces them.
-            string type = "Percentage"; // TODO(logic prompt)
-            decimal value = 0m;         // TODO(logic prompt)
-
-            // TODO(logic prompt) the "applies to every service on the bill" branch went away with
-            // TODO(logic prompt) the checkbox; the promo price is typed in txtPromoPrice now.
-            // TODO(logic prompt) if (applyAll)
-            // TODO(logic prompt) {
-            // TODO(logic prompt)     dgvPreview.DataSource = preview;
-            // TODO(logic prompt)     dgvPreview.ClearSelection();
-            // TODO(logic prompt)     lblPreviewNote.Text = "Applies to every service on the bill.";
-            // TODO(logic prompt)     ShowTotals(false);
-            // TODO(logic prompt)     lblRegularTotal.Text = string.Empty;
-            // TODO(logic prompt)     lblDropTotal.Text = string.Empty;
-            // TODO(logic prompt)     lblPromoTotal.Text = string.Empty;
-            // TODO(logic prompt)     return;
-            // TODO(logic prompt) }
 
             decimal regularTotal = 0m;
             int shown = 0;
@@ -316,65 +262,35 @@ namespace LittleEreseSystemV3.Forms
                     DataRow line = preview.NewRow();
                     line["service_name"] = serviceName;
                     line["regular_price"] = price;
-                    line["promo_price"] = DBNull.Value;
-                    line["saving"] = DBNull.Value;
-
-                    if (string.Equals(type, "Percentage", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // One line of the appointment: the price of the service times the percentage.
-                        decimal drop = PromotionRepository.ComputeDiscount(type, value, price);
-                        line["promo_price"] = price - drop;
-                        line["saving"] = drop;
-                    }
 
                     preview.Rows.Add(line);
                 }
             }
 
-            decimal totalDrop = PromotionRepository.ComputeDiscount(type, value, regularTotal);
-
-            // A fixed amount is taken off ONCE per appointment, so it only makes sense inside a
-            // single service row when that one service IS the whole selection.
-            if (!string.Equals(type, "Percentage", StringComparison.OrdinalIgnoreCase) && shown == 1)
-            {
-                DataRow only = preview.Rows[0];
-                decimal price = Db.Get<decimal>(only["regular_price"]);
-                only["promo_price"] = price - totalDrop;
-                only["saving"] = totalDrop;
-            }
-
             dgvPreview.DataSource = preview;
             dgvPreview.ClearSelection();
 
-            lblRegularTotal.Text = Money.Text(regularTotal);
-            // TODO(logic prompt) lblDropTotal.Text = Money.Text(totalDrop);
-            // TODO(logic prompt) lblPromoTotal.Text = Money.Text(regularTotal - totalDrop);
+            // The saving is what the customer keeps: the regular total minus the promotional price.
+            decimal promoPrice;
+            bool hasPrice = Validators.TryMoney(txtPromoPrice.Text, out promoPrice) && promoPrice > 0m;
+            decimal saving = hasPrice && regularTotal > promoPrice ? regularTotal - promoPrice : 0m;
 
-            ShowTotals(true);
+            lblRegularTotal.Text = Money.Text(regularTotal);
+            lblSavingAmount.Text = Money.Text(saving);
 
             if (shown == 0)
             {
                 lblPreviewNote.Text = "Tick at least one service to see the prices.";
             }
-            else if (string.Equals(type, "Percentage", StringComparison.OrdinalIgnoreCase))
+            else if (!hasPrice)
             {
-                lblPreviewNote.Text = "Only the appointment lines of the selected services are discounted.";
+                lblPreviewNote.Text = "Type the promotional price of these services.";
             }
             else
             {
-                lblPreviewNote.Text = "A fixed discount is taken off once per appointment.";
+                // POLISH: reword this sentence if the owner prefers a shorter note.
+                lblPreviewNote.Text = "All the services above for " + Money.Text(promoPrice) + ".";
             }
-        }
-
-        /// <summary>Hides the totals block while the promotion applies to the whole bill.</summary>
-        private void ShowTotals(bool visible)
-        {
-            lblRegularTitle.Visible = visible;
-            lblRegularTotal.Visible = visible;
-            // TODO(logic prompt) lblDropTitle.Visible = visible;
-            // TODO(logic prompt) lblDropTotal.Visible = visible;
-            // TODO(logic prompt) lblPromoTitle.Visible = visible;
-            // TODO(logic prompt) lblPromoTotal.Visible = visible;
         }
 
         /// <summary>The regular (undiscounted) total of the ticked services.</summary>
@@ -401,21 +317,26 @@ namespace LittleEreseSystemV3.Forms
             {
                 string name = txtName.Text.Trim();
                 string conditions = txtConditions.Text.Trim();
-                string type = "Percentage"; // TODO(logic prompt) cboType.SelectedItem.ToString();
 
-                decimal value = 0m;         // TODO(logic prompt) Validators.TryMoney(txtValue.Text, out value);
+                // Every promotion saved from this dialog is a promotional price for a set of
+                // services. An old Percentage / Fixed promotion is converted when it is saved,
+                // because the owner has to type the promotional price before that can happen.
+                string type = PromotionPriceType;
+                decimal value = 0m;
+
+                decimal promoPrice;
+                Validators.TryMoney(txtPromoPrice.Text, out promoPrice);
 
                 DateTime start = dtpStart.Value.Date;
                 DateTime end = dtpEnd.Value.Date;
                 string status = cboStatus.SelectedItem.ToString();
 
-                // TODO(logic prompt) "Applies to all services" is stored as NO links at all.
-                List<int> serviceIds = new List<int>(_selectedServiceIds); // TODO(logic prompt)
+                List<int> serviceIds = new List<int>(_selectedServiceIds);
 
                 // The promotion AND its links are written in one transaction inside the repository,
                 // so a half saved promotion can never reach the database.
                 SavedPromoId = PromotionRepository.SavePromotion(
-                    EditId, name, conditions, type, value, start, end, status, serviceIds);
+                    EditId, name, conditions, type, value, promoPrice, start, end, status, serviceIds);
 
                 ActivityRepository.Log(Session.UserId,
                     EditId > 0 ? "Edit Promotion" : "Add Promotion",
@@ -469,10 +390,7 @@ namespace LittleEreseSystemV3.Forms
                 }
             }
 
-            // 2. and 3. (discount type and value) went with the two removed controls.
-            // TODO(logic prompt) validate txtPromoPrice instead of txtValue.
-
-            // 4. At least one service must be ticked (the "apply to all" option is gone).
+            // 2. At least one service must be ticked, because a promotion is a set of services.
             if (_selectedServiceIds.Count == 0)
             {
                 Validators.SetError(errorProvider1, dgvServicePick,
@@ -480,7 +398,23 @@ namespace LittleEreseSystemV3.Forms
                 ok = false;
             }
 
-            // 5. The end date may not be before the start date.
+            // 3. The promotional price must be above 0 and lower than what the services cost.
+            decimal promoPrice;
+            if (!Validators.TryMoney(txtPromoPrice.Text, out promoPrice) || promoPrice <= 0m)
+            {
+                Validators.SetError(errorProvider1, txtPromoPrice,
+                    "Enter the promotional price of these services.");
+                ok = false;
+            }
+            else if (_selectedServiceIds.Count > 0 && promoPrice >= RegularTotalOfSelected())
+            {
+                Validators.SetError(errorProvider1, txtPromoPrice,
+                    "The promo price must be lower than the regular price of the services (" +
+                    Money.Text(RegularTotalOfSelected()) + ").");
+                ok = false;
+            }
+
+            // 4. The end date may not be before the start date.
             if (dtpEnd.Value.Date < dtpStart.Value.Date)
             {
                 Validators.SetError(errorProvider1, dtpEnd, "The end date must be on or after the start date.");
@@ -554,7 +488,11 @@ namespace LittleEreseSystemV3.Forms
 
         private void txtPromoPrice_TextChanged(object sender, EventArgs e)
         {
-            // TODO(logic prompt)
+            if (_loading) return;
+
+            // The price preview follows the typed price, so the owner sees the saving at once.
+            errorProvider1.SetError(txtPromoPrice, string.Empty);
+            UpdatePreview();
         }
     }
 }

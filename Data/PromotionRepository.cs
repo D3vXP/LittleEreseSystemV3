@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using LittleEreseSystemV3.Helpers;
 
 namespace LittleEreseSystemV3.Data
 {
@@ -13,9 +14,6 @@ namespace LittleEreseSystemV3.Data
     /// </summary>
     internal static class PromotionRepository
     {
-        /// <summary>How many service names the "applies_to" column shows before " +N more".</summary>
-        private const int AppliesToNameLimit = 3;
-
         /// <summary>
         /// Moves every promotion whose end date has passed to status 'Expired'.
         /// WHY: the status is stored, so reports and the dashboard can trust a single word.
@@ -32,14 +30,15 @@ namespace LittleEreseSystemV3.Data
         /// The promotions for the grid.
         ///   search - matches the promotion name (empty = no search)
         ///   status - "All" means "every status"
-        /// Returns promo_id, promo_name, discount_type, discount_value, start_date, end_date,
-        /// status, description (the conditions shown in the grid) and applies_to.
+        /// Returns promo_id, promo_name, description, discount_type, discount_value, promo_price,
+        /// start_date, end_date and status, plus the four columns the page shows but the database
+        /// does not store: services_text, regular_total, promo_price_text and saving.
         /// </summary>
         public static DataTable GetPromotions(string search, string status)
         {
             string sql =
-                "SELECT promo_id, promo_name, discount_type, discount_value, start_date, end_date, " +
-                "       status, description " +
+                "SELECT promo_id, promo_name, description, discount_type, discount_value, promo_price, " +
+                "       start_date, end_date, status " +
                 "FROM Promotions " +
                 "WHERE (@search = '' OR promo_name LIKE @like) " +
                 "  AND (@status = 'All' OR status = @status) " +
@@ -52,7 +51,7 @@ namespace LittleEreseSystemV3.Data
                 Db.P("@like", "%" + term + "%"),
                 Db.P("@status", status ?? "All"));
 
-            AddAppliesToColumn(table);
+            AddListColumns(table);
             return table;
         }
 
@@ -61,7 +60,7 @@ namespace LittleEreseSystemV3.Data
         {
             DataTable table = Db.Query(
                 "SELECT promo_id, promo_name, description, discount_type, discount_value, " +
-                "       start_date, end_date, status " +
+                "       promo_price, start_date, end_date, status " +
                 "FROM Promotions WHERE promo_id = @promo_id",
                 Db.P("@promo_id", promoId));
 
@@ -75,14 +74,14 @@ namespace LittleEreseSystemV3.Data
         public static DataTable GetActiveValid()
         {
             DataTable table = Db.Query(
-                "SELECT promo_id, promo_name, discount_type, discount_value, start_date, end_date, " +
-                "       status, description " +
+                "SELECT promo_id, promo_name, description, discount_type, discount_value, promo_price, " +
+                "       start_date, end_date, status " +
                 "FROM Promotions " +
                 "WHERE status = 'Active' " +
                 "  AND CAST(GETDATE() AS date) BETWEEN start_date AND end_date " +
                 "ORDER BY end_date, promo_name");
 
-            AddAppliesToColumn(table);
+            AddListColumns(table);
             return table;
         }
 
@@ -178,10 +177,17 @@ namespace LittleEreseSystemV3.Data
         /// other transaction helper.
         /// </summary>
         public static int SavePromotion(int promoId, string promoName, string description, string discountType,
-            decimal discountValue, DateTime startDate, DateTime endDate, string status, List<int> serviceIds)
+            decimal discountValue, decimal promoPrice, DateTime startDate, DateTime endDate, string status,
+            List<int> serviceIds)
         {
             string name = promoName == null ? string.Empty : promoName.Trim();
             if (serviceIds == null) serviceIds = new List<int>();
+
+            // A 'Promo Price' promotion stores its promotional price and no percentage / fixed value;
+            // an old Percentage or Fixed promotion keeps a NULL promo price.
+            bool promoPriceType = string.Equals(discountType, "Promo Price", StringComparison.OrdinalIgnoreCase);
+            object promoPriceValue = promoPriceType ? (object)promoPrice : DBNull.Value;
+            decimal storedValue = promoPriceType ? 0m : discountValue;
 
             using (SqlConnection connection = Db.CreateConnection())
             {
@@ -213,6 +219,7 @@ namespace LittleEreseSystemV3.Data
                             using (SqlCommand update = new SqlCommand(
                                 "UPDATE Promotions SET promo_name = @promo_name, description = @description, " +
                                 "       discount_type = @discount_type, discount_value = @discount_value, " +
+                                "       promo_price = @promo_price, " +
                                 "       start_date = @start_date, end_date = @end_date, status = @status " +
                                 "WHERE promo_id = @promo_id",
                                 connection, transaction))
@@ -220,7 +227,8 @@ namespace LittleEreseSystemV3.Data
                                 update.Parameters.Add(Db.P("@promo_name", name));
                                 update.Parameters.Add(Db.P("@description", description));
                                 update.Parameters.Add(Db.P("@discount_type", discountType));
-                                update.Parameters.Add(Db.P("@discount_value", discountValue));
+                                update.Parameters.Add(Db.P("@discount_value", storedValue));
+                                update.Parameters.Add(Db.P("@promo_price", promoPriceValue));
                                 update.Parameters.Add(Db.P("@start_date", startDate.Date));
                                 update.Parameters.Add(Db.P("@end_date", endDate.Date));
                                 update.Parameters.Add(Db.P("@status", status));
@@ -235,16 +243,17 @@ namespace LittleEreseSystemV3.Data
                         {
                             using (SqlCommand insert = new SqlCommand(
                                 "INSERT INTO Promotions (promo_name, description, discount_type, discount_value, " +
-                                "                        start_date, end_date, status) " +
+                                "                        promo_price, start_date, end_date, status) " +
                                 "VALUES (@promo_name, @description, @discount_type, @discount_value, " +
-                                "        @start_date, @end_date, @status); " +
+                                "        @promo_price, @start_date, @end_date, @status); " +
                                 "SELECT CAST(SCOPE_IDENTITY() AS int);",
                                 connection, transaction))
                             {
                                 insert.Parameters.Add(Db.P("@promo_name", name));
                                 insert.Parameters.Add(Db.P("@description", description));
                                 insert.Parameters.Add(Db.P("@discount_type", discountType));
-                                insert.Parameters.Add(Db.P("@discount_value", discountValue));
+                                insert.Parameters.Add(Db.P("@discount_value", storedValue));
+                                insert.Parameters.Add(Db.P("@promo_price", promoPriceValue));
                                 insert.Parameters.Add(Db.P("@start_date", startDate.Date));
                                 insert.Parameters.Add(Db.P("@end_date", endDate.Date));
                                 insert.Parameters.Add(Db.P("@status", status));
@@ -341,6 +350,14 @@ namespace LittleEreseSystemV3.Data
             decimal value = Db.Get<decimal>(promo["discount_value"]);
 
             List<int> linked = GetServiceIds(promoId);
+
+            // A 'Promo Price' promotion is a fixed set of services sold for one price, so it has
+            // its own rule: every linked service must be on the booking, and the discount is the
+            // regular total of those services minus the promotional price.
+            if (string.Equals(type, "Promo Price", StringComparison.OrdinalIgnoreCase))
+            {
+                return PromoPriceDiscount(promo, linked, lines, out message);
+            }
 
             decimal eligibleSubtotal = 0m;
             int eligibleLines = 0;
@@ -440,52 +457,125 @@ namespace LittleEreseSystemV3.Data
         }
 
         /// <summary>
-        /// Adds the applies_to column to a promotions table: "All services" when nothing is linked,
-        /// otherwise the first few service names plus " +N more". The text is built in C# on
-        /// purpose, so the app does not need a SQL Server version with STRING_AGG.
+        /// The discount of a 'Promo Price' promotion: the regular price of its services (ONE unit
+        /// each, read from the database) minus the promotional price, never below 0 and taken ONCE
+        /// per appointment. Every linked service must be on the booking, otherwise the message says
+        /// which ones are missing.
         /// </summary>
-        private static void AddAppliesToColumn(DataTable table)
+        private static decimal PromoPriceDiscount(DataRow promo, List<int> linked, DataTable lines, out string message)
         {
-            if (table == null || table.Columns.Contains("applies_to")) return;
+            message = string.Empty;
 
-            table.Columns.Add("applies_to", typeof(string));
-
-            foreach (DataRow row in table.Rows)
+            if (linked.Count == 0)
             {
-                int promoId = Db.Get<int>(row["promo_id"]);
-                row["applies_to"] = BuildAppliesTo(promoId);
+                message = "This promotion has no services yet.";
+                return 0m;
             }
-        }
 
-        /// <summary>The short "Applies to" text for one promotion.</summary>
-        private static string BuildAppliesTo(int promoId)
-        {
-            if (promoId <= 0) return "All services";
+            List<int> booked = new List<int>();
+            if (lines != null)
+            {
+                foreach (DataRow line in lines.Rows)
+                {
+                    booked.Add(Db.Get<int>(line["service_id"]));
+                }
+            }
 
-            DataTable table = Db.Query(
-                "SELECT s.service_name " +
+            DataTable services = Db.Query(
+                "SELECT s.service_id, s.service_name, s.price " +
                 "FROM PromotionServices ps " +
                 "INNER JOIN Services s ON s.service_id = ps.service_id " +
                 "WHERE ps.promo_id = @promo_id " +
                 "ORDER BY s.service_name",
-                Db.P("@promo_id", promoId));
+                Db.P("@promo_id", Db.Get<int>(promo["promo_id"])));
 
-            if (table.Rows.Count == 0) return "All services";
+            List<string> missing = new List<string>();
+            decimal regularTotal = 0m;
 
-            List<string> names = new List<string>();
-            for (int i = 0; i < table.Rows.Count && i < AppliesToNameLimit; i++)
+            foreach (DataRow service in services.Rows)
             {
-                names.Add(Db.Get<string>(table.Rows[i]["service_name"]));
+                int serviceId = Db.Get<int>(service["service_id"]);
+                regularTotal += Db.Get<decimal>(service["price"]);
+
+                if (!booked.Contains(serviceId))
+                {
+                    missing.Add(Db.Get<string>(service["service_name"]));
+                }
             }
 
-            string text = string.Join(", ", names.ToArray());
-
-            if (table.Rows.Count > AppliesToNameLimit)
+            if (missing.Count > 0)
             {
-                text += " +" + (table.Rows.Count - AppliesToNameLimit) + " more";
+                message = "This promotion needs: " + string.Join(", ", missing.ToArray()) + ".";
+                return 0m;
             }
 
-            return text;
+            decimal promoPrice = Db.Get<decimal>(promo["promo_price"]);
+            decimal discount = Math.Round(regularTotal - promoPrice, 2, MidpointRounding.AwayFromZero);
+
+            if (discount < 0m) discount = 0m;
+            return discount;
+        }
+
+        /// <summary>
+        /// Adds the four display columns of the promotions page: services_text (the linked service
+        /// names), regular_total (their prices), promo_price_text ("P 3,000.00" for a Promo Price
+        /// promo, "15 % off" or "P 200.00 off" for an old one) and saving. The text is built in C#
+        /// on purpose, so the app does not need a SQL Server version with STRING_AGG.
+        /// </summary>
+        private static void AddListColumns(DataTable table)
+        {
+            if (table == null || table.Columns.Contains("services_text")) return;
+
+            table.Columns.Add("services_text", typeof(string));
+            table.Columns.Add("regular_total", typeof(decimal));
+            table.Columns.Add("promo_price_text", typeof(string));
+            table.Columns.Add("saving", typeof(decimal));
+
+            foreach (DataRow row in table.Rows)
+            {
+                int promoId = Db.Get<int>(row["promo_id"]);
+
+                DataTable services = Db.Query(
+                    "SELECT s.service_name, s.price " +
+                    "FROM PromotionServices ps " +
+                    "INNER JOIN Services s ON s.service_id = ps.service_id " +
+                    "WHERE ps.promo_id = @promo_id " +
+                    "ORDER BY s.service_name",
+                    Db.P("@promo_id", promoId));
+
+                List<string> names = new List<string>();
+                decimal regularTotal = 0m;
+
+                foreach (DataRow service in services.Rows)
+                {
+                    names.Add(Db.Get<string>(service["service_name"]));
+                    regularTotal += Db.Get<decimal>(service["price"]);
+                }
+
+                bool promoPriceType = string.Equals(Db.Get<string>(row["discount_type"]),
+                    "Promo Price", StringComparison.OrdinalIgnoreCase);
+
+                decimal promoPrice = Db.Get<decimal>(row["promo_price"]);
+                decimal discountValue = Db.Get<decimal>(row["discount_value"]);
+
+                row["services_text"] = names.Count == 0 ? "All services" : string.Join(", ", names.ToArray());
+                row["regular_total"] = regularTotal;
+                row["saving"] = promoPriceType ? Math.Max(0m, regularTotal - promoPrice) : 0m;
+
+                if (promoPriceType)
+                {
+                    row["promo_price_text"] = Money.Text(promoPrice);
+                }
+                else if (string.Equals(Db.Get<string>(row["discount_type"]), "Percentage",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    row["promo_price_text"] = discountValue.ToString("0.##") + " % off";
+                }
+                else
+                {
+                    row["promo_price_text"] = Money.Text(discountValue) + " off";
+                }
+            }
         }
     }
 }

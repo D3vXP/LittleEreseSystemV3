@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Globalization;
 using System.Windows.Forms;
 using LittleEreseSystemV3.Data;
 using LittleEreseSystemV3.Forms;
@@ -126,7 +125,7 @@ namespace LittleEreseSystemV3.Controls
             DataGridViewRow row = dgvPromotions.CurrentRow;
             bool hasRow = row != null;
 
-            string status = hasRow ? Db.Get<string>(row.Cells["colStatus"].Value) : string.Empty;
+            string status = hasRow ? CellText(row, "colStatus") : string.Empty;
 
             btnEdit.Enabled = hasRow;
 
@@ -151,7 +150,28 @@ namespace LittleEreseSystemV3.Controls
         {
             DataGridViewRow row = dgvPromotions.CurrentRow;
             if (row == null) return string.Empty;
-            return Db.Get<string>(row.Cells["colName"].Value);
+            return CellText(row, "colName");
+        }
+
+        /// <summary>
+        /// The text of one cell, read through the bound row. WHY not row.Cells[name]: a bound grid
+        /// only fills the cells of the columns the user can see, so an unvisited or hidden column
+        /// would come back empty.
+        /// </summary>
+        private string CellText(DataGridViewRow row, string columnName)
+        {
+            if (row == null) return string.Empty;
+
+            DataGridViewColumn column = dgvPromotions.Columns[columnName];
+            DataRowView bound = row.DataBoundItem as DataRowView;
+
+            if (column != null && bound != null && column.DataPropertyName.Length > 0
+                && bound.Row.Table.Columns.Contains(column.DataPropertyName))
+            {
+                return Db.Get<string>(bound[column.DataPropertyName]);
+            }
+
+            return Db.Get<string>(row.Cells[columnName].Value);
         }
 
         private void btnAdd_Click(object sender, EventArgs e)
@@ -268,12 +288,10 @@ namespace LittleEreseSystemV3.Controls
             }
 
             // The description of the promotion is one of the columns the grid is bound to already.
-            // TODO(logic prompt): add the saving, which needs promo_price from the repository (S2-C3).
             DataRowView bound = row.DataBoundItem as DataRowView;
             string description = bound == null ? string.Empty : Db.Get<string>(bound["description"]);
 
             List<string> names = new List<string>();
-            decimal regularTotal = 0m;
 
             try
             {
@@ -283,7 +301,6 @@ namespace LittleEreseSystemV3.Controls
                 {
                     if (!Db.Get<bool>(pickRow["is_selected"])) continue;
                     names.Add(Db.Get<string>(pickRow["service_name"]));
-                    regularTotal += Db.Get<decimal>(pickRow["price"]);
                 }
             }
             catch (Exception ex)
@@ -293,15 +310,15 @@ namespace LittleEreseSystemV3.Controls
                 return;
             }
 
-            // The strip is short on purpose: the description of the promotion, then the services it
-            // covers. Nothing is computed here, so an unlinked promotion simply shows its description.
             string nameList = names.Count == 0 ? string.Empty : ShortNameList(names);
 
-            // TODO(logic prompt): add the saving of the selected promo once the repository returns
-            // promo_price (S2-C3). regularTotal below is already the sum of the linked services.
-            lblPromoSummary.Text = string.IsNullOrEmpty(nameList)
-                ? description
-                : (string.IsNullOrEmpty(description) ? nameList : description + "   |   " + nameList);
+            // The saving comes from the list query (regular total minus the promotional price),
+            // so the strip and the grid can never disagree.
+            decimal saving = bound == null ? 0m : Db.Get<decimal>(bound["saving"]);
+            string savingText = "Customers save " + Money.Text(saving);
+
+            lblPromoSummary.Text = description + "   |   " + savingText
+                + (string.IsNullOrEmpty(nameList) ? string.Empty : "   |   " + nameList);
         }
 
         /// <summary>The first few service names plus " +N more", so the strip stays one line of text.</summary>
@@ -330,7 +347,6 @@ namespace LittleEreseSystemV3.Controls
                 e.CellStyle.ForeColor = Theme.StatusColor(e.Value.ToString());
                 e.CellStyle.SelectionForeColor = System.Drawing.Color.White;
             }
-            // TODO(logic prompt): the Value column (with its percentage wording) was removed.
         }
     }
 }

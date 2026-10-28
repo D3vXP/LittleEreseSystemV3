@@ -316,6 +316,11 @@ namespace LittleEreseSystemV3.Helpers
             CheckMigrationsListed();
             CheckMigration002Columns();
 
+            // A 'Promo Price' promotion without its price could never give a discount, so the
+            // stored data is checked here (read-only).
+            CheckScalarZero("Promotions of type 'Promo Price' with a NULL promo_price",
+                "SELECT COUNT(*) FROM Promotions WHERE discount_type = 'Promo Price' AND promo_price IS NULL");
+
             // The two read-only minimum-age checks. Nothing is written: the rejected call stops
             // inside ClientRepository BEFORE its INSERT, so no row is created and none has to
             // be cleaned up afterwards (that is why the smoke test stays read-only here too).

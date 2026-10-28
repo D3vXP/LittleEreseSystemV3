@@ -142,10 +142,22 @@ namespace LittleEreseSystemV3.Controls
                     string type = Db.Get<string>(row["discount_type"], "Percentage");
                     decimal value = Db.Get<decimal>(row["discount_value"]);
 
-                    string caption = Db.Get<string>(row["promo_name"]) + " - " +
-                        (string.Equals(type, "Percentage", StringComparison.OrdinalIgnoreCase)
-                            ? value.ToString("0.##") + " % off"
-                            : Money.Text(value) + " off");
+                    string amount;
+                    if (string.Equals(type, "Promo Price", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // A Promo Price promo is a package: the caption is its price, not a discount.
+                        amount = Money.Text(Db.Get<decimal>(row["promo_price"]));
+                    }
+                    else if (string.Equals(type, "Percentage", StringComparison.OrdinalIgnoreCase))
+                    {
+                        amount = value.ToString("0.##") + " % off";
+                    }
+                    else
+                    {
+                        amount = Money.Text(value) + " off";
+                    }
+
+                    string caption = Db.Get<string>(row["promo_name"]) + " - " + amount;
 
                     items.Rows.Add(promoId, caption);
                 }
