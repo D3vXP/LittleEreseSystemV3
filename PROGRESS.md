@@ -2,6 +2,23 @@
 
 Update this file at the end of every task.
 
+- Step 39 (this task): CHECKED, nothing to change. The prompt repeated Step 30/31 work that is
+  already in the repository, so no file was edited in this run.
+  - CheckMaintenanceTableCounts already uses counts.Rows.Count >= MinimumTables (line 613) since
+    Step 30; there is no ">" left anywhere.
+  - Database\Migrations\002_feedback_round1_schema.sql already exists with exactly the requested
+    content (all five parts, every GO on its own line, 3914 bytes) and is listed in SchemaVersion
+    (applied 2026-10-27 11:17:07).
+  - Helpers\SmokeTest.cs already has "Migration 002 columns exist = 9 (expected at least 9)".
+  - PROJECT_RULES.md already carries Users.staff_type and Promotions 'Promo Price' in the value
+    lists, plus the AppointmentServices.start_time / end_time / busy_end_time rule and the
+    "first payment Downpayment, every later one Final" rule.
+  - LittleEreseSystemV3.csproj was NOT edited: the Content wildcard Database\Migrations\*.sql
+    (PreserveNewest) already copied both files to bin\Debug\Database\Migrations.
+  - Checks: standard clean build 0 errors / 0 warnings; the app was started ONCE and 002 did NOT
+    run a second time (SchemaVersion: 001_runner_check.sql 2026-10-27 10:07:30 and
+    002_feedback_round1_schema.sql 2026-10-27 11:17:07, one row each); --smoketest 71 passed /
+    0 failed / 0 skipped; DesignerAudit 22 files exit 0; no error.log.
 - Step 38 (this task): the PROMO PRICE logic (S2-C3). A promotion is now a set of services sold
   for one promotional price.
   - Data\PromotionRepository.cs: GetById / GetPromotions / GetActiveValid return promo_price too.
