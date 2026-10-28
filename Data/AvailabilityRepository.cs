@@ -128,5 +128,155 @@ WHERE a.client_id = @client_id
 
             return Convert.ToInt32(count) > 0;
         }
+
+        /// <summary>
+        /// The reason this ONE service line cannot start at that time, or "" when it can.
+        /// The first failing rule wins, so the user reads the most useful sentence first.
+        /// A rule problem never throws; only a database error does.
+        /// otherLines are the other lines of the booking being built (may be null).
+        /// </summary>
+        public static string WhyNotPossible(SqlConnection connection, SqlTransaction transaction,
+            DateTime date, int serviceId, int quantity, TimeSpan start, int technicianId, int clientId,
+            int excludeAppointmentId, DataTable otherLines)
+        {
+            // a) A past date, or today at a time that has already gone by.
+            if (date.Date < DateTime.Today ||
+                (date.Date == DateTime.Today && start <= DateTime.Now.TimeOfDay))
+            {
+                return "That time has already passed.";
+            }
+
+            DataRow service = AppointmentRepository.GetServiceInfo(connection, transaction, serviceId);
+            if (service == null) return "This service no longer exists.";
+
+            string serviceName = Db.Get<string>(service["service_name"]);
+            string categoryName = Db.Get<string>(service["category_name"]);
+            int categoryId = Db.Get<int>(service["category_id"]);
+            int duration = Db.Get<int>(service["duration_minutes"]);
+            bool massage = AppointmentRepository.IsMassageCategory(categoryName);
+
+            if (quantity < 1) quantity = 1;
+
+            TimeSpan end = LineEnd(start, duration, quantity);
+
+            // b) Opening hours: massage opens later and closes later than an aesthetic service.
+            TimeSpan opens = massage
+                ? AppointmentRepository.MassageOpening
+                : AppointmentRepository.AestheticOpening;
+            TimeSpan closes = massage
+                ? AppointmentRepository.MassageClosing
+                : AppointmentRepository.AestheticClosing;
+
+            if (start < opens || end > closes)
+            {
+                return serviceName + " can only be done between " +
+                    AppointmentRepository.Clock(opens) + " and " + AppointmentRepository.Clock(closes) +
+                    "; starting at " + AppointmentRepository.Clock(start) + " it would end at " +
+                    AppointmentRepository.Clock(end) + ".";
+            }
+
+            // c) The shop only starts a service on the half hour.
+            if (start.TotalMinutes % SlotMinutes != 0) return "Start times are on the half hour.";
+
+            // d) The client cannot be in two places at once, neither on another appointment
+            //    nor on another line of the booking that is being built right now.
+            if (clientId > 0 &&
+                ClientBusy(connection, transaction, clientId, date, start, end, excludeAppointmentId))
+            {
+                return "The client already has another service at that time.";
+            }
+
+            if (otherLines != null)
+            {
+                foreach (DataRow line in otherLines.Rows)
+                {
+                    TimeSpan lineStart = AppointmentRepository.ReadTime(line[AppointmentRepository.ColStartTime]);
+
+                    // A line that has no time yet is not placed on the day, so it cannot overlap.
+                    if (lineStart == TimeSpan.Zero) continue;
+
+                    int lineDuration = Db.Get<int>(line[AppointmentRepository.ColDuration]);
+                    int lineQuantity = Db.Get<int>(line[AppointmentRepository.ColQuantity], 1);
+                    TimeSpan lineEnd = LineEnd(lineStart, lineDuration, lineQuantity);
+
+                    if (lineStart < end && lineEnd > start)
+                    {
+                        return "This overlaps another service of the same appointment.";
+                    }
+                }
+            }
+
+            // e) At least one room of the category must still have room for one more line.
+            // POLISH: when a category has no room linked in RoomServiceCategories there is no
+            // room rule, otherwise no booking would be possible until the owner links the rooms.
+            DataTable rooms = AppointmentRepository.GetRoomsForCategory(connection, transaction, categoryId);
+
+            if (rooms.Rows.Count > 0)
+            {
+                bool roomFree = false;
+
+                foreach (DataRow room in rooms.Rows)
+                {
+                    int used = RoomUsage(connection, transaction, Db.Get<int>(room["room_id"]), date,
+                        start, end, excludeAppointmentId);
+
+                    if (used < Db.Get<int>(room["capacity"], 1))
+                    {
+                        roomFree = true;
+                        break;
+                    }
+                }
+
+                if (!roomFree)
+                {
+                    return "No " + categoryName + " room is free from " +
+                        AppointmentRepository.Clock(start) + " to " + AppointmentRepository.Clock(end) + ".";
+                }
+            }
+
+            // f) The technician: a chosen one must be free, and when nobody is chosen at least
+            //    one technician of the category must be free. The person is free at the BUSY end,
+            //    which is shorter than the room time for a gluta drip.
+            int staffBusyMinutes = Db.Get<int>(service["staff_busy_minutes"], 0);
+            TimeSpan busyEnd = LineBusyEnd(start, duration, staffBusyMinutes, quantity);
+
+            if (technicianId > 0)
+            {
+                if (TechnicianBusy(connection, transaction, technicianId, date, start, busyEnd,
+                    excludeAppointmentId))
+                {
+                    return AppointmentRepository.UserName(connection, transaction, technicianId) +
+                        " is busy at that time.";
+                }
+            }
+            else
+            {
+                DataTable eligible = UserRepository.GetActiveStaffFor(categoryName);
+
+                // No technician of that type exists yet, so the rule cannot be applied.
+                if (eligible.Rows.Count > 0)
+                {
+                    bool someoneFree = false;
+
+                    foreach (DataRow person in eligible.Rows)
+                    {
+                        if (!TechnicianBusy(connection, transaction, Db.Get<int>(person["user_id"]),
+                            date, start, busyEnd, excludeAppointmentId))
+                        {
+                            someoneFree = true;
+                            break;
+                        }
+                    }
+
+                    if (!someoneFree)
+                    {
+                        return "No " + (massage ? "Massage Therapist" : "Aesthetician") +
+                            " is free at that time.";
+                    }
+                }
+            }
+
+            return string.Empty;
+        }
     }
 }

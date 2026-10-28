@@ -2,6 +2,27 @@
 
 Update this file at the end of every task.
 
+- Step 47 (this task): AvailabilityRepository.WhyNotPossible - the one-sentence reason a line
+  cannot start at a time.
+  - New method in Data\AvailabilityRepository.cs (signature + rules a-c, then rules d-f, two
+    edits). It returns "" when the line fits, otherwise the FIRST failing rule, in this order:
+    (a) "That time has already passed."; (b) service missing, then opening hours (massage opens
+    1:00 PM to 10:00 PM, aesthetic 10:00 AM to 8:00 PM) using LineEnd for the end; (c) start not
+    on a half hour; (d) the client already has another line, then an overlap with another line of
+    the same booking (otherLines may be null, a line with no start or 00:00 is skipped);
+    (e) no room of the category has a free seat (GetRoomsForCategory + RoomUsage vs capacity);
+    (f) the chosen technician is busy, or every eligible technician is busy ("No Aesthetician /
+    Massage Therapist is free at that time."). No room link and no eligible staff mean NO rule,
+    the // POLISH note is kept. A rule problem never throws.
+  - PROJECT_RULES.md WAS edited: the room / technician sentence of the "Rooms" rule now says every
+    line has its own start_time / end_time / busy_end_time, a room cannot hold more overlapping
+    LINES than its capacity, a technician is busy from the line start to busy_end_time, a client
+    cannot have two overlapping lines, and all checks live in AvailabilityRepository.
+  - LittleEreseSystemV3.csproj was NOT edited (the file is already listed since Step 45) and
+    Helpers\SmokeTest.cs was not touched, so the count stays at 77.
+  - Checks: clean build 0 errors / 0 warnings; --smoketest 77 passed / 0 failed / 0 skipped;
+    DesignerAudit 22 files exit 0; app started once, stayed open, closed, no error.log.
+  - Next: call WhyNotPossible from the booking wizard line loop (before each line is added).
 - Step 46 (this task): the three availability queries in Data\AvailabilityRepository.cs.
   - RoomUsage(room, date, start, end, excludeAppointment) counts the DISTINCT service lines that
     hold the room in the window (released rooms, cancelled lines and cancelled / rescheduled
