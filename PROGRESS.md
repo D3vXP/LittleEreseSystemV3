@@ -2,6 +2,45 @@
 
 Update this file at the end of every task.
 
+- Step 50 (this task): the booking is checked and saved LINE BY LINE. ValidateBooking and Create keep
+  their signatures, so the booking form still works while the screen is rebuilt.
+  - Data\AppointmentRepository.cs: new PrepareLines(connection, transaction, lines, firstStart)
+    returns a COPY of the lines with ColStartTime / ColEndTime / ColBusyEndTime / ColAssessedBy added
+    when missing. A line with no start, DBNull or 00:00 is placed right after the previous line (the
+    first one at firstStart), so an old caller keeps the old whole-appointment behaviour. End and
+    busy end come from GetServiceInfo (duration_minutes, staff_busy_minutes) through
+    AvailabilityRepository.LineEnd / LineBusyEnd with the quantity.
+  - ValidateBooking: the opening-hours loop, the BuildRoomPlan call and the technician overlap loop
+    are replaced by ONE loop over the prepared lines that calls AvailabilityRepository.WhyNotPossible
+    with the line's own start and the prepared table minus that row as otherLines; each answer is
+    added as "<service name> at <time>: <sentence>". Client, no lines, past date, the 30-a-day and
+    10-massage limits, the promo and the money checks are unchanged.
+  - Create: prices first (ResolveLinePrices, which now carries the line's own start when the caller
+    set one), then PrepareLines, then the appointment row with the EARLIEST line start and the LATEST
+    line end. Every AppointmentServices INSERT writes start_time, end_time, busy_end_time and
+    assessed_by (NULL when 0). A line without a technician gets one from
+    AvailabilityRepository.PickTechnician (0 stays unassigned) and its room from PickRoom for its own
+    time window (room 0 inserts no AppointmentRooms row, as before).
+  - Removed HasTechnicianOverlap and CountRoomUsage (nothing else used them); BuildRoomPlan stays
+    because Reschedule still uses it until E2-C. Its room count now calls
+    AvailabilityRepository.RoomUsage, so there is one room query instead of two.
+  - GetServiceLines also returns start_time and end_time as "h:mm tt" text (ISNULL falls back to the
+    appointment times) and session_text ("Session x of y"); GetLinesForBooking also returns
+    start_time, end_time, busy_end_time, ISNULL(assessed_by, 0) and ISNULL(s.staff_busy_minutes, 0).
+  - Helpers\SmokeTest.cs: two read-only checks in CheckAvailability on today + 400 days - "ValidateBooking
+    accepts a massage at 1:00 PM plus a facial at 10:00 AM" (0 problems) and "ValidateBooking rejects a
+    massage at 10:00 AM" (a sentence with "between"). The count went from 87 to 89 passed.
+  - PROJECT_RULES.md WAS edited: the "Opening hours" rule now says every service LINE has its own start
+    time and must finish inside its own category's hours, and Appointments.start_time / end_time are
+    the earliest line start and the latest line end. docs\POLISH_LIST.md line number for the room
+    POLISH note was updated (1142 -> 1284).
+  - LittleEreseSystemV3.csproj was NOT edited (no new file).
+  - Known issue for E2-C: AppointmentRepository.Reschedule still plans rooms with BuildRoomPlan and
+    does not rewrite the line times, so a reschedule validates and moves the whole appointment the old
+    way. It must be switched to PrepareLines + PickRoom + PickTechnician in E2-C.
+  - Checks: clean build 0 errors / 0 warnings; --smoketest 89 passed / 0 failed / 0 skipped;
+    DesignerAudit 22 files exit 0; app started once, stayed open, closed, no error.log.
+  - Next: E2-C, the booking screen (per-line time pickers, PackageForm session plan, reschedule).
 - Step 49 (this task): packages are booked as weekly sessions.
   - Data\AvailabilityRepository.cs: NextSessionNumber(packageId, totalSessions) returns the lowest
     free session number of a package (numbers of non-cancelled AppointmentServices rows are used, so

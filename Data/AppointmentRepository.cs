@@ -267,9 +267,22 @@ ORDER BY ast.appointment_staff_id");
             return Db.Query(
 @"SELECT s.service_name, asv.quantity, asv.price,
          ISNULL(u.full_name, 'Unassigned') AS staff_name,
-         asv.status, s.duration_minutes
+         asv.status, s.duration_minutes,
+         LEFT(LTRIM(RIGHT(CONVERT(varchar(20), ISNULL(asv.start_time, a.start_time), 100), 7)),
+              LEN(LTRIM(RIGHT(CONVERT(varchar(20), ISNULL(asv.start_time, a.start_time), 100), 7))) - 2)
+             + ' ' +
+         RIGHT(LTRIM(RIGHT(CONVERT(varchar(20), ISNULL(asv.start_time, a.start_time), 100), 7)), 2)
+             AS start_time,
+         LEFT(LTRIM(RIGHT(CONVERT(varchar(20), ISNULL(asv.end_time, a.end_time), 100), 7)),
+              LEN(LTRIM(RIGHT(CONVERT(varchar(20), ISNULL(asv.end_time, a.end_time), 100), 7))) - 2)
+             + ' ' +
+         RIGHT(LTRIM(RIGHT(CONVERT(varchar(20), ISNULL(asv.end_time, a.end_time), 100), 7)), 2)
+             AS end_time,
+         'Session ' + CONVERT(varchar(10), ISNULL(asv.session_number, 1)) + ' of ' +
+             CONVERT(varchar(10), ISNULL(asv.total_sessions, 1)) AS session_text
 FROM AppointmentServices asv
 INNER JOIN Services s ON s.service_id = asv.service_id
+INNER JOIN Appointments a ON a.appointment_id = asv.appointment_id
 LEFT JOIN AppointmentStaff ast ON ast.appointment_service_id = asv.appointment_service_id
                                AND ast.status <> 'Reassigned'
 LEFT JOIN Users u ON u.user_id = ast.user_id
@@ -350,9 +363,15 @@ WHERE a.appointment_id = @appointment_id",
          s.default_total_sessions, ISNULL(ast.user_id, 0) AS technician_id,
          ISNULL(asv.package_id, 0) AS package_id,
          ISNULL(asv.session_number, 0) AS session_number,
-         ISNULL(asv.total_sessions, 0) AS total_sessions
+         ISNULL(asv.total_sessions, 0) AS total_sessions,
+         ISNULL(asv.start_time, a.start_time) AS start_time,
+         ISNULL(asv.end_time, a.end_time) AS end_time,
+         ISNULL(asv.busy_end_time, ISNULL(asv.end_time, a.end_time)) AS busy_end_time,
+         ISNULL(asv.assessed_by, 0) AS assessed_by,
+         ISNULL(s.staff_busy_minutes, 0) AS staff_busy_minutes
 FROM AppointmentServices asv
 INNER JOIN Services s ON s.service_id = asv.service_id
+INNER JOIN Appointments a ON a.appointment_id = asv.appointment_id
 LEFT JOIN AppointmentStaff ast ON ast.appointment_service_id = asv.appointment_service_id
                                AND ast.status <> 'Reassigned'
 WHERE asv.appointment_id = @appointment_id AND asv.status <> 'Cancelled'
@@ -490,6 +509,63 @@ ORDER BY asv.appointment_service_id",
         // ---------------------------------------------------------------------
 
         /// <summary>
+        /// A COPY of the lines table where every line carries its own start, end and busy end
+        /// (ColStartTime, ColEndTime, ColBusyEndTime) plus the nurse column (ColAssessedBy).
+        /// WHY a copy: the caller's table stays untouched. A line with no start of its own is placed
+        /// right after the previous line (the first one at firstStart), which is exactly what the
+        /// old whole-appointment booking did, so an old caller keeps working.
+        /// </summary>
+        public static DataTable PrepareLines(SqlConnection connection, SqlTransaction transaction,
+            DataTable lines, TimeSpan firstStart)
+        {
+            if (lines == null) return new DataTable();
+
+            DataTable prepared = lines.Copy();
+
+            if (!prepared.Columns.Contains(ColStartTime)) prepared.Columns.Add(ColStartTime, typeof(TimeSpan));
+            if (!prepared.Columns.Contains(ColEndTime)) prepared.Columns.Add(ColEndTime, typeof(TimeSpan));
+            if (!prepared.Columns.Contains(ColBusyEndTime)) prepared.Columns.Add(ColBusyEndTime, typeof(TimeSpan));
+            if (!prepared.Columns.Contains(ColAssessedBy)) prepared.Columns.Add(ColAssessedBy, typeof(int));
+
+            TimeSpan nextStart = firstStart;
+
+            foreach (DataRow row in prepared.Rows)
+            {
+                // A line without a time of its own follows the line above it.
+                TimeSpan lineStart = ReadTime(row[ColStartTime]);
+                if (lineStart == TimeSpan.Zero) lineStart = nextStart;
+
+                int serviceId = Db.Get<int>(row[ColServiceId]);
+                int quantity = Db.Get<int>(row[ColQuantity], 1);
+                if (quantity < 1) quantity = 1;
+
+                DataRow service = GetServiceInfo(connection, transaction, serviceId);
+
+                int duration = 0;
+                int staffBusyMinutes = 0;
+
+                if (service != null)
+                {
+                    duration = Db.Get<int>(service["duration_minutes"]);
+                    staffBusyMinutes = Db.Get<int>(service["staff_busy_minutes"], 0);
+                }
+                else if (prepared.Columns.Contains(ColDuration))
+                {
+                    duration = Db.Get<int>(row[ColDuration]);
+                }
+
+                row[ColStartTime] = lineStart;
+                row[ColEndTime] = AvailabilityRepository.LineEnd(lineStart, duration, quantity);
+                row[ColBusyEndTime] = AvailabilityRepository.LineBusyEnd(lineStart, duration,
+                    staffBusyMinutes, quantity);
+
+                nextStart = ReadTime(row[ColEndTime]);
+            }
+
+            return prepared;
+        }
+
+        /// <summary>
         /// Checks a booking against the business rules and returns the problems it found
         /// (an empty list means the booking is fine).
         ///   appointmentId - 0 for a new booking, or the id being rescheduled, so the appointment
@@ -513,7 +589,6 @@ ORDER BY asv.appointment_service_id",
             }
 
             TimeSpan duration = TotalDuration(lines);
-            TimeSpan endTime = startTime + duration;
 
             if (duration <= TimeSpan.Zero)
             {
@@ -531,25 +606,38 @@ ORDER BY asv.appointment_service_id",
                     DateTime.Today.Add(DateTime.Now.TimeOfDay).ToString("h:mm tt") + " now).");
             }
 
-            // Opening hours: every service must start after it opens and finish before it closes.
+            // Every line is checked in ONE place: AvailabilityRepository knows the opening hours,
+            // the room and the technician rules (a massage at 1:00 PM and a facial at 10:00 AM fit
+            // in the same booking, because each line has its own time).
             bool hasMassage = false;
 
-            foreach (DataRow row in lines.Rows)
+            DataTable prepared = PrepareLines(null, null, lines, startTime);
+
+            foreach (DataRow row in prepared.Rows)
             {
                 DataRow service = GetServiceInfo(null, null, Db.Get<int>(row[ColServiceId]));
-                if (service == null) continue;
-
-                string categoryName = Db.Get<string>(service["category_name"]);
-                bool massage = IsMassageCategory(categoryName);
-                if (massage) hasMassage = true;
-
-                TimeSpan opens = massage ? MassageOpening : AestheticOpening;
-                TimeSpan closes = massage ? MassageClosing : AestheticClosing;
-
-                if (startTime < opens || endTime > closes)
+                if (service != null && IsMassageCategory(Db.Get<string>(service["category_name"])))
                 {
-                    problems.Add("'" + Db.Get<string>(service["service_name"]) + "' can only be done between " +
-                        Clock(opens) + " and " + Clock(closes) + ", so this appointment does not fit.");
+                    hasMassage = true;
+                }
+
+                // The other lines of the same booking are passed without this row, so a line is
+                // never reported as overlapping itself.
+                DataTable otherLines = prepared.Copy();
+                otherLines.Rows.Remove(otherLines.Rows[prepared.Rows.IndexOf(row)]);
+
+                string answer = AvailabilityRepository.WhyNotPossible(null, null, appointmentDate,
+                    Db.Get<int>(row[ColServiceId]), Db.Get<int>(row[ColQuantity], 1),
+                    ReadTime(row[ColStartTime]), Db.Get<int>(row[ColTechnicianId]), clientId,
+                    appointmentId, otherLines);
+
+                if (!string.IsNullOrEmpty(answer))
+                {
+                    string name = prepared.Columns.Contains(ColServiceName)
+                        ? Db.Get<string>(row[ColServiceName])
+                        : "Service #" + Db.Get<int>(row[ColServiceId]);
+
+                    problems.Add(name + " at " + Clock(ReadTime(row[ColStartTime])) + ": " + answer);
                 }
             }
 
@@ -565,24 +653,6 @@ ORDER BY asv.appointment_service_id",
             {
                 problems.Add("This day already has " + MaxMassageAppointmentsPerDay +
                     " massage appointments (the daily limit). Choose another date.");
-            }
-
-            // Rooms: every line needs a room that is linked to its category and is still free.
-            // BuildRoomPlan puts the chosen room in a copy of the lines table (see Create).
-            BuildRoomPlan(null, null, appointmentDate, startTime, endTime, lines, appointmentId, problems);
-
-            // A requested technician may not already have an overlapping service.
-            foreach (DataRow row in lines.Rows)
-            {
-                int technicianId = Db.Get<int>(row[ColTechnicianId]);
-                if (technicianId <= 0) continue;
-
-                if (HasTechnicianOverlap(null, null, technicianId, appointmentDate, startTime, endTime, appointmentId))
-                {
-                    string name = UserName(null, null, technicianId);
-                    problems.Add(name + " is already booked for another service at this time. " +
-                        "Choose another technician or another time.");
-                }
             }
 
             // Promotion: it must be valid today AND apply to at least one service of this booking.
@@ -648,12 +718,32 @@ ORDER BY asv.appointment_service_id",
                 throw new InvalidOperationException("An appointment needs at least one service.");
             }
 
-            TimeSpan endTime = startTime + TotalDuration(lines);
             int newAppointmentId = 0;
 
             Db.InTransaction(delegate (SqlConnection connection, SqlTransaction transaction)
             {
-                // 1. The appointment itself.
+                // 1. The prices, worked out from the database (package rule).
+                DataTable resolved = ResolveLinePrices(connection, transaction, clientId, lines);
+
+                // 2. Every line carries its own time. A line without a start follows the line above.
+                DataTable prepared = PrepareLines(connection, transaction, resolved, startTime);
+
+                // The appointment keeps the earliest line start and the latest line end.
+                TimeSpan firstLineStart = startTime;
+                TimeSpan lastLineEnd = startTime;
+                bool firstLine = true;
+
+                foreach (DataRow row in prepared.Rows)
+                {
+                    TimeSpan lineStart = ReadTime(row[ColStartTime]);
+                    TimeSpan lineEnd = ReadTime(row[ColEndTime]);
+
+                    if (firstLine || lineStart < firstLineStart) firstLineStart = lineStart;
+                    if (firstLine || lineEnd > lastLineEnd) lastLineEnd = lineEnd;
+                    firstLine = false;
+                }
+
+                // 3. The appointment itself.
                 object id = Db.Scalar(connection, transaction,
 @"INSERT INTO Appointments (client_id, user_id, appointment_date, start_time, end_time,
                            booking_source, status, notes)
@@ -663,25 +753,17 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
                     Db.P("@client_id", clientId),
                     Db.P("@user_id", userId),
                     Db.P("@appointment_date", appointmentDate.Date),
-                    Db.P("@start_time", SqlTime(startTime)),
-                    Db.P("@end_time", SqlTime(endTime)),
+                    Db.P("@start_time", SqlTime(firstLineStart)),
+                    Db.P("@end_time", SqlTime(lastLineEnd)),
                     Db.P("@booking_source", bookingSource),
                     Db.P("@notes", string.IsNullOrWhiteSpace(notes) ? null : notes.Trim()));
 
                 newAppointmentId = Convert.ToInt32(id);
 
-                // 2. The prices, worked out from the database (package rule).
-                DataTable resolved = ResolveLinePrices(connection, transaction, clientId, lines);
-
-                // 3. The rooms are chosen with the same helper the validator uses.
-                List<string> roomProblems = new List<string>();
-                DataTable plan = BuildRoomPlan(connection, transaction, appointmentDate, startTime, endTime,
-                    resolved, 0, roomProblems);
-
                 // 4. One row per service line, plus its technician and its room.
                 decimal subtotal = 0m;
 
-                foreach (DataRow row in plan.Rows)
+                foreach (DataRow row in prepared.Rows)
                 {
                     int serviceId = Db.Get<int>(row[ColServiceId]);
                     int quantity = Db.Get<int>(row[ColQuantity], 1);
@@ -692,15 +774,39 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
                     int sessionNumber = Db.Get<int>(row[ColSessionNumber]);
                     int totalSessions = Db.Get<int>(row[ColTotalSessions]);
                     int technicianId = Db.Get<int>(row[ColTechnicianId]);
-                    int roomId = Db.Get<int>(row[ColRoomId]);
+
+                    TimeSpan lineStart = ReadTime(row[ColStartTime]);
+                    TimeSpan lineEnd = ReadTime(row[ColEndTime]);
+                    TimeSpan busyEnd = ReadTime(row[ColBusyEndTime]);
+                    int assessedBy = Db.Get<int>(row[ColAssessedBy]);
+
+                    // Nobody was chosen for this line, so the first free technician of the
+                    // category takes it (0 leaves the line unassigned).
+                    if (technicianId <= 0)
+                    {
+                        technicianId = AvailabilityRepository.PickTechnician(connection, transaction,
+                            appointmentDate, serviceId, quantity, lineStart, 0);
+                    }
+
+                    // The room is chosen for this line's own time window. A room of 0 inserts
+                    // no AppointmentRooms row, exactly as before.
+                    int categoryId = 0;
+                    DataRow serviceInfo = GetServiceInfo(connection, transaction, serviceId);
+                    if (serviceInfo != null) categoryId = Db.Get<int>(serviceInfo["category_id"]);
+
+                    string roomName;
+                    int roomId = AvailabilityRepository.PickRoom(connection, transaction, appointmentDate,
+                        categoryId, lineStart, lineEnd, 0, out roomName);
 
                     subtotal += price * quantity;
 
                     object lineId = Db.Scalar(connection, transaction,
 @"INSERT INTO AppointmentServices (appointment_id, service_id, package_id, quantity, price,
-                                  session_number, total_sessions, status)
+                                  session_number, total_sessions, status,
+                                  start_time, end_time, busy_end_time, assessed_by)
 VALUES (@appointment_id, @service_id, @package_id, @quantity, @price,
-        @session_number, @total_sessions, 'Pending');
+        @session_number, @total_sessions, 'Pending',
+        CAST(@start_time AS time), CAST(@end_time AS time), CAST(@busy_end_time AS time), @assessed_by);
 SELECT CAST(SCOPE_IDENTITY() AS int);",
                         Db.P("@appointment_id", newAppointmentId),
                         Db.P("@service_id", serviceId),
@@ -708,7 +814,11 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
                         Db.P("@quantity", quantity),
                         Db.P("@price", price),
                         Db.P("@session_number", sessionNumber > 0 ? (object)sessionNumber : null),
-                        Db.P("@total_sessions", totalSessions > 0 ? (object)totalSessions : null));
+                        Db.P("@total_sessions", totalSessions > 0 ? (object)totalSessions : null),
+                        Db.P("@start_time", SqlTime(lineStart)),
+                        Db.P("@end_time", SqlTime(lineEnd)),
+                        Db.P("@busy_end_time", SqlTime(busyEnd)),
+                        Db.P("@assessed_by", assessedBy > 0 ? (object)assessedBy : null));
 
                     int appointmentServiceId = Convert.ToInt32(lineId);
 
@@ -738,7 +848,7 @@ VALUES (@appointment_id, @appointment_service_id, @room_id, 'Reserved')",
                 if (promoId > 0)
                 {
                     string promoMessage;
-                    discount = PromotionRepository.CalculateDiscount(promoId, BuildPromoLines(plan), out promoMessage);
+                    discount = PromotionRepository.CalculateDiscount(promoId, BuildPromoLines(prepared), out promoMessage);
                     if (!string.IsNullOrEmpty(promoMessage)) discount = 0m;
                 }
 
@@ -1135,6 +1245,13 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
                     packageId,
                     sessionNumber,
                     totalSessions);
+
+                // A start the caller already set (a prepared table) is kept; otherwise the column
+                // stays empty and PrepareLines places the line after the one above it.
+                if (lines.Columns.Contains(ColStartTime))
+                {
+                    resolved.Rows[resolved.Rows.Count - 1][ColStartTime] = ReadTime(row[ColStartTime]);
+                }
             }
 
             return resolved;
@@ -1153,6 +1270,9 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
             table.Columns.Add(ColPackageId, typeof(int));
             table.Columns.Add(ColSessionNumber, typeof(int));
             table.Columns.Add(ColTotalSessions, typeof(int));
+            // The line's own start travels with the resolved row, so Create keeps the times the
+            // validator already approved. A line without one is placed after the line above.
+            table.Columns.Add(ColStartTime, typeof(TimeSpan));
             return table;
         }
 
@@ -1195,8 +1315,8 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
                     int roomId = Db.Get<int>(room["room_id"]);
                     int capacity = Db.Get<int>(room["capacity"], 1);
 
-                    int used = CountRoomUsage(connection, transaction, roomId, appointmentDate,
-                        startTime, endTime, excludeAppointmentId);
+                    int used = AvailabilityRepository.RoomUsage(connection, transaction, roomId,
+                        appointmentDate, startTime, endTime, excludeAppointmentId);
 
                     if (used < capacity)
                     {
@@ -1294,57 +1414,6 @@ ORDER BY purchase_date, package_id",
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// How many OTHER appointments already hold this room during the time slot.
-        /// Two services of the SAME appointment share the room, so they count once.
-        /// </summary>
-        private static int CountRoomUsage(SqlConnection connection, SqlTransaction transaction, int roomId,
-            DateTime appointmentDate, TimeSpan startTime, TimeSpan endTime, int excludeAppointmentId)
-        {
-            object count = Db.Scalar(connection, transaction,
-@"SELECT COUNT(DISTINCT ar.appointment_id)
-FROM AppointmentRooms ar
-INNER JOIN Appointments a ON a.appointment_id = ar.appointment_id
-WHERE ar.room_id = @room_id
-  AND ar.status <> 'Released'
-  AND a.status <> 'Cancelled'
-  AND a.appointment_date = @appointment_date
-  AND a.start_time < CAST(@end_time AS time)
-  AND a.end_time > CAST(@start_time AS time)
-  AND a.appointment_id <> @exclude_id",
-                Db.P("@room_id", roomId),
-                Db.P("@appointment_date", appointmentDate.Date),
-                Db.P("@start_time", SqlTime(startTime)),
-                Db.P("@end_time", SqlTime(endTime)),
-                Db.P("@exclude_id", excludeAppointmentId));
-
-            return Convert.ToInt32(count);
-        }
-
-        /// <summary>True when this technician is already assigned to an overlapping service.</summary>
-        private static bool HasTechnicianOverlap(SqlConnection connection, SqlTransaction transaction,
-            int technicianId, DateTime appointmentDate, TimeSpan startTime, TimeSpan endTime, int excludeAppointmentId)
-        {
-            object count = Db.Scalar(connection, transaction,
-@"SELECT COUNT(*)
-FROM AppointmentStaff ast
-INNER JOIN Appointments a ON a.appointment_id = ast.appointment_id
-WHERE ast.user_id = @user_id
-  AND ast.status = 'Assigned'
-  AND a.status IN ('Upcoming', 'Ongoing')
-  AND a.appointment_date = @appointment_date
-  AND a.start_time < CAST(@end_time AS time)
-  AND a.end_time > CAST(@start_time AS time)
-  AND a.appointment_id <> @exclude_id",
-                Db.P("@user_id", technicianId),
-                Db.P("@appointment_date", appointmentDate.Date),
-                Db.P("@start_time", SqlTime(startTime)),
-                Db.P("@end_time", SqlTime(endTime)),
-                Db.P("@exclude_id", excludeAppointmentId));
-
-            return Convert.ToInt32(count) > 0;
         }
 
         /// <summary>How many appointments (not cancelled) a day already has.</summary>

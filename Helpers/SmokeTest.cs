@@ -1082,6 +1082,11 @@ namespace LittleEreseSystemV3.Helpers
             CheckPlanSessions(emptyDay, new TimeSpan(10, 0, 0));
             CheckSessionText(2, 4, "Session 2 of 4");
             CheckSessionText(0, 0, "Session 1 of 1");
+
+            // A booking is checked line by line, so a massage at 1:00 PM and a facial at 10:00 AM
+            // fit in the same appointment. Both checks only read (see the comment on each one).
+            CheckValidateBookingLines(emptyDay, facialId, massageId);
+            CheckValidateBookingMassageAtTen(emptyDay, massageId);
         }
 
         private static void Line(string text)
@@ -1416,6 +1421,131 @@ WHERE c.category_name = @name AND s.status = 'Active'";
             {
                 Fail(label, ex);
             }
+        }
+
+        /// <summary>
+        /// A booking is checked line by line, so a massage at 1:00 PM and a facial at 10:00 AM fit in
+        /// the same appointment: neither the opening hours nor a room may be reported.
+        /// Read-only: ValidateBooking only runs SELECT queries.
+        /// </summary>
+        private static void CheckValidateBookingLines(DateTime date, int facialId, int massageId)
+        {
+            const string label = "ValidateBooking accepts a massage at 1:00 PM plus a facial at 10:00 AM";
+            try
+            {
+                int clientId = FirstClientId();
+
+                if (clientId == 0 || facialId == 0 || massageId == 0)
+                {
+                    Skipped(label);
+                    return;
+                }
+
+                DataTable lines = new DataTable();
+                lines.Columns.Add(AppointmentRepository.ColServiceId, typeof(int));
+                lines.Columns.Add(AppointmentRepository.ColServiceName, typeof(string));
+                lines.Columns.Add(AppointmentRepository.ColQuantity, typeof(int));
+                lines.Columns.Add(AppointmentRepository.ColPrice, typeof(decimal));
+                lines.Columns.Add(AppointmentRepository.ColDuration, typeof(int));
+                lines.Columns.Add(AppointmentRepository.ColTechnicianId, typeof(int));
+                lines.Columns.Add(AppointmentRepository.ColStartTime, typeof(TimeSpan));
+
+                AddLine(lines, facialId, new TimeSpan(10, 0, 0));
+                AddLine(lines, massageId, new TimeSpan(13, 0, 0));
+
+                List<string> problems = AppointmentRepository.ValidateBooking(0, clientId, date,
+                    new TimeSpan(10, 0, 0), "Walk-in", lines, 0, 0m, "Cash", string.Empty, false);
+
+                string message = label + " (got " + problems.Count + " problem(s))";
+                string unwanted = string.Empty;
+
+                foreach (string problem in problems)
+                {
+                    if (problem.IndexOf("between", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        problem.IndexOf("room is free", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        unwanted = problem;
+                        break;
+                    }
+                }
+
+                if (unwanted == string.Empty) Pass(message);
+                else Fail(message + " - " + unwanted);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// A massage cannot start at 10:00 AM (massage opens at 1:00 PM), so the line is refused with
+        /// a sentence about its opening hours. Read-only: only SELECT queries run.
+        /// </summary>
+        private static void CheckValidateBookingMassageAtTen(DateTime date, int massageId)
+        {
+            const string label = "ValidateBooking rejects a massage at 10:00 AM";
+            try
+            {
+                int clientId = FirstClientId();
+
+                if (clientId == 0 || massageId == 0)
+                {
+                    Skipped(label);
+                    return;
+                }
+
+                DataTable lines = new DataTable();
+                lines.Columns.Add(AppointmentRepository.ColServiceId, typeof(int));
+                lines.Columns.Add(AppointmentRepository.ColServiceName, typeof(string));
+                lines.Columns.Add(AppointmentRepository.ColQuantity, typeof(int));
+                lines.Columns.Add(AppointmentRepository.ColPrice, typeof(decimal));
+                lines.Columns.Add(AppointmentRepository.ColDuration, typeof(int));
+                lines.Columns.Add(AppointmentRepository.ColTechnicianId, typeof(int));
+                lines.Columns.Add(AppointmentRepository.ColStartTime, typeof(TimeSpan));
+
+                AddLine(lines, massageId, new TimeSpan(10, 0, 0));
+
+                List<string> problems = AppointmentRepository.ValidateBooking(0, clientId, date,
+                    new TimeSpan(10, 0, 0), "Walk-in", lines, 0, 0m, "Cash", string.Empty, false);
+
+                string message = label + " (got " + problems.Count + " problem(s))";
+
+                bool mentionsBetween = false;
+                foreach (string problem in problems)
+                {
+                    if (problem.IndexOf("between", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        mentionsBetween = true;
+                        break;
+                    }
+                }
+
+                if (mentionsBetween) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>The first client of the shop, so a read-only booking check has a real client.</summary>
+        private static int FirstClientId()
+        {
+            DataTable clients = ClientRepository.GetForCombo();
+            if (clients == null || clients.Rows.Count == 0) return 0;
+            return Db.Get<int>(clients.Rows[0]["client_id"]);
+        }
+
+        /// <summary>Adds one line at its own start time, with the price and duration of the service.</summary>
+        private static void AddLine(DataTable lines, int serviceId, TimeSpan start)
+        {
+            DataRow service = AppointmentRepository.GetServiceInfo(null, null, serviceId);
+            if (service == null) return;
+
+            lines.Rows.Add(serviceId, Db.Get<string>(service["service_name"]), 1,
+                Db.Get<decimal>(service["price"]), Db.Get<int>(service["duration_minutes"]), 0, start);
         }
 
         /// <summary>Overwrites smoketest.log on every run. Never throws (a missing log must not hide the result).</summary>
