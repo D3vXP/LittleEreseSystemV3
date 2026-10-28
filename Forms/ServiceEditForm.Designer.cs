@@ -30,6 +30,7 @@ namespace LittleEreseSystemV3.Forms
         {
             this.components = new System.ComponentModel.Container();
             this.pnlContent = new System.Windows.Forms.Panel();
+            this.chkAssessment = new System.Windows.Forms.CheckBox();
             this.cboStatus = new System.Windows.Forms.ComboBox();
             this.lblStatus = new System.Windows.Forms.Label();
             this.nudSessions = new System.Windows.Forms.NumericUpDown();
@@ -70,6 +71,7 @@ namespace LittleEreseSystemV3.Forms
             // pnlContent
             // 
             this.pnlContent.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
+            this.pnlContent.Controls.Add(this.chkAssessment);
             this.pnlContent.Controls.Add(this.cboStatus);
             this.pnlContent.Controls.Add(this.lblStatus);
             this.pnlContent.Controls.Add(this.nudInterval);
@@ -92,8 +94,21 @@ namespace LittleEreseSystemV3.Forms
             this.pnlContent.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pnlContent.Location = new System.Drawing.Point(0, 56);
             this.pnlContent.Name = "pnlContent";
-            this.pnlContent.Size = new System.Drawing.Size(460, 452);
+            this.pnlContent.Size = new System.Drawing.Size(460, 490);
             this.pnlContent.TabIndex = 1;
+            // 
+            // chkAssessment
+            // 
+            this.chkAssessment.AutoSize = true;
+            this.chkAssessment.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
+            this.chkAssessment.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.chkAssessment.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
+            this.chkAssessment.Location = new System.Drawing.Point(16, 450);
+            this.chkAssessment.Name = "chkAssessment";
+            this.chkAssessment.Size = new System.Drawing.Size(294, 23);
+            this.chkAssessment.TabIndex = 19;
+            this.chkAssessment.Text = "Needs a nurse assessment first";
+            this.chkAssessment.UseVisualStyleBackColor = false;
             // 
             // cboStatus
             // 
@@ -354,7 +369,7 @@ namespace LittleEreseSystemV3.Forms
             this.pnlFooter.Controls.Add(this.btnSave);
             this.pnlFooter.Controls.Add(this.pnlFooterLine);
             this.pnlFooter.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.pnlFooter.Location = new System.Drawing.Point(0, 508);
+            this.pnlFooter.Location = new System.Drawing.Point(0, 546);
             this.pnlFooter.Name = "pnlFooter";
             this.pnlFooter.Size = new System.Drawing.Size(460, 64);
             this.pnlFooter.TabIndex = 2;
@@ -449,7 +464,7 @@ namespace LittleEreseSystemV3.Forms
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(460, 572);
+            this.ClientSize = new System.Drawing.Size(460, 610);
             this.Controls.Add(this.pnlContent);
             this.Controls.Add(this.pnlFooter);
             this.Controls.Add(this.pnlHeader);
@@ -498,6 +513,7 @@ namespace LittleEreseSystemV3.Forms
         private System.Windows.Forms.NumericUpDown nudInterval;
         private System.Windows.Forms.Label lblStatus;
         private System.Windows.Forms.ComboBox cboStatus;
+        private System.Windows.Forms.CheckBox chkAssessment;
         private System.Windows.Forms.Panel pnlFooter;
         private System.Windows.Forms.Panel pnlFooterLine;
         private System.Windows.Forms.Button btnSave;

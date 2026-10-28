@@ -316,6 +316,7 @@ namespace LittleEreseSystemV3.Helpers
             CheckMigrationsListed();
             CheckMigration002Columns();
             CheckMigration003Data();
+            CheckMigration004Data();
 
             // A 'Promo Price' promotion without its price could never give a discount, so the
             // stored data is checked here (read-only).
@@ -626,6 +627,21 @@ namespace LittleEreseSystemV3.Helpers
 
             CheckScalarAtLeast("Room category links = ", 10,
                 "SELECT COUNT(*) FROM RoomServiceCategories");
+        }
+
+        /// <summary>
+        /// Migration 004: the requires_assessment column must exist and the invasive services must
+        /// already be flagged, otherwise the booking screen would never ask for the nurse.
+        /// Read-only; "at least" style for both checks.
+        /// </summary>
+        private static void CheckMigration004Data()
+        {
+            CheckScalarAtLeast("Migration 004 column exists = ", 1,
+                "SELECT COUNT(*) FROM sys.columns " +
+                "WHERE object_id = OBJECT_ID('dbo.Services') AND name = 'requires_assessment'");
+
+            CheckScalarAtLeast("Services that need an assessment = ", 1,
+                "SELECT COUNT(*) FROM Services WHERE requires_assessment = 1");
         }
 
         /// <summary>GetLog for the last 7 days must run and come back with the columns the grid needs.</summary>

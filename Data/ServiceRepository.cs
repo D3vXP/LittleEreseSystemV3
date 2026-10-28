@@ -29,7 +29,7 @@ namespace LittleEreseSystemV3.Data
         {
             string sql =
                 "SELECT s.service_id, c.category_name, s.service_name, s.description, s.price, " +
-                "       s.duration_minutes, s.default_total_sessions, s.status " +
+                "       s.duration_minutes, s.default_total_sessions, s.status, s.requires_assessment " +
                 "FROM Services s " +
                 "INNER JOIN ServiceCategories c ON c.category_id = s.category_id " +
                 "WHERE (@search = '' OR s.service_name LIKE @like OR c.category_name LIKE @like) " +
@@ -52,7 +52,7 @@ namespace LittleEreseSystemV3.Data
             DataTable table = Db.Query(
                 "SELECT service_id, category_id, service_name, description, price, " +
                 "       duration_minutes, default_total_sessions, status, " +
-                "       staff_busy_minutes, session_interval_days " +
+                "       staff_busy_minutes, session_interval_days, requires_assessment " +
                 "FROM Services WHERE service_id = @service_id",
                 Db.P("@service_id", serviceId));
 
@@ -67,7 +67,7 @@ namespace LittleEreseSystemV3.Data
         {
             return Db.Query(
                 "SELECT s.service_id, c.category_name, s.service_name, s.description, s.price, " +
-                "       s.duration_minutes, s.default_total_sessions, s.status " +
+                "       s.duration_minutes, s.default_total_sessions, s.status, s.requires_assessment " +
                 "FROM Services s " +
                 "INNER JOIN ServiceCategories c ON c.category_id = s.category_id " +
                 "WHERE s.status = 'Active' " +
@@ -100,7 +100,7 @@ namespace LittleEreseSystemV3.Data
         /// </summary>
         public static int Add(int categoryId, string serviceName, string description, decimal price,
             int durationMinutes, int defaultTotalSessions, string status,
-            int staffBusyMinutes, int sessionIntervalDays)
+            int staffBusyMinutes, int sessionIntervalDays, bool requiresAssessment)
         {
             string name = serviceName == null ? string.Empty : serviceName.Trim();
 
@@ -114,10 +114,10 @@ namespace LittleEreseSystemV3.Data
             object id = Db.Scalar(
                 "INSERT INTO Services (category_id, service_name, description, price, " +
                 "                      duration_minutes, default_total_sessions, status, " +
-                "                      staff_busy_minutes, session_interval_days) " +
+                "                      staff_busy_minutes, session_interval_days, requires_assessment) " +
                 "VALUES (@category_id, @service_name, @description, @price, " +
                 "        @duration_minutes, @default_total_sessions, @status, " +
-                "        @staff_busy_minutes, @session_interval_days); " +
+                "        @staff_busy_minutes, @session_interval_days, @requires_assessment); " +
                 "SELECT CAST(SCOPE_IDENTITY() AS int);",
                 Db.P("@category_id", categoryId),
                 Db.P("@service_name", name),
@@ -127,7 +127,8 @@ namespace LittleEreseSystemV3.Data
                 Db.P("@default_total_sessions", defaultTotalSessions),
                 Db.P("@status", status),
                 Db.P("@staff_busy_minutes", BusyValue(staffBusyMinutes)),
-                Db.P("@session_interval_days", sessionIntervalDays));
+                Db.P("@session_interval_days", sessionIntervalDays),
+                Db.P("@requires_assessment", requiresAssessment));
 
             return Convert.ToInt32(id);
         }
@@ -135,7 +136,7 @@ namespace LittleEreseSystemV3.Data
         /// <summary>Updates a service. The service_id is not changed.</summary>
         public static void Update(int serviceId, int categoryId, string serviceName, string description,
             decimal price, int durationMinutes, int defaultTotalSessions, string status,
-            int staffBusyMinutes, int sessionIntervalDays)
+            int staffBusyMinutes, int sessionIntervalDays, bool requiresAssessment)
         {
             string name = serviceName == null ? string.Empty : serviceName.Trim();
 
@@ -151,7 +152,8 @@ namespace LittleEreseSystemV3.Data
                 "       duration_minutes = @duration_minutes, " +
                 "       default_total_sessions = @default_total_sessions, status = @status, " +
                 "       staff_busy_minutes = @staff_busy_minutes, " +
-                "       session_interval_days = @session_interval_days " +
+                "       session_interval_days = @session_interval_days, " +
+                "       requires_assessment = @requires_assessment " +
                 "WHERE service_id = @service_id",
                 Db.P("@category_id", categoryId),
                 Db.P("@service_name", name),
@@ -162,6 +164,7 @@ namespace LittleEreseSystemV3.Data
                 Db.P("@status", status),
                 Db.P("@staff_busy_minutes", BusyValue(staffBusyMinutes)),
                 Db.P("@session_interval_days", sessionIntervalDays),
+                Db.P("@requires_assessment", requiresAssessment),
                 Db.P("@service_id", serviceId));
         }
 

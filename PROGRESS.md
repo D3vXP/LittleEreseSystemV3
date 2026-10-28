@@ -2,6 +2,27 @@
 
 Update this file at the end of every task.
 
+- Step 43 (this task): Services.requires_assessment - which services ask for the nurse first.
+  - New file Database\Migrations\004_service_assessment_flag.sql: adds Services.requires_assessment
+    BIT NOT NULL CONSTRAINT DF_Services_RequiresAssessment DEFAULT 0, then flags the Botox,
+    Glutathione and Slimming categories and every PRP / Vampire name. Guarded by COL_LENGTH and
+    "AND requires_assessment = 0", so a second run changes nothing (24 services flagged).
+  - Data\ServiceRepository.cs: GetById returns requires_assessment; Add and Update take one more
+    last parameter bool requiresAssessment and write the column; GetServices and
+    GetActiveForBooking add it to their SELECT only.
+  - Forms\ServiceEditForm.Designer.cs: new chkAssessment "Needs a nurse assessment first" under the
+    Status row (TabIndex 19), pnlContent 490 and ClientSize 460 x 610, so it still fits a 768 px
+    screen. Forms\ServiceEditForm.cs: loaded in LoadService, saved in btnSave_Click, unchecked for
+    a new service.
+  - Helpers\SmokeTest.cs: new read-only CheckMigration004Data - "Migration 004 column exists = 1" and
+    "Services that need an assessment = 24" (both CheckScalarAtLeast).
+  - PROJECT_RULES.md: new value-list / business line about Services.requires_assessment.
+  - LittleEreseSystemV3.csproj was NOT edited: the Content wildcard copied 004 to
+    bin\Debug\Database\Migrations.
+  - Checks: clean build 0 errors / 0 warnings; app started once and applied 004 (SchemaVersion now
+    has 001, 002, 003 and 004); a second start added no row; --smoketest 77 passed / 0 failed /
+    0 skipped; DesignerAudit 22 files exit 0; --preview ServiceEditForm clean in 1 round; no
+    error.log.
 - Step 42 (this task): staff busy time and days between sessions on the service form.
   - Forms\ServiceEditForm.Designer.cs: new lblBusy "Staff busy (min, optional)" + nudBusy (0..240,
     step 5, 0 = empty) under the Duration row, and lblInterval "Days between sessions" +

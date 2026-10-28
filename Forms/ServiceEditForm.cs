@@ -47,6 +47,7 @@ namespace LittleEreseSystemV3.Forms
             FillCategories();
             cboStatus.SelectedIndex = 0; // "Active" for a new service
             nudInterval.Enabled = false;  // only a package (more than 1 session) has an interval
+            chkAssessment.Checked = false; // a new service needs no nurse assessment until the owner says so
 
             if (EditId > 0) LoadService(EditId);
         }
@@ -108,6 +109,8 @@ namespace LittleEreseSystemV3.Forms
             nudBusy.Value = ClampNumeric(nudBusy, Db.Get<int>(row["staff_busy_minutes"], 0));
             nudInterval.Value = ClampNumeric(nudInterval, Db.Get<int>(row["session_interval_days"], 7));
             UpdateIntervalState();
+            // requires_assessment is a BIT NOT NULL DEFAULT 0, so a missing value means "no".
+            chkAssessment.Checked = Db.Get<bool>(row["requires_assessment"], false);
 
             string status = Db.Get<string>(row["status"], "Active");
             cboStatus.SelectedItem = status;
@@ -168,12 +171,13 @@ namespace LittleEreseSystemV3.Forms
                 int sessions = Convert.ToInt32(nudSessions.Value);
                 int busy = Convert.ToInt32(nudBusy.Value);
                 int interval = Convert.ToInt32(nudInterval.Value);
+                bool assessment = chkAssessment.Checked;
                 string status = cboStatus.SelectedItem.ToString();
 
                 if (EditId > 0)
                 {
                     ServiceRepository.Update(EditId, category.Id, name, description, price,
-                        duration, sessions, status, busy, interval);
+                        duration, sessions, status, busy, interval, assessment);
                     SavedServiceId = EditId;
 
                     ActivityRepository.Log(Session.UserId, "Edit", "Services", name);
@@ -181,7 +185,7 @@ namespace LittleEreseSystemV3.Forms
                 else
                 {
                     SavedServiceId = ServiceRepository.Add(category.Id, name, description, price,
-                        duration, sessions, status, busy, interval);
+                        duration, sessions, status, busy, interval, assessment);
 
                     ActivityRepository.Log(Session.UserId, "Add", "Services", name);
                 }
