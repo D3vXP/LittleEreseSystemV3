@@ -46,6 +46,10 @@ namespace LittleEreseSystemV3.Data
         public const string ColTotalSessions = "total_sessions";
         public const string ColRoomId = "room_id";
         public const string ColRoomName = "room_name";
+        public const string ColStartTime = "start_time";
+        public const string ColEndTime = "end_time";
+        public const string ColBusyEndTime = "busy_end_time";
+        public const string ColAssessedBy = "assessed_by";
 
         // ---------------------------------------------------------------------
         // READ
@@ -1221,11 +1225,12 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
         }
 
         /// <summary>The service with its category (price, duration, package size, category name).</summary>
-        private static DataRow GetServiceInfo(SqlConnection connection, SqlTransaction transaction, int serviceId)
+        internal static DataRow GetServiceInfo(SqlConnection connection, SqlTransaction transaction, int serviceId)
         {
             DataTable table = Db.Query(connection, transaction,
 @"SELECT s.service_id, s.service_name, s.category_id, c.category_name, s.price,
-         s.duration_minutes, s.default_total_sessions
+         s.duration_minutes, s.default_total_sessions,
+         s.staff_busy_minutes, s.session_interval_days, s.requires_assessment
 FROM Services s
 INNER JOIN ServiceCategories c ON c.category_id = s.category_id
 WHERE s.service_id = @service_id",
@@ -1234,7 +1239,7 @@ WHERE s.service_id = @service_id",
             return table.Rows.Count == 0 ? null : table.Rows[0];
         }
 
-        private static DataTable GetRoomsForCategory(SqlConnection connection, SqlTransaction transaction, int categoryId)
+        internal static DataTable GetRoomsForCategory(SqlConnection connection, SqlTransaction transaction, int categoryId)
         {
             return Db.Query(connection, transaction,
 @"SELECT r.room_id, r.room_name, r.capacity
@@ -1312,7 +1317,7 @@ WHERE ast.user_id = @user_id
         }
 
         /// <summary>How many appointments (not cancelled) a day already has.</summary>
-        private static int CountAppointmentsThatDay(SqlConnection connection, SqlTransaction transaction,
+        internal static int CountAppointmentsThatDay(SqlConnection connection, SqlTransaction transaction,
             DateTime appointmentDate, int excludeAppointmentId)
         {
             object count = Db.Scalar(connection, transaction,
@@ -1326,7 +1331,7 @@ WHERE appointment_date = @appointment_date AND status <> 'Cancelled'
         }
 
         /// <summary>How many appointments of that day already contain a massage service.</summary>
-        private static int CountMassageThatDay(SqlConnection connection, SqlTransaction transaction,
+        internal static int CountMassageThatDay(SqlConnection connection, SqlTransaction transaction,
             DateTime appointmentDate, int excludeAppointmentId)
         {
             object count = Db.Scalar(connection, transaction,
@@ -1347,7 +1352,7 @@ WHERE a.appointment_date = @appointment_date
         }
 
         /// <summary>The full name of a user, for a readable message.</summary>
-        private static string UserName(SqlConnection connection, SqlTransaction transaction, int userId)
+        internal static string UserName(SqlConnection connection, SqlTransaction transaction, int userId)
         {
             DataTable table = Db.Query(connection, transaction,
                 "SELECT full_name FROM Users WHERE user_id = @user_id",
@@ -1391,7 +1396,7 @@ ORDER BY p.payment_id DESC",
         }
 
         /// <summary>True when the category name means "massage" (they open later and close later).</summary>
-        private static bool IsMassageCategory(string categoryName)
+        internal static bool IsMassageCategory(string categoryName)
         {
             if (string.IsNullOrEmpty(categoryName)) return false;
             return categoryName.Trim().StartsWith(MassageCategoryPrefix, StringComparison.OrdinalIgnoreCase);
@@ -1401,13 +1406,13 @@ ORDER BY p.payment_id DESC",
         /// A time value written the way SQL Server reads it as a time, which keeps the parameters
         /// independent of the database provider's type mapping.
         /// </summary>
-        private static string SqlTime(TimeSpan value)
+        internal static string SqlTime(TimeSpan value)
         {
             return value.ToString(@"hh\:mm\:ss");
         }
 
         /// <summary>A time column read back safely (SqlDataReader and DataAdapter differ here).</summary>
-        private static TimeSpan ReadTime(object value)
+        internal static TimeSpan ReadTime(object value)
         {
             if (value == null || value == DBNull.Value) return TimeSpan.Zero;
             if (value is TimeSpan) return (TimeSpan)value;
@@ -1419,7 +1424,7 @@ ORDER BY p.payment_id DESC",
         }
 
         /// <summary>"10:00 AM" for a time value, so every message reads the same way.</summary>
-        private static string Clock(TimeSpan value)
+        internal static string Clock(TimeSpan value)
         {
             return DateTime.Today.Add(value).ToString("h:mm tt");
         }

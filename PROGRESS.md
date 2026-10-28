@@ -2,7 +2,20 @@
 
 Update this file at the end of every task.
 
-- Step 43 (this task): Services.requires_assessment - which services ask for the nurse first.
+- Step 44 (this task): the three small hooks the new availability class needs, all in
+  Data\AppointmentRepository.cs and no new file.
+  - Four new column-name constants after ColRoomName: ColStartTime ("start_time"), ColEndTime
+    ("end_time"), ColBusyEndTime ("busy_end_time"), ColAssessedBy ("assessed_by").
+  - Nine helpers changed from private static to internal static (nothing else): GetServiceInfo,
+    IsMassageCategory, UserName, Clock, SqlTime, ReadTime, CountAppointmentsThatDay,
+    CountMassageThatDay and GetRoomsForCategory(SqlConnection, SqlTransaction, int).
+  - GetServiceInfo's SELECT also reads s.staff_busy_minutes, s.session_interval_days and
+    s.requires_assessment (after s.default_total_sessions).
+  - PROJECT_RULES.md: no rule changed, so it was not edited. LittleEreseSystemV3.csproj was NOT
+    edited (no new file).
+  - Checks: clean build 0 errors / 0 warnings; --smoketest 77 passed / 0 failed / 0 skipped.
+  - Next: the availability class that uses these hooks.
+- Step 43: Services.requires_assessment - which services ask for the nurse first.
   - New file Database\Migrations\004_service_assessment_flag.sql: adds Services.requires_assessment
     BIT NOT NULL CONSTRAINT DF_Services_RequiresAssessment DEFAULT 0, then flags the Botox,
     Glutathione and Slimming categories and every PRP / Vampire name. Guarded by COL_LENGTH and
