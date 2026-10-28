@@ -2,6 +2,25 @@
 
 Update this file at the end of every task.
 
+- Step 48 (this task): the free start times, the room and the technician a booking line needs.
+  - Three new methods in Data\AvailabilityRepository.cs, one edit each. GetFreeStarts walks the
+    category's opening hours every 30 minutes up to the last start that still ends before closing
+    and keeps the ones WhyNotPossible returns "" for (a past date gives an empty list). PickTechnician
+    returns the first technician of the category who is not TechnicianBusy for the line's busy
+    window, or 0. PickRoom returns the first room whose RoomUsage is under its capacity (same order
+    as BuildRoomPlan) and fills roomName, or 0 and "" when no room is linked or none is free.
+  - Helpers\SmokeTest.cs: one new read-only method CheckAvailability, called right after
+    CheckMigration004Data (7 checks, all SELECT only, on DateTime.Today.AddDays(400)):
+    Facial starts begin at 10:00 with none ending after 8:00 PM, a massage service begins at
+    1:00 PM, yesterday gives 0, today gives only future times, PickRoom finds the Facial Room,
+    PickTechnician finds an aesthetician, and a gluta drip's LineBusyEnd is earlier than its
+    LineEnd. The count went from 77 to 84 passed.
+  - PROJECT_RULES.md: no rule changed, so it was not edited. LittleEreseSystemV3.csproj was NOT
+    edited (Data\AvailabilityRepository.cs has been listed since Step 45).
+  - Checks: clean build 0 errors / 0 warnings; --smoketest 84 passed / 0 failed / 0 skipped;
+    DesignerAudit 22 files exit 0; app started once, stayed open, closed, no error.log.
+  - Next: use GetFreeStarts / PickRoom / PickTechnician in the booking screen's time and staff
+    drop-downs. Known issue: none.
 - Step 47 (this task): AvailabilityRepository.WhyNotPossible - the one-sentence reason a line
   cannot start at a time.
   - New method in Data\AvailabilityRepository.cs (signature + rules a-c, then rules d-f, two

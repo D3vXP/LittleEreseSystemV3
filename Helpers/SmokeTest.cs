@@ -318,6 +318,9 @@ namespace LittleEreseSystemV3.Helpers
             CheckMigration003Data();
             CheckMigration004Data();
 
+            // The read-only availability checks (Step 48). Nothing is written here.
+            CheckAvailability();
+
             // A 'Promo Price' promotion without its price could never give a discount, so the
             // stored data is checked here (read-only).
             CheckScalarZero("Promotions of type 'Promo Price' with a NULL promo_price",
@@ -1055,9 +1058,274 @@ namespace LittleEreseSystemV3.Helpers
             Line("SKIPPED " + name + " (no public parameterless constructor)");
         }
 
+        /// <summary>
+        /// The booking screen only offers the start times that really work, so these checks run
+        /// AvailabilityRepository on a day with nothing booked (today + 400 days). Read-only:
+        /// only SELECT queries run, so the shop's data is never changed.
+        /// </summary>
+        private static void CheckAvailability()
+        {
+            DateTime emptyDay = DateTime.Today.AddDays(400);
+
+            int facialId = FindServiceId("Facial", false);
+            int massageId = FindServiceId("Massage - Feet", false);
+
+            CheckFreeStarts("Free starts of a Facial service on an empty day", facialId, emptyDay,
+                new TimeSpan(10, 0, 0), AppointmentRepository.AestheticClosing);
+            CheckFreeStarts("Free starts of a massage service on an empty day", massageId, emptyDay,
+                new TimeSpan(13, 0, 0), AppointmentRepository.MassageClosing);
+            CheckFreeStartsInThePast(facialId);
+            CheckFreeStartsToday(facialId);
+            CheckPickRoom(facialId, emptyDay);
+            CheckPickTechnician(facialId, emptyDay);
+            CheckGlutaBusyEnd();
+        }
+
         private static void Line(string text)
         {
             _log.AppendLine(text);
+        }
+
+        /// <summary>
+        /// The lowest Active service id of a category, or 0 when the category has none.
+        /// onlyWithBusyMinutes keeps only a service whose technician leaves before the room
+        /// (a gluta drip), which is what the busy-end check needs.
+        /// </summary>
+        private static int FindServiceId(string categoryName, bool onlyWithBusyMinutes)
+        {
+            string sql =
+@"SELECT TOP 1 s.service_id
+FROM Services s
+INNER JOIN ServiceCategories c ON c.category_id = s.category_id
+WHERE c.category_name = @name AND s.status = 'Active'";
+
+            if (onlyWithBusyMinutes) sql += " AND s.staff_busy_minutes > 0";
+
+            object id = Db.Scalar(sql + " ORDER BY s.service_id", Db.P("@name", categoryName));
+
+            return id == null || id == DBNull.Value ? 0 : Convert.ToInt32(id);
+        }
+
+        /// <summary>
+        /// On an empty day a service must fill the whole opening hours: the first start is the
+        /// opening time, every start is on the half hour, and none is too late to finish in time.
+        /// </summary>
+        private static void CheckFreeStarts(string label, int serviceId, DateTime date,
+            TimeSpan expectedFirst, TimeSpan closing)
+        {
+            try
+            {
+                if (serviceId == 0)
+                {
+                    Fail(label + " (no Active service of that category)");
+                    return;
+                }
+
+                DataRow service = AppointmentRepository.GetServiceInfo(null, null, serviceId);
+                int duration = Db.Get<int>(service["duration_minutes"]);
+                // One session is booked here: the package size has nothing to do with the length
+                // of one service line.
+                const int quantity = 1;
+
+                List<TimeSpan> starts = AvailabilityRepository.GetFreeStarts(null, null, date,
+                    serviceId, quantity, 0, 0, 0, null);
+
+                string message = label + " (got " + starts.Count + " start(s))";
+
+                if (starts.Count < 1)
+                {
+                    Fail(message);
+                    return;
+                }
+
+                if (starts[0] != expectedFirst)
+                {
+                    Fail(message + " first " + AppointmentRepository.Clock(starts[0]) + " is not " +
+                        AppointmentRepository.Clock(expectedFirst));
+                    return;
+                }
+
+                bool lastTooLate = false;
+                foreach (TimeSpan start in starts)
+                {
+                    if (start.TotalMinutes % AvailabilityRepository.SlotMinutes != 0) lastTooLate = true;
+
+                    if (AvailabilityRepository.LineEnd(start, duration, quantity) > closing)
+                    {
+                        lastTooLate = true;
+                    }
+                }
+
+                if (lastTooLate) Fail(message + " a start is off the half hour or ends after closing");
+                else Pass(message);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>A day that has already gone by can never offer a start time.</summary>
+        private static void CheckFreeStartsInThePast(int serviceId)
+        {
+            const string label = "Free starts in the past";
+            try
+            {
+                if (serviceId == 0)
+                {
+                    Fail(label + " (no Active Facial service)");
+                    return;
+                }
+
+                List<TimeSpan> starts = AvailabilityRepository.GetFreeStarts(null, null,
+                    DateTime.Today.AddDays(-1), serviceId, 1, 0, 0, 0, null);
+
+                string message = label + " (got " + starts.Count + ")";
+
+                if (starts.Count == 0) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>The booking screen never offers a time that has already gone by today.</summary>
+        private static void CheckFreeStartsToday(int serviceId)
+        {
+            const string label = "Free starts today are all in the future";
+            try
+            {
+                if (serviceId == 0)
+                {
+                    Fail(label + " (no Active Facial service)");
+                    return;
+                }
+
+                TimeSpan now = DateTime.Now.TimeOfDay;
+                List<TimeSpan> starts = AvailabilityRepository.GetFreeStarts(null, null,
+                    DateTime.Today, serviceId, 1, 0, 0, 0, null);
+
+                bool allFuture = true;
+                foreach (TimeSpan start in starts)
+                {
+                    if (start <= now) allFuture = false;
+                }
+
+                string message = label + " (got " + starts.Count + " start(s))";
+
+                if (allFuture) Pass(message);
+                else Fail(message + " a start is not in the future");
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>A Facial room is linked in RoomServiceCategories, so one must be free.</summary>
+        private static void CheckPickRoom(int serviceId, DateTime date)
+        {
+            const string label = "PickRoom finds a Facial room on an empty day";
+            try
+            {
+                if (serviceId == 0)
+                {
+                    Fail(label + " (no Active Facial service)");
+                    return;
+                }
+
+                DataRow service = AppointmentRepository.GetServiceInfo(null, null, serviceId);
+                int duration = Db.Get<int>(service["duration_minutes"]);
+                TimeSpan start = new TimeSpan(11, 0, 0);
+                TimeSpan end = AvailabilityRepository.LineEnd(start, duration, 1);
+
+                string roomName;
+                int roomId = AvailabilityRepository.PickRoom(null, null, date,
+                    Db.Get<int>(service["category_id"]), start, end, 0, out roomName);
+
+                string message = label + " (room " + roomId + " '" + roomName + "')";
+
+                if (roomId > 0) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>The seeded aestheticians have nothing booked that day, so one is picked.</summary>
+        private static void CheckPickTechnician(int serviceId, DateTime date)
+        {
+            const string label = "PickTechnician finds an aesthetician on an empty day";
+            try
+            {
+                if (serviceId == 0)
+                {
+                    Fail(label + " (no Active Facial service)");
+                    return;
+                }
+
+                int userId = AvailabilityRepository.PickTechnician(null, null, date, serviceId, 1,
+                    new TimeSpan(11, 0, 0), 0);
+
+                string message = label + " (user " + userId + ")";
+
+                if (userId > 0) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// A gluta drip keeps the room for the whole drip but the aesthetician only for
+        /// staff_busy_minutes, so the busy end is earlier than the room end.
+        /// </summary>
+        private static void CheckGlutaBusyEnd()
+        {
+            const string label = "A gluta drip keeps the chair but not the aesthetician";
+            try
+            {
+                int glutaId = FindServiceId("Glutathione", true);
+
+                if (glutaId == 0)
+                {
+                    Skipped(label);
+                    return;
+                }
+
+                DataRow service = AppointmentRepository.GetServiceInfo(null, null, glutaId);
+                int duration = Db.Get<int>(service["duration_minutes"]);
+                int staffBusyMinutes = Db.Get<int>(service["staff_busy_minutes"], 0);
+
+                // No drip with a short busy time in this database, so there is nothing to prove.
+                if (staffBusyMinutes <= 0)
+                {
+                    Skipped(label);
+                    return;
+                }
+
+                TimeSpan start = new TimeSpan(14, 0, 0);
+                TimeSpan end = AvailabilityRepository.LineEnd(start, duration, 1);
+                // A drip is sold one at a time, so one unit is enough to prove the rule.
+                TimeSpan busyEnd = AvailabilityRepository.LineBusyEnd(start, duration,
+                    staffBusyMinutes, 1);
+
+                string message = label + " (room until " + AppointmentRepository.Clock(end) +
+                    ", technician free at " + AppointmentRepository.Clock(busyEnd) + ")";
+
+                if (busyEnd < end) Pass(message);
+                else Fail(message);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
         }
 
         /// <summary>Overwrites smoketest.log on every run. Never throws (a missing log must not hide the result).</summary>

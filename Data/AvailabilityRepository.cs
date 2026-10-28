@@ -278,5 +278,112 @@ WHERE a.client_id = @client_id
 
             return string.Empty;
         }
+
+        /// <summary>
+        /// The start times on that day where this line really fits: every 30 minutes from the
+        /// category's opening to the last start that still ends before closing.
+        /// A past date has no start times at all; today loses its past times through rule (a)
+        /// of WhyNotPossible, so the list is only ever in the future.
+        /// </summary>
+        public static List<TimeSpan> GetFreeStarts(SqlConnection connection, SqlTransaction transaction,
+            DateTime date, int serviceId, int quantity, int technicianId, int clientId,
+            int excludeAppointmentId, DataTable otherLines)
+        {
+            List<TimeSpan> free = new List<TimeSpan>();
+
+            if (date.Date < DateTime.Today) return free;
+
+            DataRow service = AppointmentRepository.GetServiceInfo(connection, transaction, serviceId);
+            if (service == null) return free;
+
+            string categoryName = Db.Get<string>(service["category_name"]);
+            int duration = Db.Get<int>(service["duration_minutes"]);
+            if (duration <= 0) return free;
+
+            bool massage = AppointmentRepository.IsMassageCategory(categoryName);
+            TimeSpan opens = massage
+                ? AppointmentRepository.MassageOpening
+                : AppointmentRepository.AestheticOpening;
+            TimeSpan closes = massage
+                ? AppointmentRepository.MassageClosing
+                : AppointmentRepository.AestheticClosing;
+
+            for (TimeSpan slot = opens; slot <= closes; slot = slot.Add(new TimeSpan(0, SlotMinutes, 0)))
+            {
+                // The last start of the day is the one whose end is still inside the opening hours.
+                if (LineEnd(slot, duration, quantity) > closes) break;
+
+                if (WhyNotPossible(connection, transaction, date, serviceId, quantity, slot,
+                    technicianId, clientId, excludeAppointmentId, otherLines) == string.Empty)
+                {
+                    free.Add(slot);
+                }
+            }
+
+            return free;
+        }
+
+        /// <summary>
+        /// The first technician of the category who is free for the busy window of this line,
+        /// or 0 when the category has no eligible technician or nobody is free.
+        /// </summary>
+        public static int PickTechnician(SqlConnection connection, SqlTransaction transaction,
+            DateTime date, int serviceId, int quantity, TimeSpan start, int excludeAppointmentId)
+        {
+            DataRow service = AppointmentRepository.GetServiceInfo(connection, transaction, serviceId);
+            if (service == null) return 0;
+
+            string categoryName = Db.Get<string>(service["category_name"]);
+            int duration = Db.Get<int>(service["duration_minutes"]);
+            int staffBusyMinutes = Db.Get<int>(service["staff_busy_minutes"], 0);
+
+            // The person is free at the BUSY end, which is shorter than the room time for a drip.
+            TimeSpan busyEnd = LineBusyEnd(start, duration, staffBusyMinutes, quantity);
+
+            DataTable eligible = UserRepository.GetActiveStaffFor(categoryName);
+
+            foreach (DataRow person in eligible.Rows)
+            {
+                int userId = Db.Get<int>(person["user_id"]);
+
+                if (!TechnicianBusy(connection, transaction, userId, date, start, busyEnd,
+                    excludeAppointmentId))
+                {
+                    return userId;
+                }
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// The first room of the category that still has a free seat, in the same order as
+        /// AppointmentRepository.BuildRoomPlan (GetRoomsForCategory). Returns 0 and an empty
+        /// name when no room is linked to the category or none is free.
+        /// </summary>
+        public static int PickRoom(SqlConnection connection, SqlTransaction transaction, DateTime date,
+            int categoryId, TimeSpan start, TimeSpan end, int excludeAppointmentId, out string roomName)
+        {
+            roomName = string.Empty;
+
+            DataTable rooms = AppointmentRepository.GetRoomsForCategory(connection, transaction, categoryId);
+
+            foreach (DataRow room in rooms.Rows)
+            {
+                int roomId = Db.Get<int>(room["room_id"]);
+                int capacity = Db.Get<int>(room["capacity"], 1);
+
+                int used = RoomUsage(connection, transaction, roomId, date, start, end,
+                    excludeAppointmentId);
+
+                if (used < capacity)
+                {
+                    roomName = Db.Get<string>(room["room_name"]);
+                    return roomId;
+                }
+            }
+
+            return 0;
+        }
     }
 }
