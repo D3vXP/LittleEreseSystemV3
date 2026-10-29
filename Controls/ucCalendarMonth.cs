@@ -243,7 +243,8 @@ namespace LittleEreseSystemV3.Controls
             Label line = SmallLabel(text);
             line.Tag = Db.Get<int>(row["appointment_id"]);
 
-            // A cancelled visit still shows, but greyed out, because it explains a gap in the day.
+            // The month feed already leaves cancelled and rescheduled visits out (they are not
+            // work - see PROJECT_RULES.md), so this is only a safety net for an older table.
             line.ForeColor = IsCancelled(status)
                 ? Theme.TextMuted
                 : Theme.StatusColor(status);

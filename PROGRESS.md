@@ -2,6 +2,38 @@
 
 Update this file at the end of every task.
 
+- Step 64 (this task): the "Selected Day" list no longer looks empty while the calendar still
+  shows lines for that day.
+  - CAUSE: the two feeds disagreed. The Dashboard lists ask for "Active" (everything except
+    Cancelled and Rescheduled, the working list of the day), but the month calendar's feed
+    AppointmentRepository.GetMonthAppointments had NO status filter at all, so it kept drawing the
+    cancelled (and rescheduled) rows. Nov 10, 2026 is exactly that case: appointment #52 10:00 AM
+    and #53 3:30 PM (the two Tirzepatide package sessions) were moved onto that day as Upcoming and
+    were later cancelled (AppointmentHistory shows both, updated_at 15:38). The calendar still
+    listed "10:00 AM ..." and "3:30 PM ...", while GetByDate(date, "Active") - correctly - returns
+    0 rows, so the tab read "November 10, 2026 - 0 appointments" with an empty grid. There was no
+    wrong date, no stale tab, no lost join: the calendar was simply not applying the rule.
+  - Fix (smallest change, one predicate): GetMonthAppointments now adds
+    "AND a.status NOT IN ('Cancelled', 'Rescheduled')" to its WHERE, so the month cells, their
+    count badges and the tooltips show the very same working list as the Today / Selected Day
+    grids and the Appointments page default filter. The 42 day cells, the colours, the layout and
+    ucDashboard.cs are untouched.
+  - Controls\ucCalendarMonth.cs: the comment on the (now unreachable) grey fallback in
+    BuildLineLabel was corrected - the feed already leaves those visits out, so it is only a safety
+    net. No behaviour change there.
+  - PROJECT_RULES.md: the "Cancelled and rescheduled appointments are not work" rule now names the
+    Dashboard month calendar (GetMonthAppointments) as using the same working list, so a day cell
+    and its "Selected Day" list can never disagree again.
+  - No Designer, .csproj or migration change; no other method touched.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --smoketest 91
+    passed / 0 failed / 0 skipped (GetMonthAppointments(this month) now 37 rows for October 2026,
+    was 39 - it drops the two cancelled visits on Oct 05 and Oct 13);
+    app started once, stayed open, closed, no error.log.
+  - Known issue: not verified by hand (no UI automation). To see it: open the Dashboard with a day
+    that holds only cancelled visits - the cell now shows no line and its badge no count, and the
+    Selected Day tab agrees.
+
+
 - Step 63 (this task): the cancel and reschedule screens now drive the package-session overloads.
   - Controls\ucAppointments.cs (btnCancelAppointment_Click): after the confirmation and the reason
     prompt, AppointmentRepository.GetLaterSessions(selectedId) is read BEFORE anything is written.

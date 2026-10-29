@@ -189,6 +189,9 @@ ORDER BY ar.appointment_room_id");
         /// The appointments of ONE whole month, for the Dashboard calendar.
         /// Returns appointment_id, appointment_date, start_time_text ("10:00 AM"), client_name,
         /// services, staff_names, status and payment_status.
+        /// WHY only the working ones: a cancelled or rescheduled visit is not work (see
+        /// PROJECT_RULES.md), so the month query uses the same filter as GetByDate's "Active".
+        /// The calendar and the "Selected Day" list therefore always agree on a day.
         /// WHY one query for the month: the calendar shows 42 days at once, and asking the
         /// database once per day would mean 31 round trips every time the page is refreshed.
         /// </summary>
@@ -209,6 +212,7 @@ INNER JOIN Clients c ON c.client_id = a.client_id
 LEFT JOIN Billing b ON b.appointment_id = a.appointment_id
 WHERE a.appointment_date >= @from_date
   AND a.appointment_date <= @to_date
+  AND a.status NOT IN ('Cancelled', 'Rescheduled')
 ORDER BY a.appointment_date, a.start_time, a.appointment_id",
                 Db.P("@from_date", first),
                 Db.P("@to_date", last));
