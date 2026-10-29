@@ -1181,6 +1181,16 @@ VALUES (@appointment_id, @changed_by, 'Created', 'Upcoming', @reason)",
                 throw new InvalidOperationException(string.Join(Environment.NewLine, problems.ToArray()));
             }
 
+            // A session of a package must keep its weekly place: it stays session_interval_days
+            // after the session before it and before the session that follows it. The other
+            // sessions already exist as their own appointments, so only their dates are read.
+            List<string> packageProblems = PackageSessionProblems(appointmentId, newDate, lines);
+
+            if (packageProblems.Count > 0)
+            {
+                throw new InvalidOperationException(string.Join(Environment.NewLine, packageProblems.ToArray()));
+            }
+
             using (SqlConnection connection = Db.CreateConnection())
             {
                 connection.Open();
@@ -1413,6 +1423,104 @@ VALUES (@appointment_id, @changed_by, 'Status Change', @old_status, @new_status,
         // ---------------------------------------------------------------------
         // PRIVATE HELPERS
         // ---------------------------------------------------------------------
+
+        /// <summary>
+        /// Checks a moved package session against its neighbours: a session must stay at least
+        /// Services.session_interval_days after the session before it and at least that many days
+        /// before the session that follows it, because a package is booked as weekly sessions.
+        /// The other sessions already exist as their own appointments, so only their numbers and
+        /// dates are read. Returns one plain sentence per failing line (empty means the move fits).
+        /// </summary>
+        private static List<string> PackageSessionProblems(int appointmentId, DateTime newDate, DataTable lines)
+        {
+            List<string> problems = new List<string>();
+
+            if (lines == null) return problems;
+
+            foreach (DataRow line in lines.Rows)
+            {
+                int packageId = Db.Get<int>(line[ColPackageId]);
+                int sessionNumber = Db.Get<int>(line[ColSessionNumber]);
+                int totalSessions = Db.Get<int>(line[ColTotalSessions]);
+
+                // Only a real package session has neighbours to keep a distance from.
+                if (totalSessions <= 1 || packageId <= 0 || sessionNumber <= 0) continue;
+
+                int serviceId = Db.Get<int>(line[ColServiceId]);
+                DataRow service = GetServiceInfo(null, null, serviceId);
+
+                string serviceName = service == null
+                    ? "Service #" + serviceId
+                    : Db.Get<string>(service["service_name"]);
+
+                // A missing or zero interval means the weekly default of 7 days.
+                int intervalDays = service == null ? 7 : Db.Get<int>(service["session_interval_days"], 7);
+                if (intervalDays < 1) intervalDays = 7;
+
+                // The other sessions of the same package that still count: neither the line nor its
+                // appointment is cancelled. The moved appointment is left out through its own id.
+                DataTable others = Db.Query(
+@"SELECT asv.session_number, a.appointment_date
+FROM AppointmentServices asv
+INNER JOIN Appointments a ON a.appointment_id = asv.appointment_id
+WHERE asv.package_id = @package_id
+  AND asv.appointment_id <> @appointment_id
+  AND asv.status <> 'Cancelled'
+  AND a.status <> 'Cancelled'",
+                    Db.P("@package_id", packageId),
+                    Db.P("@appointment_id", appointmentId));
+
+                int previousNumber = 0;
+                DateTime previousDate = DateTime.MinValue;
+                int nextNumber = 0;
+                DateTime nextDate = DateTime.MinValue;
+
+                foreach (DataRow other in others.Rows)
+                {
+                    int number = Db.Get<int>(other["session_number"]);
+                    if (number <= 0) continue;
+
+                    // The nearest session below and the nearest one above this line decide.
+                    if (number < sessionNumber && number > previousNumber)
+                    {
+                        previousNumber = number;
+                        previousDate = Db.Get<DateTime>(other["appointment_date"]).Date;
+                    }
+
+                    if (number > sessionNumber && (nextNumber == 0 || number < nextNumber))
+                    {
+                        nextNumber = number;
+                        nextDate = Db.Get<DateTime>(other["appointment_date"]).Date;
+                    }
+                }
+
+                bool tooEarly = previousNumber > 0 && newDate.Date < previousDate.AddDays(intervalDays);
+                bool tooLate = nextNumber > 0 && newDate.Date > nextDate.AddDays(-intervalDays);
+
+                if (!tooEarly && !tooLate) continue;
+
+                // The sentence names only the halves that have a neighbour, so it stays short.
+                string sentence = serviceName + " Session " + sessionNumber + " of " + totalSessions;
+
+                if (tooEarly)
+                {
+                    sentence += " must stay at least " + intervalDays + " days after Session " +
+                        previousNumber + " (" + previousDate.ToString("MMM dd, yyyy") + ")";
+                }
+
+                if (tooLate)
+                {
+                    sentence += tooEarly ? " and at least " : " must stay at least ";
+                    sentence += intervalDays + " days before Session " +
+                        nextNumber + " (" + nextDate.ToString("MMM dd, yyyy") + ")";
+                }
+
+                sentence += ". Move the other sessions first.";
+                problems.Add(sentence);
+            }
+
+            return problems;
+        }
 
         /// <summary>
         /// Works out the real price of every line and which package row it uses (the package rule:

@@ -1458,7 +1458,29 @@ namespace LittleEreseSystemV3.Forms
             _loading = true;
             try
             {
-                WriteLineStart(_selectedLine, _slots[index]);
+                if (RescheduleId > 0 && _rescheduleLine != null)
+                {
+                    // A reschedule moves the WHOLE appointment at once: the picked time is the new
+                    // start of the earliest line, so every other placed line keeps its distance and
+                    // is shifted by the same amount. Without this only the earliest line moved and
+                    // the mixed plan made the availability check read a move that never happens.
+                    TimeSpan current = AppointmentRepository.ReadTime(
+                        _rescheduleLine[AppointmentRepository.ColStartTime]);
+                    TimeSpan delta = _slots[index] - current;
+
+                    foreach (DataRowView view in _lines.DefaultView)
+                    {
+                        TimeSpan start = AppointmentRepository.ReadTime(
+                            view[AppointmentRepository.ColStartTime]);
+                        if (start == TimeSpan.Zero) continue;
+
+                        WriteLineStart(view, start + delta);
+                    }
+                }
+                else
+                {
+                    WriteLineStart(_selectedLine, _slots[index]);
+                }
             }
             finally
             {
@@ -1859,6 +1881,14 @@ namespace LittleEreseSystemV3.Forms
 
         private void SaveReschedule()
         {
+            // The old time is not free on the new date, so cboLineTime could not keep a pick and
+            // shows nothing. There is no time to move to until the desk chooses one.
+            if (cboLineTime.SelectedIndex < 0)
+            {
+                Messages.Warn("Pick the new time first.");
+                return;
+            }
+
             DataRow appointment;
             try
             {

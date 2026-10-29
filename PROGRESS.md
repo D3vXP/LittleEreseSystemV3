@@ -2,6 +2,38 @@
 
 Update this file at the end of every task.
 
+- Step 61 (this task): a rescheduled package session must keep its weekly place.
+  - Data\AppointmentRepository.cs: Reschedule now calls the new private PackageSessionProblems
+    (appointmentId, newDate, lines) right after the ValidateBooking problems check and before the
+    transaction. For every line with total_sessions > 1 and a package_id it reads the OTHER
+    non-cancelled sessions of the same package (AppointmentServices with the same package_id whose
+    appointment_id is not this one and whose line status and appointment status are not
+    'Cancelled'), takes interval = Services.session_interval_days (7 when 0 or NULL), and demands
+    newDate >= (previous session date + interval) and newDate <= (next session date - interval).
+    The previous is the highest session_number below this line, the next the lowest above it.
+  - Every failing line adds ONE plain sentence naming only the halves that have a neighbour, e.g.
+    "Tirzepatide Session 2 of 4 must stay at least 7 days after Session 1 (Oct 01, 2026) and at
+    least 7 days before Session 3 (Oct 15, 2026). Move the other sessions first."; the sentences are
+    joined with Environment.NewLine and thrown as InvalidOperationException, like the other problems.
+  - No form, Designer or .csproj change; no new migration. PROJECT_RULES.md gained the package
+    sentence (a rescheduled session stays at least session_interval_days after the previous and
+    before the next session of the same package). SmokeTest: no write test was added, as asked.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --smoketest 90
+    passed / 0 failed / 0 skipped.
+  - Not verified by hand (no UI automation): moving Tirzepatide session 2 onto session 1's day.
+
+- Step 60 (this task): reschedule mode moves every line when a new time is picked.
+  - cboLineTime_SelectedIndexChanged (Forms\AppointmentForm.cs): when RescheduleId > 0 it computes
+    delta = picked start - the current start of _rescheduleLine and shifts EVERY row of _lines that
+    has a start by that delta through WriteLineStart, so start_time, start_text and end_text all
+    follow. The _loading guard stays and a new booking still only writes the selected line.
+  - SaveReschedule now returns first with Messages.Warn("Pick the new time first.") when
+    cboLineTime has no selected item (the old time is no longer free on the new date).
+  - No other method, no Designer file and no .csproj change. The reschedule rule in
+    PROJECT_RULES.md already matched (all lines move by the same amount), so it was left alone.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --smoketest 90
+    passed / 0 failed / 0 skipped; app started once, stayed open, closed, no error.log.
+  - Not verified by hand (no UI automation): a two-service reschedule picked in the dialog.
 - Step 59 (this task): the booking dialog is finished (E2-H); the reschedule mode is rebuilt.
   - Date and client changes now also call UpdateLinePanel(), so cboLineTime is refilled for the
     new date or client instead of keeping the times of the old one (in reschedule mode
