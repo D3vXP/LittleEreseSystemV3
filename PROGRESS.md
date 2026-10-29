@@ -2,6 +2,31 @@
 
 Update this file at the end of every task.
 
+- Step 73 (this task): the demo set shows the health/intake fields and every demo line has its own
+  times.
+  - Data\DemoDataSeeder.cs SeedClients / InsertClient: InsertClient now also takes healthConditions
+    and treatmentHistory (empty text is stored as NULL). 6 of the 12 demo clients carry
+    health_conditions (1 to 3 entries, spelled exactly like ClientRepository.HealthConditionOptions
+    and joined with ClientRepository.JoinHealthConditions), 3 of them also an allergy ("Penicillin",
+    "Latex", "Shellfish"), 2 clients keep medical_history empty and 2 clients (Carlo Miguel, Rosalie)
+    got the one plain line "Chemical peel at another clinic (3 months ago)" as treatment_history.
+    No generated history line is written.
+  - Data\DemoDataSeeder.cs: new private BackfillLineTimes(connection, transaction), called at the END
+    of SeedAll after every section. One UPDATE fills start_time / end_time from the appointment and
+    busy_end_time from Services.staff_busy_minutes (capped at end_time, else end_time) for every line
+    whose start_time IS NULL - no loop.
+  - Data\DemoDataSeeder.cs SeedPastVisits: the bill of a 0.00 line (a later package session) is now
+    born 'Paid' instead of 'Unpaid', so a fresh database matches migration 005 and the smoke check
+    "No bill with a total of 0 is Unpaid" is green without a restart.
+  - PROJECT_RULES.md: the "start_time / end_time / busy_end_time are NULL for demo rows" sentence was
+    updated - the seeder now backfills every demo line, so only rows written straight into SQL stay
+    NULL. LittleEreseSystemV3.csproj was NOT edited.
+  - Checks on a FRESH database (backup C:\VSStudio\LittleEresesDB_before_D1.bak first, then dropped
+    and recreated by the app): Clients 12, Appointments 47, AppointmentServices 47,
+    AppointmentServices with start_time NULL 0, Billing 47, Payments 59, clients with
+    health_conditions 6. Clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0;
+    --smoketest 96 passed / 0 failed / 0 skipped; app started once, stayed open, closed, no error.log.
+
 - Step 72 (this task): the client card now shows the paper-form health data and the shop's own
   treatment history, and the consent badge is never red.
   - Controls\ucClients.Designer.cs (tlpDetails): lblMedicalTitle reads "Health conditions" (the box

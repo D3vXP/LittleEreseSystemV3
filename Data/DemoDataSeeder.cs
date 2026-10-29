@@ -149,6 +149,34 @@ namespace LittleEreseSystemV3.Data
             SeedCancelledVisits(connection, transaction, random, clientIds, adminId, staffIds, services, rooms);
 
             SeedActivityLog(connection, transaction, adminId, staffIds);
+
+            // LAST, after every section: the lines written above carry no times of their own yet.
+            BackfillLineTimes(connection, transaction);
+        }
+
+        /// <summary>
+        /// Gives every service line the times of its appointment when it has none.
+        /// The line inherits the appointment's start and end; the technician is busy for
+        /// s.staff_busy_minutes only (a gluta drip), never past the line end.
+        /// ONE statement for the whole set, no loop.
+        /// </summary>
+        private static void BackfillLineTimes(SqlConnection connection, SqlTransaction transaction)
+        {
+            Db.Execute(connection, transaction,
+@"UPDATE asv
+SET asv.start_time = a.start_time,
+    asv.end_time = a.end_time,
+    asv.busy_end_time = CASE
+        WHEN s.staff_busy_minutes > 0
+            THEN CAST(CASE WHEN DATEADD(MINUTE, s.staff_busy_minutes, a.start_time) > a.end_time
+                           THEN a.end_time
+                           ELSE DATEADD(MINUTE, s.staff_busy_minutes, a.start_time) END AS time)
+        ELSE a.end_time
+    END
+FROM AppointmentServices asv
+INNER JOIN Appointments a ON a.appointment_id = asv.appointment_id
+INNER JOIN Services s ON s.service_id = asv.service_id
+WHERE asv.start_time IS NULL");
         }
 
         // ---------------------------------------------------------------------
@@ -162,67 +190,86 @@ namespace LittleEreseSystemV3.Data
             // POLISH: replace these placeholder guests with the real client list before the defense.
             clients.Add(InsertClient(connection, transaction, "Maria Clara", "Santos",
                 new DateTime(1994, 3, 12), "Female", "09171234501",
-                "San Nicolas Poblacion, Concepcion, Tarlac", null, null, true, 120));
+                "San Nicolas Poblacion, Concepcion, Tarlac", null, null, null, null, true, 120));
 
             clients.Add(InsertClient(connection, transaction, "Jhon Rey", "Cunanan",
                 new DateTime(1990, 7, 5), "Male", "09171234502",
-                "Poblacion 3, Concepcion, Tarlac", null, null, true, 110));
+                "Poblacion 3, Concepcion, Tarlac", null, null, null, null, true, 110));
 
             clients.Add(InsertClient(connection, transaction, "Aileen", "Dela Cruz",
                 new DateTime(1996, 11, 20), "Female", "09171234503",
-                "Sto. Cristo, Concepcion, Tarlac", "Allergic to lidocaine",
-                "Hypertension - maintenance medicine", true, 100));
+                "Sto. Cristo, Concepcion, Tarlac", "Penicillin",
+                "Hypertension - maintenance medicine",
+                ClientRepository.JoinHealthConditions(new string[] { "High blood pressure", "Taking blood thinners" }),
+                null, true, 100));
 
             clients.Add(InsertClient(connection, transaction, "Mark Anthony", "Reyes",
                 new DateTime(1988, 2, 14), "Male", "09171234504",
-                "Alfonso, Concepcion, Tarlac", "Allergic to seafood (no seaweed scrub)", null, false, 95));
+                "Alfonso, Concepcion, Tarlac", "Shellfish", null,
+                ClientRepository.JoinHealthConditions(new string[] { "Diabetes" }),
+                null, false, 95));
 
             clients.Add(InsertClient(connection, transaction, "Jenny Lyn", "Bautista",
                 new DateTime(1999, 6, 30), "Female", "09171234505",
-                "Minane, Concepcion, Tarlac", null, null, true, 90));
+                "Minane, Concepcion, Tarlac", null, "Mild asthma - no maintenance medicine",
+                null, null, true, 90));
 
             clients.Add(InsertClient(connection, transaction, "Carlo Miguel", "Aquino",
                 new DateTime(1993, 9, 8), "Male", "09171234506",
-                "Balutu, Concepcion, Tarlac", "Sensitive skin - reacts to strong peeling acids", null, true, 80));
+                "Balutu, Concepcion, Tarlac", null, "Sensitive skin - reacts to strong peeling acids",
+                ClientRepository.JoinHealthConditions(new string[] { "Asthma", "Skin condition (eczema, psoriasis)" }),
+                "Chemical peel at another clinic (3 months ago)", true, 80));
 
             clients.Add(InsertClient(connection, transaction, "Rosalie", "Manalo",
                 new DateTime(1985, 12, 1), "Female", "09171234507",
-                "Sta. Cruz, Concepcion, Tarlac", null, null, true, 70));
+                "Sta. Cruz, Concepcion, Tarlac", null, "Occasional migraine",
+                ClientRepository.JoinHealthConditions(new string[] { "High blood pressure", "Thyroid condition", "Kidney or liver condition" }),
+                "Chemical peel at another clinic (3 months ago)", true, 70));
 
             clients.Add(InsertClient(connection, transaction, "Kevin Paul", "Garcia",
                 new DateTime(1997, 4, 17), "Male", "09171234508",
-                "Tinang, Concepcion, Tarlac", null, null, false, 60));
+                "Tinang, Concepcion, Tarlac", null, null, null, null, false, 60));
 
             clients.Add(InsertClient(connection, transaction, "Divina", "Mercado",
                 new DateTime(1991, 8, 23), "Female", "09171234509",
-                "San Jose, Concepcion, Tarlac", "Allergic to latex gloves", null, true, 50));
+                "San Jose, Concepcion, Tarlac", "Latex", "Occasional lower back pain",
+                ClientRepository.JoinHealthConditions(new string[] { "Keloid or easy scarring" }),
+                null, true, 50));
 
             clients.Add(InsertClient(connection, transaction, "Paolo Vincent", "Laxamana",
                 new DateTime(1992, 1, 5), "Male", "09171234510",
-                "Marimla, Concepcion, Tarlac", null, null, true, 40));
+                "Marimla, Concepcion, Tarlac", null, "Mild gastritis",
+                null, null, true, 40));
 
             clients.Add(InsertClient(connection, transaction, "Cristina", "Villanueva",
                 new DateTime(2000, 5, 19), "Female", "09171234511",
                 "Taldiapan, Concepcion, Tarlac", null,
-                "Pregnant (2nd trimester) - no Botox or injectables", false, 30));
+                "Pregnant (2nd trimester) - no Botox or injectables",
+                ClientRepository.JoinHealthConditions(new string[] { "Pregnant or breastfeeding" }),
+                null, false, 30));
 
             clients.Add(InsertClient(connection, transaction, "Jomar", "Tiongson",
                 new DateTime(1989, 10, 27), "Male", "09171234512",
-                "San Martin, Concepcion, Tarlac", null, null, true, 20));            return clients.ToArray();
+                "San Martin, Concepcion, Tarlac", null, "Seasonal allergic rhinitis",
+                null, null, true, 20));
+            return clients.ToArray();
         }
 
         /// <summary>Writes one client and returns the new client_id (created_at is back-dated).</summary>
         private static int InsertClient(SqlConnection connection, SqlTransaction transaction,
             string firstName, string lastName, DateTime birthDate, string gender, string contact,
-            string address, string allergies, string medicalHistory, bool consentSigned, int daysAgo)
+            string address, string allergies, string medicalHistory, string healthConditions,
+            string treatmentHistory, bool consentSigned, int daysAgo)
         {
             DateTime registered = DateTime.Now.AddDays(-daysAgo);
 
             object id = Db.Scalar(connection, transaction,
 @"INSERT INTO Clients (first_name, last_name, birth_date, gender, contact_number, address,
-                     allergies, medical_history, treatment_history, consent_status, created_at, updated_at)
+                     allergies, medical_history, health_conditions, treatment_history,
+                     consent_status, created_at, updated_at)
 VALUES (@first_name, @last_name, @birth_date, @gender, @contact_number, @address,
-        @allergies, @medical_history, NULL, @consent_status, @created_at, @created_at);
+        @allergies, @medical_history, @health_conditions, @treatment_history,
+        @consent_status, @created_at, @created_at);
 SELECT CAST(SCOPE_IDENTITY() AS int);",
                 Db.P("@first_name", firstName),
                 Db.P("@last_name", lastName),
@@ -232,6 +279,9 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
                 Db.P("@address", address),
                 Db.P("@allergies", allergies),
                 Db.P("@medical_history", medicalHistory),
+                // An empty list must land as NULL, so "clients with health_conditions" counts real entries.
+                Db.P("@health_conditions", string.IsNullOrEmpty(healthConditions) ? null : (object)healthConditions),
+                Db.P("@treatment_history", string.IsNullOrEmpty(treatmentHistory) ? null : (object)treatmentHistory),
                 Db.P("@consent_status", consentSigned),
                 Db.P("@created_at", registered));
 
@@ -561,8 +611,12 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
                 decimal upfront = promoId > 0 ? total : (IsWalkIn(bookingSource) ? 0m : HalfOf(subtotal));
                 string downpaymentStatus = upfront > 0m ? "Applied" : "None";
 
+                // A line of 0.00 (a later session of a package) leaves nothing to collect, so the
+                // bill is born 'Paid' - the same rule migration 005 applies to older rows.
+                string paymentStatus = total == 0m ? "Paid" : "Unpaid";
+
                 int billingId = BillingRepository.CreateBilling(connection, transaction, appointmentId,
-                    subtotal, promoId, discount, total, upfront, downpaymentStatus, total, "Unpaid");
+                    subtotal, promoId, discount, total, upfront, downpaymentStatus, total, paymentStatus);
 
                 int finalPaymentId = 0;
 
