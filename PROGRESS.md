@@ -2,6 +2,44 @@
 
 Update this file at the end of every task.
 
+- Step 70 (this task): the health checkboxes, the treatment-history meaning and the package rule.
+  - Data\ClientRepository.cs: new public static readonly string[] HealthConditionOptions (the ONE
+    list of the paper-form conditions), JoinHealthConditions / SplitHealthConditions, GetClinicHistory
+    (one row per COMPLETED line: visit_date, service_name, session_text built with
+    AppointmentRepository.SessionText when total_sessions > 1, staff_name from AppointmentStaff ->
+    Users.full_name or "-"), RemoveGeneratedHistoryLines (drops only lines matching
+    ^[A-Z][a-z]{2} \d{2}, \d{4} - .+ \(.+\)$, keeps the rest, NULL when empty, returns the count) and
+    AddPackage now throws "Only a service with more than one session can be a package." for a
+    one-session service. GetById also returns health_conditions; Add / Update take a new
+    string healthConditions right after medicalHistory and write it (empty -> NULL).
+  - Data\BillingRepository.cs: Checkout step (h) deleted (the treatment history entry and the
+    UPDATE Clients SET treatment_history); the line query no longer selects service_name and the
+    unused clientId local was removed. The shop's own work now lives only in the completed lines.
+  - Data\DemoDataSeeder.cs: SaveTreatmentHistory, AppendTreatment, StaffNames, the treatments
+    dictionary and the treatment line in InsertFinishedVisits are gone (nothing writes
+    Clients.treatment_history in the seeder).
+  - Database\Migrations\006_clients_history_cleanup.sql (NEW FILE): a comment plus SELECT 1, same
+    mechanism as 001-005. Data\DatabaseBootstrapper.ApplyMigrations calls
+    ClientRepository.RemoveGeneratedHistoryLines() exactly ONCE, right after that file is applied
+    (the loop already knows it was just applied, so no new state was needed).
+  - Forms\PackageForm.cs: FillServices lists ONLY services with default_total_sessions > 1 (the
+    single-session fallback and its POLISH comment are removed).
+  - Forms\ClientEditForm.cs: passes string.Empty for healthConditions for now (the checkbox step
+    fills it in); Helpers\SmokeTest.cs: two new read-only checks - CheckClinicHistoryColumns and
+    CheckNoGeneratedHistoryLines - and ClientRepository.Add got the extra "" argument.
+  - PROJECT_RULES.md WAS edited: new client rule (health_conditions / medical_history /
+    treatment_history meaning, the completed-visit history, package = more than one session).
+    docs\POLISH_LIST.md line numbers updated and the removed PackageForm entry deleted.
+    LittleEreseSystemV3.csproj was NOT edited (Database\Migrations\*.sql is already a wildcard).
+  - AppointmentRepository.Create and DemoDataSeeder only create packages for services with
+    default_total_sessions > 1 (verified: TryGetPackagePlan returns false for 1 session, Create only
+    inserts ClientPackages inside "if (defaultSessions > 1)", and the seeder uses InsertPackage only
+    with the 3-session PRP/Vampire Facial and FindMultiSessionService).
+  - Checks: clean rebuild 0 errors / 0 warnings; --smoketest 96 passed / 0 failed / 0 skipped (the
+    two new checks PASS); DesignerAudit 22 files exit 0; app started once, stayed open, closed, no
+    error.log; migration 006 is listed in SchemaVersion and 0 clients still hold a generated line.
+  - Open Forms\PackageForm.cs and Forms\ClientEditForm.cs in the Designer to check them.
+
 - Step 69 (this task): there is no "Start Service" button any more. An appointment becomes 'Ongoing'
   by itself when its scheduled time arrives; 'Completed' is still set in Billing.
   - Data\AppointmentRepository.cs: new AutoStartDue() - in ONE Db.InTransaction it starts every

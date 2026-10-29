@@ -84,9 +84,9 @@ namespace LittleEreseSystemV3.Forms
         }
 
         /// <summary>
-        /// Fills the service list with the Active services.
-        /// Services that really are packages (more than one session) are listed first, because a
-        /// package form is normally about those; the rest stay selectable for one-off bundles.
+        /// Fills the service list with the Active services that really are packages (more than one
+        /// session). A one-session service cannot be a package, so it is not offered here; the rule
+        /// itself is enforced again by ClientRepository.AddPackage.
         /// </summary>
         private void FillServices()
         {
@@ -103,21 +103,7 @@ namespace LittleEreseSystemV3.Forms
                         Db.Get<decimal>(row["price"]),
                         Db.Get<int>(row["default_total_sessions"], 1));
 
-                    // POLISH: change this split if staff should also see single-session services as packages.
                     if (item.DefaultSessions > 1) cboService.Items.Add(item);
-                }
-
-                // Nothing is flagged as a package yet, so the staff member still gets a choice.
-                if (cboService.Items.Count == 0)
-                {
-                    foreach (DataRow row in table.Rows)
-                    {
-                        cboService.Items.Add(new ServiceItem(
-                            Db.Get<int>(row["service_id"]),
-                            Db.Get<string>(row["service_name"]),
-                            Db.Get<decimal>(row["price"]),
-                            Db.Get<int>(row["default_total_sessions"], 1)));
-                    }
                 }
             }
             catch (Exception ex)

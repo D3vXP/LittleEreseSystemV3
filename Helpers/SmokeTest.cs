@@ -4,6 +4,7 @@ using System.Data;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using LittleEreseSystemV3.Controls;
 using LittleEreseSystemV3.Data;
@@ -342,6 +343,11 @@ namespace LittleEreseSystemV3.Helpers
 
             // The read-only package-session check. Nothing is written or changed here.
             CheckLaterSessionsWithoutPackage();
+
+            // The two read-only checks of the client history rules: the shop's own work must come
+            // from the completed visits, and no generated line may be left in the text column.
+            CheckClinicHistoryColumns();
+            CheckNoGeneratedHistoryLines();
         }
 
         /// <summary>
@@ -380,6 +386,74 @@ ORDER BY a.appointment_id");
                 {
                     Fail(label + " (rows = " + (later == null ? "null" : later.Rows.Count.ToString()) + ")");
                 }
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// ClientRepository.GetClinicHistory must hand back the four columns the details card
+        /// needs, so a renamed alias cannot silently show empty cells. Read-only (SELECT only).
+        /// </summary>
+        private static void CheckClinicHistoryColumns()
+        {
+            const string label = "ClientRepository.GetClinicHistory returns the columns";
+
+            try
+            {
+                DataTable history = ClientRepository.GetClinicHistory(0);
+
+                if (history != null
+                    && history.Columns.Contains("visit_date")
+                    && history.Columns.Contains("service_name")
+                    && history.Columns.Contains("session_text")
+                    && history.Columns.Contains("staff_name"))
+                {
+                    Pass(label + " (columns = " + history.Columns.Count + ")");
+                }
+                else
+                {
+                    Fail(label + " (a column is missing)");
+                }
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// No client may still hold a line the app itself generated
+        /// ("MMM dd, yyyy - Service name (Staff name)"), because migration 006 removes them once.
+        /// Read-only: the clients are read and checked in C#, nothing is written.
+        /// </summary>
+        private static void CheckNoGeneratedHistoryLines()
+        {
+            const string label = "Clients.treatment_history has no generated line";
+
+            try
+            {
+                Regex generated = new Regex(@"^[A-Z][a-z]{2} \d{2}, \d{4} - .+ \(.+\)$");
+                DataTable clients = Db.Query(
+                    "SELECT client_id, treatment_history FROM Clients " +
+                    "WHERE treatment_history IS NOT NULL AND LTRIM(RTRIM(treatment_history)) <> ''");
+
+                int found = 0;
+                foreach (DataRow row in clients.Rows)
+                {
+                    string[] lines = Db.Get<string>(row["treatment_history"])
+                        .Replace("\r\n", "\n").Split('\n');
+
+                    foreach (string line in lines)
+                    {
+                        if (generated.IsMatch(line.Trim())) { found++; break; }
+                    }
+                }
+
+                if (found == 0) Pass(label + " (0 clients)");
+                else Fail(label + " (" + found + " clients still hold one)");
             }
             catch (Exception ex)
             {
@@ -553,7 +627,7 @@ ORDER BY a.appointment_id");
             try
             {
                 ClientRepository.Add("Test", "Smoke Age", birthDate, "Female", "09170000000",
-                    "", "", "", "", false);
+                    "", "", "", "", "", false);
                 Fail(label + " (the save was allowed)");
             }
             catch (InvalidOperationException ex)

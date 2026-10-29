@@ -27,6 +27,10 @@ namespace LittleEreseSystemV3.Data
         // The numbered update files, in the Database folder next to the exe.
         private const string MigrationsFolder = "Migrations";
 
+        // The one-time clean-up of the old generated treatment history lines. It runs ONLY on the
+        // start where this migration was applied for the first time, right after the file is listed.
+        private const string HistoryCleanupScript = "006_clients_history_cleanup.sql";
+
         /// <summary>
         /// Makes sure the database exists and fills it from the two .sql scripts when it is new.
         /// Throws InvalidOperationException with a sentence a normal user can read on any failure.
@@ -83,6 +87,15 @@ namespace LittleEreseSystemV3.Data
                     if (MigrationApplied(connection, fileName)) continue;
 
                     RunMigration(connection, fileName, path);
+
+                    // The clean-up of the old generated history lines belongs to migration 006 and
+                    // runs exactly ONCE: on the very start that applies that file for the first time.
+                    // WHY here and not inside the .sql: the lines are removed line by line in C#,
+                    // where the format of the old entries is easy to read.
+                    if (string.Equals(fileName, HistoryCleanupScript, StringComparison.OrdinalIgnoreCase))
+                    {
+                        ClientRepository.RemoveGeneratedHistoryLines();
+                    }
                 }
             }
         }

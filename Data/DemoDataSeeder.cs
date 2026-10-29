@@ -128,7 +128,6 @@ namespace LittleEreseSystemV3.Data
 
             int adminId = UserId(connection, transaction, "admin");
             List<int> staffIds = StaffIds(connection, transaction);
-            Dictionary<int, string> staffNames = StaffNames(connection, transaction, staffIds);
 
             // Without the demo accounts there is nobody to book or to pay the commission to.
             if (adminId <= 0 || staffIds.Count == 0) return;
@@ -136,23 +135,19 @@ namespace LittleEreseSystemV3.Data
             DataTable services = LoadServices(connection, transaction);
             DataTable rooms = LoadRooms(connection, transaction);
 
-            // The treatment history text of every client, written once at the end.
-            Dictionary<int, List<string>> treatments = new Dictionary<int, List<string>>();
-
             int[] clientIds = SeedClients(connection, transaction);
             int glowPromoId = SeedPromotions(connection, transaction);
 
-            SeedPastVisits(connection, transaction, random, clientIds, adminId, staffIds, staffNames,
-                services, rooms, glowPromoId, treatments);
+            SeedPastVisits(connection, transaction, random, clientIds, adminId, staffIds,
+                services, rooms, glowPromoId);
 
-            SeedTodayVisits(connection, transaction, random, clientIds, adminId, staffIds, staffNames,
-                services, rooms, glowPromoId, treatments);
+            SeedTodayVisits(connection, transaction, random, clientIds, adminId, staffIds,
+                services, rooms, glowPromoId);
 
             SeedUpcomingVisits(connection, transaction, random, clientIds, adminId, staffIds, services, rooms);
 
             SeedCancelledVisits(connection, transaction, random, clientIds, adminId, staffIds, services, rooms);
 
-            SaveTreatmentHistory(connection, transaction, treatments);
             SeedActivityLog(connection, transaction, adminId, staffIds);
         }
 
@@ -302,8 +297,8 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
         /// technician, promo) and inserted afterwards.
         /// </summary>
         private static void SeedPastVisits(SqlConnection connection, SqlTransaction transaction, Random random,
-            int[] clientIds, int adminId, List<int> staffIds, Dictionary<int, string> staffNames,
-            DataTable services, DataTable rooms, int glowPromoId, Dictionary<int, List<string>> treatments)
+            int[] clientIds, int adminId, List<int> staffIds,
+            DataTable services, DataTable rooms, int glowPromoId)
         {
             DateTime today = DateTime.Today;
 
@@ -383,7 +378,7 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
                 }
             }
 
-            InsertFinishedVisits(connection, transaction, random, plan, services, rooms, adminId, staffNames, treatments);
+            InsertFinishedVisits(connection, transaction, random, plan, services, rooms, adminId);
         }
 
         /// <summary>The empty plan table of the finished visits (one row = one visit).</summary>
@@ -507,12 +502,13 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
 
         /// <summary>
         /// Inserts every planned visit with everything that belongs to it: the appointment, its
-        /// line, the technician, the room, the bill, the payments, the commission, the history row,
-        /// the package session and the client's treatment history.
+        /// line, the technician, the room, the bill, the payments, the commission, the history row
+        /// and the package session. The shop's own work is read from these completed lines, so
+        /// nothing is written into Clients.treatment_history (that column holds only what the guest
+        /// was treated with at other clinics).
         /// </summary>
         private static void InsertFinishedVisits(SqlConnection connection, SqlTransaction transaction,
-            Random random, DataTable plan, DataTable services, DataTable rooms, int receivedBy,
-            Dictionary<int, string> staffNames, Dictionary<int, List<string>> treatments)
+            Random random, DataTable plan, DataTable services, DataTable rooms, int receivedBy)
         {
             foreach (DataRow visit in plan.Rows)
             {
@@ -530,7 +526,6 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
                 DataRow service = FindServiceById(services, serviceId);
                 if (service == null) continue;
 
-                string serviceName = Db.Get<string>(service["service_name"]);
                 string categoryName = Db.Get<string>(service["category_name"]);
                 int categoryId = Db.Get<int>(service["category_id"]);
                 decimal servicePrice = Db.Get<decimal>(service["price"]);
@@ -634,11 +629,6 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
 
                 // (5) A package session was used, so the package moves one step forward.
                 if (packageId > 0) CompletePackageSession(connection, transaction, packageId);
-
-                // (6) The treatment history line of the client, in the same format Billing writes.
-                string staffName = staffNames.ContainsKey(technicianId) ? staffNames[technicianId] : "Staff";
-                AppendTreatment(treatments, clientId,
-                    date.ToString("MMM dd, yyyy") + " - " + serviceName + " (" + staffName + ")");
             }
         }
 
@@ -647,8 +637,8 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
         // ---------------------------------------------------------------------
 
         private static void SeedTodayVisits(SqlConnection connection, SqlTransaction transaction, Random random,
-            int[] clientIds, int adminId, List<int> staffIds, Dictionary<int, string> staffNames,
-            DataTable services, DataTable rooms, int glowPromoId, Dictionary<int, List<string>> treatments)
+            int[] clientIds, int adminId, List<int> staffIds,
+            DataTable services, DataTable rooms, int glowPromoId)
         {
             DateTime today = DateTime.Today;
 
@@ -663,7 +653,7 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
             AddVisit(plan, cursors, random, today, clientIds[1],
                 FindService(services, "Botox", "Traptox"), 0, 0, 0, staffIds[1], 0, "Walk-in");
 
-            InsertFinishedVisits(connection, transaction, random, plan, services, rooms, adminId, staffNames, treatments);
+            InsertFinishedVisits(connection, transaction, random, plan, services, rooms, adminId);
 
             // (b) One service in progress and three still to come, all at different times, so no
             //     room and no technician is used twice.
@@ -850,35 +840,8 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
         }
 
         // ---------------------------------------------------------------------
-        // SECTION 7 - TREATMENT HISTORY AND ACTIVITY LOG
+        // SECTION 7 - ACTIVITY LOG
         // ---------------------------------------------------------------------
-
-        private static void AppendTreatment(Dictionary<int, List<string>> treatments, int clientId, string line)
-        {
-            List<string> lines;
-            if (!treatments.TryGetValue(clientId, out lines))
-            {
-                lines = new List<string>();
-                treatments[clientId] = lines;
-            }
-
-            lines.Add(line);
-        }
-
-        private static void SaveTreatmentHistory(SqlConnection connection, SqlTransaction transaction,
-            Dictionary<int, List<string>> treatments)
-        {
-            foreach (KeyValuePair<int, List<string>> entry in treatments)
-            {
-                if (entry.Value == null || entry.Value.Count == 0) continue;
-
-                Db.Execute(connection, transaction,
-                    "UPDATE Clients SET treatment_history = @treatment_history, updated_at = GETDATE() " +
-                    "WHERE client_id = @client_id",
-                    Db.P("@treatment_history", string.Join(Environment.NewLine, entry.Value.ToArray())),
-                    Db.P("@client_id", entry.Key));
-            }
-        }
 
         /// <summary>A handful of log entries spread over the past week, so the page is not empty.</summary>
         private static void SeedActivityLog(SqlConnection connection, SqlTransaction transaction,
@@ -1089,21 +1052,6 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
             }
 
             return ids;
-        }
-
-        private static Dictionary<int, string> StaffNames(SqlConnection connection, SqlTransaction transaction,
-            List<int> staffIds)
-        {
-            Dictionary<int, string> names = new Dictionary<int, string>();
-
-            foreach (int id in staffIds)
-            {
-                names[id] = Db.Get<string>(Db.Scalar(connection, transaction,
-                    "SELECT full_name FROM Users WHERE user_id = @user_id",
-                    Db.P("@user_id", id)), "Staff");
-            }
-
-            return names;
         }
 
         private static DataTable LoadServices(SqlConnection connection, SqlTransaction transaction)

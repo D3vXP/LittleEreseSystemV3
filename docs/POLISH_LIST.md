@@ -22,9 +22,9 @@ Total: **26 comments** in **12 files**.
 | Data\DemoDataSeeder.cs | 22 | set to false before the shop uses the system for real. |
 | Data\DemoDataSeeder.cs | 25 | the owner can change these demo passwords here (or delete the accounts in Staff Accounts). |
 | Data\DemoDataSeeder.cs | 89 | rename these demo staff accounts to the real employees in Staff Accounts. |
-| Data\DemoDataSeeder.cs | 167 | replace these placeholder guests with the real client list before the defense. |
-| Data\DemoDataSeeder.cs | 343 | the catalogue has no multi-session laser service yet, so the demo uses the other multi-session service it finds (today: "Facial test", 8 sessions). |
-| Data\DemoDataSeeder.cs | 1182 | link the real rooms on the Rooms screen and this fallback is never used again. |
+| Data\DemoDataSeeder.cs | 162 | replace these placeholder guests with the real client list before the defense. |
+| Data\DemoDataSeeder.cs | 338 | the catalogue has no multi-session laser service yet, so the demo uses the other multi-session service it finds (today: "Facial test", 8 sessions). |
+| Data\DemoDataSeeder.cs | 1130 | link the real rooms on the Rooms screen and this fallback is never used again. |
 | Data\MaintenanceRepository.cs | 187 | switch to CreationTime if the owner prefers that. |
 | Data\ReportRepository.cs | 10 | sales are counted when the service is completed (not when money is received), so a period can show sales that were only paid for later. Ask the owner if the cash-basis view is the one she wants. |
 | Data\ReportRepository.cs | 137 | "Rescheduled" counts the moves MADE in the period (changed_at), not the appointments that sit on a rescheduled date. Confirm which one the owner reads. |
@@ -34,7 +34,6 @@ Total: **26 comments** in **12 files**.
 | File | Line | Text |
 |---|---|---|
 | Forms\LoginForm.cs | 11 | the owner may want a different number of tries or a different waiting time. |
-| Forms\PackageForm.cs | 109 | change this split if staff should also see single-session services as packages. |
 | Forms\StaffEditForm.cs | 255 | relax this if the shop also allows landline numbers. |
 
 ## Helpers\

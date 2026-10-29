@@ -165,7 +165,7 @@ namespace LittleEreseSystemV3.Forms
                 {
                     ClientRepository.Update(EditId, firstName, lastName, birthDate, gender, contact,
                         txtAddress.Text, txtAllergies.Text, txtMedicalHistory.Text,
-                        txtTreatmentHistory.Text, chkConsentSigned.Checked);
+                        string.Empty, txtTreatmentHistory.Text, chkConsentSigned.Checked);
                     SavedClientId = EditId;
 
                     ActivityRepository.Log(Session.UserId, "Edit", "Clients",
@@ -175,7 +175,7 @@ namespace LittleEreseSystemV3.Forms
                 {
                     SavedClientId = ClientRepository.Add(firstName, lastName, birthDate, gender, contact,
                         txtAddress.Text, txtAllergies.Text, txtMedicalHistory.Text,
-                        txtTreatmentHistory.Text, chkConsentSigned.Checked);
+                        string.Empty, txtTreatmentHistory.Text, chkConsentSigned.Checked);
 
                     ActivityRepository.Log(Session.UserId, "Add", "Clients",
                         lastName + ", " + firstName);

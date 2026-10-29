@@ -459,7 +459,8 @@ WHERE billing_id = @billing_id",
         ///   verified         - the "I checked it in the app" tick (same two methods)
         ///   tendered         - the cash handed over (must reach the balance for Cash)
         /// Besides the payment it completes the staff rows, the service lines, the appointment,
-        /// the package sessions, the commissions and the client's treatment history.
+        /// the package sessions and the commissions. The shop's own work is read from those
+        /// completed lines, so nothing is written into the client's treatment history here.
         /// Throws InvalidOperationException with a readable message when the checkout is not allowed.
         /// </summary>
         public static int Checkout(int appointmentId, Dictionary<int, int> technicianByLine,
@@ -487,7 +488,6 @@ WHERE billing_id = @billing_id",
             if (bill == null) throw new InvalidOperationException("This appointment has no bill yet.");
 
             int billingId = Db.Get<int>(bill["billing_id"]);
-            int clientId = Db.Get<int>(appointment["client_id"]);
             decimal subtotal = Db.Get<decimal>(bill["subtotal"]);
             decimal discount = Db.Get<decimal>(bill["discount_amount"]);
             decimal balance = Db.Get<decimal>(bill["balance_due"]);
@@ -616,20 +616,18 @@ VALUES (@appointment_id, @appointment_service_id, @user_id, 'Completed')",
 WHERE appointment_id = @appointment_id",
                     Db.P("@appointment_id", appointmentId));
 
-                // The line details the commissions and the treatment history need. The package
-                // size and the whole package price live in Services.
+                // The line details the commissions need. The package size and the whole package
+                // price live in Services.
                 DataTable lineInfo = Db.Query(connection, transaction,
 @"SELECT asv.appointment_service_id, asv.quantity, asv.price,
          ISNULL(asv.package_id, 0) AS package_id,
          ISNULL(asv.total_sessions, 0) AS total_sessions,
-         s.price AS service_price, s.service_name
+         s.price AS service_price
 FROM AppointmentServices asv
 INNER JOIN Services s ON s.service_id = asv.service_id
 WHERE asv.appointment_id = @appointment_id AND asv.status <> 'Cancelled'
 ORDER BY asv.appointment_service_id",
                     Db.P("@appointment_id", appointmentId));
-
-                List<string> treatmentLines = new List<string>();
 
                 foreach (DataRow info in lineInfo.Rows)
                 {
@@ -686,33 +684,6 @@ WHERE package_id = @package_id AND sessions_completed < total_sessions",
 WHERE package_id = @package_id AND sessions_completed >= total_sessions",
                             Db.P("@package_id", packageId));
                     }
-
-                    // (h) The treatment history entry:
-                    // "MMM dd, yyyy - Service name (Staff full name)".
-                    string staffName = Db.Get<string>(Db.Scalar(connection, transaction,
-                        "SELECT full_name FROM Users WHERE user_id = @user_id",
-                        Db.P("@user_id", technicianId)), "-");
-
-                    treatmentLines.Add(appointmentDate.ToString("MMM dd, yyyy") + " - " +
-                        Db.Get<string>(info["service_name"]) + " (" + staffName + ")");
-                }
-
-                if (treatmentLines.Count > 0)
-                {
-                    string existing = Db.Get<string>(Db.Scalar(connection, transaction,
-                        "SELECT treatment_history FROM Clients WHERE client_id = @client_id",
-                        Db.P("@client_id", clientId)));
-
-                    string addition = string.Join(Environment.NewLine, treatmentLines.ToArray());
-                    string combined = string.IsNullOrWhiteSpace(existing)
-                        ? addition
-                        : existing.TrimEnd() + Environment.NewLine + addition;
-
-                    Db.Execute(connection, transaction,
-                        "UPDATE Clients SET treatment_history = @treatment_history, updated_at = GETDATE() " +
-                        "WHERE client_id = @client_id",
-                        Db.P("@treatment_history", combined),
-                        Db.P("@client_id", clientId));
                 }
 
                 // (i) The audit row of the status change.
