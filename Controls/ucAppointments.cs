@@ -40,6 +40,7 @@ namespace LittleEreseSystemV3.Controls
             Theme.StyleGrid(dgvDetailServices);
 
             Theme.StylePrimaryButton(btnNew);
+            Theme.StyleSecondaryButton(btnTakePayment);
             Theme.StyleSecondaryButton(btnStart);
             Theme.StyleSecondaryButton(btnReschedule);
             Theme.StyleDangerButton(btnCancelAppointment);
@@ -190,10 +191,15 @@ namespace LittleEreseSystemV3.Controls
             // Start Service only makes sense while the appointment is upcoming AND today.
             bool isToday = Db.Get<DateTime>(row["appointment_date"]).Date == DateTime.Today;
             bool upcoming = string.Equals(status, StatusUpcoming, StringComparison.OrdinalIgnoreCase);
+            bool ongoing = string.Equals(status, "Ongoing", StringComparison.OrdinalIgnoreCase);
 
             btnStart.Enabled = upcoming && isToday;
             btnReschedule.Enabled = upcoming;
             btnCancelAppointment.Enabled = upcoming;
+
+            // A payment may be taken at any time while the appointment is still work, as long as
+            // the bill still has something left to pay (a bill of 0.00 has nothing to take).
+            btnTakePayment.Enabled = (upcoming || ongoing) && HasBalance(appointmentId);
         }
 
         /// <summary>Empties the card and switches off every action that needs an appointment.</summary>
@@ -208,6 +214,22 @@ namespace LittleEreseSystemV3.Controls
             btnStart.Enabled = false;
             btnReschedule.Enabled = false;
             btnCancelAppointment.Enabled = false;
+            btnTakePayment.Enabled = false;
+        }
+
+        /// <summary>True when the appointment has a bill with something left to pay.</summary>
+        private static bool HasBalance(int appointmentId)
+        {
+            try
+            {
+                DataRow billing = BillingRepository.GetByAppointment(appointmentId);
+                return billing != null && Db.Get<decimal>(billing["balance_due"]) > 0m;
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+                return false;
+            }
         }
 
         /// <summary>
@@ -232,6 +254,9 @@ namespace LittleEreseSystemV3.Controls
             decimal paid = Db.Get<decimal>(billing["paid_amount"]);
             decimal total = Db.Get<decimal>(billing["total_amount"]);
             decimal balance = Db.Get<decimal>(billing["balance_due"]);
+
+            // A later session of a package carries no price of its own, so there is nothing to pay.
+            if (total == 0m) return "Payment: Included in the package - nothing to pay.";
 
             string summary = "Payment: Paid " + Money.Text(paid) + " of " + Money.Text(total) +
                 " - Balance " + Money.Text(balance);
@@ -293,6 +318,18 @@ namespace LittleEreseSystemV3.Controls
         private void btnRefresh_Click(object sender, EventArgs e)
         {
             LoadAppointments(CurrentAppointmentId());
+        }
+
+        private void btnTakePayment_Click(object sender, EventArgs e)
+        {
+            int appointmentId = CurrentAppointmentId();
+            if (appointmentId <= 0) return;
+
+            PaymentForm.TakePayment(this, appointmentId, "Payment - appointment #" + appointmentId);
+
+            // The balance and the payment column have changed, so the page is filled again with
+            // the same row still selected.
+            LoadAppointments(appointmentId);
         }
 
         private void btnNew_Click(object sender, EventArgs e)

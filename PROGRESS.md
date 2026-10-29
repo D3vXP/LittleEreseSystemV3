@@ -2,6 +2,29 @@
 
 Update this file at the end of every task.
 
+- Step 67 (this task): the payment dialog is now reachable from the appointment flow.
+  - Forms\AppointmentForm.cs SaveNewBooking: right after AppointmentRepository.Create the payment
+    dialog opens as the next screen (PaymentForm.TakePayment(this, appointmentId, "Down payment -
+    appointment #n")); closing it without paying simply means "pay later". ONE Messages.Info remains:
+    "Appointment #n was booked for <date> at <earliest start>." + whether the down payment was
+    received or still has to be taken from Billing / the Appointments page) + PackageSessionsMessage().
+    The old "Next: take the down payment ... in Billing." sentence is gone.
+  - Controls\ucAppointments.Designer.cs: new Button btnTakePayment ("Take Payment") in flpButtons
+    between "New Appointment" and "Start Service"; the other buttons moved right (Start 140->266,
+    Reschedule 256->382, Cancel 366->492, Refresh 522->648) and TabIndex renumbered 1..5, so nothing
+    overlaps. Controls\ucAppointments.cs: styled with Theme.StyleSecondaryButton like its neighbours;
+    enabled for an Upcoming or Ongoing appointment whose bill has balance_due > 0 (new private helper
+    HasBalance); Click -> PaymentForm.TakePayment(this, id, "Payment - appointment #n") then
+    LoadAppointments(id) to reload the list keeping the row selected.
+  - Controls\ucAppointments.cs PaymentSummary: a bill with total 0 now reads "Payment: Included in
+    the package - nothing to pay." instead of "Paid P0.00 of P0.00".
+  - PROJECT_RULES.md: the Booking rule now says the booking dialog itself takes no money and its
+    saving opens the payment dialog as the next screen. No .csproj change.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --preview
+    ucAppointments exit 0 (screenshot checked: new button fits, nothing overlaps or is cut off);
+    --smoketest 94 passed / 0 failed / 0 skipped; app started once, stayed open, closed, no error.log.
+  - Open Controls\ucAppointments.cs in the Designer to check the new button.
+
 - Step 66 (this task): the SAME payment dialog now serves the down payment, a partial payment and
   completing a service.
   - Forms\PaymentForm.Designer.cs: pnlContent gained a row under "Amount due" - lblAmountToPay,

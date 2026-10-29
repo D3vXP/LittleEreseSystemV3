@@ -1847,11 +1847,18 @@ namespace LittleEreseSystemV3.Forms
             SavedAppointmentId = appointmentId;
             SavedAppointmentDate = dtpDate.Value.Date;
 
-            // The booking takes no money, so the desk is told where the down payment goes next and
-            // how many of the sessions of a package are already scheduled.
+            // The booking takes no money itself, so the payment dialog is the next screen right
+            // after saving. Closing it without paying simply means "pay later".
+            bool paid = PaymentForm.TakePayment(this, appointmentId,
+                "Down payment - appointment #" + appointmentId);
+
+            // The desk is told what was booked, whether the down payment was taken and how many of
+            // the sessions of a package are already scheduled.
             Messages.Info("Appointment #" + appointmentId + " was booked for " +
                 dtpDate.Value.Date.ToString("MMM dd, yyyy") + " at " + Clock(EarliestStart()) +
-                ". Next: take the down payment of " + Money.Text(_required) + " in Billing." +
+                "." + (paid
+                    ? " The down payment was received."
+                    : " The down payment is not paid yet: take it from Billing or from the Appointments page.") +
                 PackageSessionsMessage());
 
             DialogResult = DialogResult.OK;

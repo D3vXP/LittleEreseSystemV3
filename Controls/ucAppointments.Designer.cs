@@ -51,6 +51,7 @@ namespace LittleEreseSystemV3.Controls
             this.lblSummary = new System.Windows.Forms.Label();
             this.flpButtons = new System.Windows.Forms.FlowLayoutPanel();
             this.btnNew = new System.Windows.Forms.Button();
+            this.btnTakePayment = new System.Windows.Forms.Button();
             this.btnStart = new System.Windows.Forms.Button();
             this.btnReschedule = new System.Windows.Forms.Button();
             this.btnCancelAppointment = new System.Windows.Forms.Button();
@@ -281,6 +282,7 @@ namespace LittleEreseSystemV3.Controls
             this.flpButtons.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flpButtons.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
             this.flpButtons.Controls.Add(this.btnNew);
+            this.flpButtons.Controls.Add(this.btnTakePayment);
             this.flpButtons.Controls.Add(this.btnStart);
             this.flpButtons.Controls.Add(this.btnReschedule);
             this.flpButtons.Controls.Add(this.btnCancelAppointment);
@@ -288,7 +290,7 @@ namespace LittleEreseSystemV3.Controls
             this.flpButtons.Location = new System.Drawing.Point(12, 54);
             this.flpButtons.Margin = new System.Windows.Forms.Padding(12, 0, 0, 0);
             this.flpButtons.Name = "flpButtons";
-            this.flpButtons.Size = new System.Drawing.Size(602, 30);
+            this.flpButtons.Size = new System.Drawing.Size(728, 30);
             this.flpButtons.TabIndex = 1;
             this.flpButtons.WrapContents = false;
             // 
@@ -312,6 +314,26 @@ namespace LittleEreseSystemV3.Controls
             this.btnNew.UseVisualStyleBackColor = false;
             this.btnNew.Click += new System.EventHandler(this.btnNew_Click);
             // 
+            // btnTakePayment
+            // 
+            this.btnTakePayment.BackColor = System.Drawing.Color.White;
+            this.btnTakePayment.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnTakePayment.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(164)))), ((int)(((byte)(123)))), ((int)(((byte)(43)))));
+            this.btnTakePayment.FlatAppearance.BorderSize = 1;
+            this.btnTakePayment.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(227)))), ((int)(((byte)(218)))), ((int)(((byte)(198)))));
+            this.btnTakePayment.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
+            this.btnTakePayment.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnTakePayment.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnTakePayment.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(164)))), ((int)(((byte)(123)))), ((int)(((byte)(43)))));
+            this.btnTakePayment.Location = new System.Drawing.Point(140, 0);
+            this.btnTakePayment.Margin = new System.Windows.Forms.Padding(0, 0, 4, 0);
+            this.btnTakePayment.Name = "btnTakePayment";
+            this.btnTakePayment.Size = new System.Drawing.Size(122, 30);
+            this.btnTakePayment.TabIndex = 1;
+            this.btnTakePayment.Text = "Take Payment";
+            this.btnTakePayment.UseVisualStyleBackColor = false;
+            this.btnTakePayment.Click += new System.EventHandler(this.btnTakePayment_Click);
+            // 
             // btnStart
             // 
             this.btnStart.BackColor = System.Drawing.Color.White;
@@ -323,11 +345,11 @@ namespace LittleEreseSystemV3.Controls
             this.btnStart.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnStart.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnStart.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(164)))), ((int)(((byte)(123)))), ((int)(((byte)(43)))));
-            this.btnStart.Location = new System.Drawing.Point(140, 0);
+            this.btnStart.Location = new System.Drawing.Point(266, 0);
             this.btnStart.Margin = new System.Windows.Forms.Padding(0, 0, 4, 0);
             this.btnStart.Name = "btnStart";
             this.btnStart.Size = new System.Drawing.Size(112, 30);
-            this.btnStart.TabIndex = 1;
+            this.btnStart.TabIndex = 2;
             this.btnStart.Text = "Start Service";
             this.btnStart.UseVisualStyleBackColor = false;
             this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
@@ -343,11 +365,11 @@ namespace LittleEreseSystemV3.Controls
             this.btnReschedule.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnReschedule.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnReschedule.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(164)))), ((int)(((byte)(123)))), ((int)(((byte)(43)))));
-            this.btnReschedule.Location = new System.Drawing.Point(256, 0);
+            this.btnReschedule.Location = new System.Drawing.Point(382, 0);
             this.btnReschedule.Margin = new System.Windows.Forms.Padding(0, 0, 4, 0);
             this.btnReschedule.Name = "btnReschedule";
             this.btnReschedule.Size = new System.Drawing.Size(106, 30);
-            this.btnReschedule.TabIndex = 2;
+            this.btnReschedule.TabIndex = 3;
             this.btnReschedule.Text = "Reschedule";
             this.btnReschedule.UseVisualStyleBackColor = false;
             this.btnReschedule.Click += new System.EventHandler(this.btnReschedule_Click);
@@ -363,11 +385,11 @@ namespace LittleEreseSystemV3.Controls
             this.btnCancelAppointment.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnCancelAppointment.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnCancelAppointment.ForeColor = System.Drawing.Color.White;
-            this.btnCancelAppointment.Location = new System.Drawing.Point(366, 0);
+            this.btnCancelAppointment.Location = new System.Drawing.Point(492, 0);
             this.btnCancelAppointment.Margin = new System.Windows.Forms.Padding(0, 0, 4, 0);
             this.btnCancelAppointment.Name = "btnCancelAppointment";
             this.btnCancelAppointment.Size = new System.Drawing.Size(152, 30);
-            this.btnCancelAppointment.TabIndex = 3;
+            this.btnCancelAppointment.TabIndex = 4;
             this.btnCancelAppointment.Text = "Cancel Appointment";
             this.btnCancelAppointment.UseVisualStyleBackColor = false;
             this.btnCancelAppointment.Click += new System.EventHandler(this.btnCancelAppointment_Click);
@@ -383,11 +405,11 @@ namespace LittleEreseSystemV3.Controls
             this.btnRefresh.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnRefresh.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnRefresh.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(164)))), ((int)(((byte)(123)))), ((int)(((byte)(43)))));
-            this.btnRefresh.Location = new System.Drawing.Point(522, 0);
+            this.btnRefresh.Location = new System.Drawing.Point(648, 0);
             this.btnRefresh.Margin = new System.Windows.Forms.Padding(0);
             this.btnRefresh.Name = "btnRefresh";
             this.btnRefresh.Size = new System.Drawing.Size(80, 30);
-            this.btnRefresh.TabIndex = 4;
+            this.btnRefresh.TabIndex = 5;
             this.btnRefresh.Text = "Refresh";
             this.btnRefresh.UseVisualStyleBackColor = false;
             this.btnRefresh.Click += new System.EventHandler(this.btnRefresh_Click);
@@ -869,6 +891,7 @@ namespace LittleEreseSystemV3.Controls
         private System.Windows.Forms.Label lblSummary;
         private System.Windows.Forms.FlowLayoutPanel flpButtons;
         private System.Windows.Forms.Button btnNew;
+        private System.Windows.Forms.Button btnTakePayment;
         private System.Windows.Forms.Button btnStart;
         private System.Windows.Forms.Button btnReschedule;
         private System.Windows.Forms.Button btnCancelAppointment;
