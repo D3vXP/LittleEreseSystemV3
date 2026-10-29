@@ -2,6 +2,38 @@
 
 Update this file at the end of every task.
 
+- Step 74 (this task): the demo shows a weekly package and a booking with two services at two times.
+  - Data\DemoDataSeeder.cs: new SeedWeeklyPackage, called at the END of SeedUpcomingVisits (before
+    SeedCancelledVisits). It books the active "Tirzepatide (4 sessions)" package (5000.00) for the
+    first client WITH a signed consent form: one Active ClientPackages row (4 sessions, purchase 7
+    days ago, sessions_completed 1 after session 1 is completed) and four appointments 7 days apart at
+    the same time (session 1 Completed a week ago at 4:00 PM, session 2 today at 4:00 PM, sessions
+    3 and 4 on the next two weeks, all Upcoming), every line with package_id,
+    session_number 1..4, total_sessions 4 and its own start / end / busy_end. Price 5000.00 on session
+    1 (0.00 on 2 to 4); session 1 paid in full with a 'Downpayment' (50%) and a 'Final' (rest) payment,
+    the commission row and the staff row; the bills of the 0.00 sessions are born 'Paid'. Technician an
+    aesthetician, room "Aesthetic Lobby". Sessions 1 and 2 set assessed_by to the nurse user (found by
+    staff_type 'Nurse', never by id).
+  - Data\DemoDataSeeder.cs: new SeedTwoServiceBooking (also before SeedCancelledVisits): one
+    appointment tomorrow + 3 days with TWO lines - Hydrafacial at 10:00 AM (Aesthetician 1, Facial
+    Room) and "Full Body Massage w/ Sauna (2 hours)" at 1:00 PM (Massage Therapist 1, Massage Room).
+    Each line has its own start / end / busy_end; the appointment spans 10:00 AM - 3:00 PM. Bill:
+    subtotal 2100.00, no promo, a 'Downpayment' of 1050.00 (Held), payment_status 'Partial'.
+  - Data\DemoDataSeeder.cs: InsertLine gained a 4-parameter overload (startTime, endTime, busyEndTime,
+    assessedBy); the old 10-argument signature now calls it with NULL times / no nurse, so no code was
+    copied. New small helpers: FirstConsentingClientId, StaffIdForType, FirstMassageService.
+  - No business rule changed (the package, weekly-session, line-time and booking rules already cover
+    this), so PROJECT_RULES.md was NOT edited. LittleEreseSystemV3.csproj was NOT edited.
+  - Checks on a FRESH database (backup C:\VSStudio\LittleEresesDB_before_D1_2.bak first, then dropped
+    and recreated by the app): the four Tirzepatide appointments correct (22 Oct Completed 5000.00;
+    29 Oct / 5 Nov / 12 Nov Upcoming 0.00, all 4:00 PM); the two-service booking shows Hydrafacial
+    10:00-11:00 Facial Room Aesthetician 1 and the massage 13:00-15:00 Massage Room Massage Therapist 1;
+    clients with overlapping lines on one date 0; bills with total 0 and payment_status <> 'Paid' 0;
+    Downpayments smaller than 50% 0. Counts: Clients 12, Appointments 52, AppointmentServices 53
+    (start_time NULL 0), Billing 52, Payments 62, clients with health_conditions 6.
+    Clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --smoketest 96 passed / 0
+    failed / 0 skipped; app started once, stayed open, closed, no error.log.
+
 - Step 73 (this task): the demo set shows the health/intake fields and every demo line has its own
   times.
   - Data\DemoDataSeeder.cs SeedClients / InsertClient: InsertClient now also takes healthConditions

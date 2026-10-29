@@ -146,6 +146,10 @@ namespace LittleEreseSystemV3.Data
 
             SeedUpcomingVisits(connection, transaction, random, clientIds, adminId, staffIds, services, rooms);
 
+            // The two bookings that show the weekly package and two services at two times.
+            SeedWeeklyPackage(connection, transaction, clientIds, adminId, services, rooms);
+            SeedTwoServiceBooking(connection, transaction, clientIds, adminId, services, rooms);
+
             SeedCancelledVisits(connection, transaction, random, clientIds, adminId, staffIds, services, rooms);
 
             SeedActivityLog(connection, transaction, adminId, staffIds);
@@ -823,6 +827,220 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
         }
 
         // ---------------------------------------------------------------------
+        // SECTION 5b - THE WEEKLY PACKAGE (4 sessions, 7 days apart) AND THE
+        //              TWO-SERVICE BOOKING (a facial in the morning, a massage later)
+        // ---------------------------------------------------------------------
+
+        /// <summary>
+        /// Books the active "Tirzepatide (4 sessions)" package for a client WITH a signed consent
+        /// form, so the app shows a real weekly plan: session 1 a week ago (completed and paid in
+        /// full), session 2 today at 4:00 PM and sessions 3 and 4 on the next two weeks.
+        /// The whole package price sits on session 1; sessions 2 to 4 are 0.00.
+        /// </summary>
+        private static void SeedWeeklyPackage(SqlConnection connection, SqlTransaction transaction,
+            int[] clientIds, int adminId, DataTable services, DataTable rooms)
+        {
+            DataRow service = FindService(services, "Slimming", "Tirzepatide (4 sessions)");
+            if (service == null) return;
+
+            int serviceId = Db.Get<int>(service["service_id"]);
+            int totalSessions = Db.Get<int>(service["default_total_sessions"], 1);
+            if (totalSessions < 2) return;
+
+            decimal packagePrice = Db.Get<decimal>(service["price"]);
+            int duration = Db.Get<int>(service["duration_minutes"], 60);
+
+            DateTime today = DateTime.Today;
+            TimeSpan start = new TimeSpan(16, 0, 0);
+            TimeSpan end = AvailabilityRepository.LineEnd(start, duration, 1);
+
+            // The client with the signed consent form (the booking rule needs it).
+            int clientId = FirstConsentingClientId(connection, transaction, clientIds);
+            if (clientId <= 0) return;
+
+            // The attending aesthetician and the room the package is held in.
+            int technicianId = StaffIdForType(connection, transaction, "Aesthetician");
+            if (technicianId <= 0) return;
+
+            int roomId = RoomId(rooms, "Aesthetic Lobby");
+
+            // The one nurse of the Users table (found by staff_type, never by a hard-coded id).
+            int nurseId = StaffIdForType(connection, transaction, "Nurse");
+
+            int packageId = InsertPackage(connection, transaction, clientId, serviceId, totalSessions,
+                today.AddDays(-7));
+
+            decimal firstSessionPrice = packagePrice;
+            decimal deposit = HalfOf(packagePrice);
+            decimal settlement = packagePrice - deposit;
+
+            for (int session = 1; session <= totalSessions; session++)
+            {
+                DateTime date = today.AddDays(-7 + (session - 1) * 7);
+                bool first = session == 1;
+                string status = first ? "Completed" : "Upcoming";
+                decimal price = first ? firstSessionPrice : 0m;
+                DateTime bookedAt = today.AddDays(-14);
+
+                int appointmentId = InsertAppointment(connection, transaction, clientId, adminId, date,
+                    start, end, "Messenger", status, bookedAt, null);
+
+                int lineId = InsertLine(connection, transaction, appointmentId, serviceId, 1, price,
+                    packageId, session, totalSessions, first ? "Completed" : "Pending",
+                    start, end, end, session <= 2 ? nurseId : 0);
+
+                InsertStaff(connection, transaction, appointmentId, lineId, technicianId,
+                    first ? "Completed" : "Assigned");
+
+                if (roomId > 0)
+                {
+                    InsertRoom(connection, transaction, appointmentId, lineId, roomId,
+                        first ? "Released" : "Reserved");
+                }
+
+                // Every session carries its own bill: session 1 is paid in full (50% downpayment +
+                // the rest as 'Final'), the later 0.00 sessions are born 'Paid'.
+                int billingId = BillingRepository.CreateBilling(connection, transaction, appointmentId,
+                    price, 0, 0m, price, first ? deposit : 0m, first ? "Applied" : "None",
+                    first ? settlement : 0m, first ? "Unpaid" : "Paid");
+
+                if (first)
+                {
+                    BillingRepository.AddPayment(connection, transaction, billingId, adminId, "Downpayment",
+                        "Cash", null, deposit, "Verified");
+                    BillingRepository.AddPayment(connection, transaction, billingId, adminId, "Final",
+                        "Cash", null, settlement, "Verified");
+                }
+
+                if (first)
+                {
+                    decimal net = packagePrice / totalSessions;
+                    decimal commission = Math.Round(net * CommissionPercent / 100m, 2,
+                        MidpointRounding.AwayFromZero);
+                    InsertCommission(connection, transaction, technicianId, lineId, 0, commission, "Unpaid",
+                        null);
+                }
+
+                InsertHistory(connection, transaction, appointmentId, adminId, "Created", null, null, null,
+                    "Upcoming", "Booked a package session as a Messenger appointment.", bookedAt);
+
+                // Session 1 is already done, so the package moves one step forward.
+                if (first) CompletePackageSession(connection, transaction, packageId);
+            }
+        }
+
+        /// <summary>
+        /// Books ONE appointment with TWO service lines at two different times: a Facial in the
+        /// morning (an aesthetician, the Facial Room) and a massage at 1:00 PM (a massage therapist,
+        /// the Massage Room). The appointment itself spans the earliest line start to the latest end.
+        /// </summary>
+        private static void SeedTwoServiceBooking(SqlConnection connection, SqlTransaction transaction,
+            int[] clientIds, int adminId, DataTable services, DataTable rooms)
+        {
+            DataRow facial = FindService(services, "Facial", "Hydrafacial");
+            DataRow massage = FindService(services, "Massage - Full Body", "Full Body Massage w/ Sauna (2 hours)");
+            if (massage == null) massage = FirstMassageService(services);
+            if (facial == null || massage == null) return;
+
+            int clientId = FirstConsentingClientId(connection, transaction, clientIds);
+            if (clientId <= 0) return;
+
+            int aestheticianId = StaffIdForType(connection, transaction, "Aesthetician");
+            int therapistId = StaffIdForType(connection, transaction, "Massage Therapist");
+            if (aestheticianId <= 0 || therapistId <= 0) return;
+
+            DateTime date = DateTime.Today.AddDays(3);
+
+            TimeSpan facialStart = new TimeSpan(10, 0, 0);
+            int facialMinutes = Db.Get<int>(facial["duration_minutes"], 60);
+            TimeSpan facialEnd = AvailabilityRepository.LineEnd(facialStart, facialMinutes, 1);
+
+            TimeSpan massageStart = AppointmentRepository.MassageOpening;
+            int massageMinutes = Db.Get<int>(massage["duration_minutes"], 60);
+            TimeSpan massageEnd = AvailabilityRepository.LineEnd(massageStart, massageMinutes, 1);
+
+            DateTime bookedAt = date.AddDays(-4);
+
+            int appointmentId = InsertAppointment(connection, transaction, clientId, adminId, date,
+                facialStart, massageEnd, "Messenger", "Upcoming", bookedAt, null);
+
+            int facialRoomId = RoomId(rooms, "Facial Room");
+            int massageRoomId = RoomId(rooms, "Massage Room");
+
+            int facialLineId = InsertLine(connection, transaction, appointmentId,
+                Db.Get<int>(facial["service_id"]), 1, Db.Get<decimal>(facial["price"]), 0, 0, 0, "Pending",
+                facialStart, facialEnd, facialEnd, 0);
+
+            InsertStaff(connection, transaction, appointmentId, facialLineId, aestheticianId, "Assigned");
+            if (facialRoomId > 0)
+            {
+                InsertRoom(connection, transaction, appointmentId, facialLineId, facialRoomId, "Reserved");
+            }
+
+            int massageLineId = InsertLine(connection, transaction, appointmentId,
+                Db.Get<int>(massage["service_id"]), 1, Db.Get<decimal>(massage["price"]), 0, 0, 0, "Pending",
+                massageStart, massageEnd, massageEnd, 0);
+
+            InsertStaff(connection, transaction, appointmentId, massageLineId, therapistId, "Assigned");
+            if (massageRoomId > 0)
+            {
+                InsertRoom(connection, transaction, appointmentId, massageLineId, massageRoomId, "Reserved");
+            }
+
+            decimal subtotal = Db.Get<decimal>(facial["price"]) + Db.Get<decimal>(massage["price"]);
+            decimal deposit = HalfOf(subtotal);
+            decimal balance = subtotal - deposit;
+
+            int billingId = BillingRepository.CreateBilling(connection, transaction, appointmentId,
+                subtotal, 0, 0m, subtotal, deposit, "Held", balance, "Partial");
+
+            BillingRepository.AddPayment(connection, transaction, billingId, adminId, "Downpayment",
+                "GCash", ReferenceFor("GCash", new Random(RandomSeed), bookedAt), deposit, "Verified");
+
+            InsertHistory(connection, transaction, appointmentId, adminId, "Created", null, null, null,
+                "Upcoming", "Booked a Messenger appointment with a 50% downpayment.", bookedAt);
+        }
+
+        /// <summary>The first Active client WITH a signed consent form (the booking rule needs it).</summary>
+        private static int FirstConsentingClientId(SqlConnection connection, SqlTransaction transaction,
+            int[] clientIds)
+        {
+            foreach (int clientId in clientIds)
+            {
+                object consent = Db.Scalar(connection, transaction,
+                    "SELECT consent_status FROM Clients WHERE client_id = @client_id",
+                    Db.P("@client_id", clientId));
+
+                if (consent != null && consent != DBNull.Value && Convert.ToBoolean(consent)) return clientId;
+            }
+
+            return 0;
+        }
+
+        /// <summary>The user_id of one Active Staff member of this job type (found by staff_type).</summary>
+        private static int StaffIdForType(SqlConnection connection, SqlTransaction transaction, string staffType)
+        {
+            object id = Db.Scalar(connection, transaction,
+                "SELECT TOP 1 user_id FROM Users " +
+                "WHERE role = 'Staff' AND status = 'Active' AND staff_type = @staff_type " +
+                "ORDER BY user_id",
+                Db.P("@staff_type", staffType));
+
+            return id == null || id == DBNull.Value ? 0 : Convert.ToInt32(id);
+        }
+
+        /// <summary>The first massage service of the catalogue (the fallback of the two-service booking).</summary>
+        private static DataRow FirstMassageService(DataTable services)
+        {
+            foreach (DataRow row in services.Rows)
+            {
+                if (IsMassageCategory(Db.Get<string>(row["category_name"]))) return row;
+            }
+
+            return null;
+        }
+
+        // ---------------------------------------------------------------------
         // SECTION 6 - THE TWO CANCELLED BOOKINGS (deposit forfeited)
         // ---------------------------------------------------------------------
 
@@ -959,11 +1177,25 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
             int serviceId, int quantity, decimal price, int packageId, int sessionNumber, int totalSessions,
             string status)
         {
+            return InsertLine(connection, transaction, appointmentId, serviceId, quantity, price,
+                packageId, sessionNumber, totalSessions, status, null, null, null, 0);
+        }
+
+        /// <summary>
+        /// The same line, but with its own start / end / busy_end times and its assessing nurse.
+        /// A NULL start (the overload above) is backfilled from the appointment at the end of SeedAll.
+        /// </summary>
+        private static int InsertLine(SqlConnection connection, SqlTransaction transaction, int appointmentId,
+            int serviceId, int quantity, decimal price, int packageId, int sessionNumber, int totalSessions,
+            string status, TimeSpan? startTime, TimeSpan? endTime, TimeSpan? busyEndTime, int assessedBy)
+        {
             object id = Db.Scalar(connection, transaction,
 @"INSERT INTO AppointmentServices (appointment_id, service_id, package_id, quantity, price,
-                                  session_number, total_sessions, status)
+                                  session_number, total_sessions, status,
+                                  start_time, end_time, busy_end_time, assessed_by)
 VALUES (@appointment_id, @service_id, @package_id, @quantity, @price,
-        @session_number, @total_sessions, @status);
+        @session_number, @total_sessions, @status,
+        CAST(@start_time AS time), CAST(@end_time AS time), CAST(@busy_end_time AS time), @assessed_by);
 SELECT CAST(SCOPE_IDENTITY() AS int);",
                 Db.P("@appointment_id", appointmentId),
                 Db.P("@service_id", serviceId),
@@ -972,7 +1204,11 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
                 Db.P("@price", price),
                 Db.P("@session_number", sessionNumber > 0 ? (object)sessionNumber : null),
                 Db.P("@total_sessions", totalSessions > 0 ? (object)totalSessions : null),
-                Db.P("@status", status));
+                Db.P("@status", status),
+                Db.P("@start_time", startTime.HasValue ? (object)SqlTime(startTime.Value) : null),
+                Db.P("@end_time", endTime.HasValue ? (object)SqlTime(endTime.Value) : null),
+                Db.P("@busy_end_time", busyEndTime.HasValue ? (object)SqlTime(busyEndTime.Value) : null),
+                Db.P("@assessed_by", assessedBy > 0 ? (object)assessedBy : null));
 
             return Convert.ToInt32(id);
         }
