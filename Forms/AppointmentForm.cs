@@ -19,10 +19,12 @@ namespace LittleEreseSystemV3.Forms
     /// </summary>
     public partial class AppointmentForm : Form
     {
-        // TODO(logic prompt): the promo combo is gone (promos become categories of
-        // cboCategoryFilter) and the technician is picked per line in cboLineTech.
-        // private const string NoPromo = "No promo";
-        // private const string AnyTechnician = "Any available";
+        // The legend rows of the two line dropdowns.
+        private const string AnyTechnician = "Any available";
+        private const string NoNurse = "None";
+
+        // Shown under the client picker until one is chosen.
+        private const string NoClientMessage = "Pick a client to see the medical alerts.";
 
         /// <summary>The appointment being rescheduled, or 0 to book a new one.</summary>
         public int RescheduleId { get; set; }
@@ -44,9 +46,12 @@ namespace LittleEreseSystemV3.Forms
         // maps back to a real time without parsing the text.
         private readonly List<TimeSpan> _slots = new List<TimeSpan>();
 
-        // TODO(logic prompt): the promotion ids behind the promo categories of cboCategoryFilter
-        // (0 = no promotion).
-        // private readonly List<int> _promoIds = new List<int>();
+        // The promotion ids behind the promo entries of cboCategoryFilter, aligned with its items
+        // (0 = a normal category or "All categories").
+        private readonly List<int> _promoIds = new List<int>();
+
+        // The line grpLine is showing, so its two dropdowns know which row to write into.
+        private DataRowView _selectedLine;
 
         // The services of the appointment being built (bound to dgvSelected).
         private DataTable _lines;
@@ -80,6 +85,12 @@ namespace LittleEreseSystemV3.Forms
             // It is wired here because it keeps a bad entry quiet instead of showing two dialogs.
             dgvSelected.DataError += dgvSelected_DataError;
 
+            // These three are wired in code for the same reason the DataError above is: the grid
+            // and the two line dropdowns only exist to feed the "Selected service" block.
+            dgvSelected.SelectionChanged += dgvSelected_SelectionChanged;
+            cboLineTech.SelectedIndexChanged += cboLineTech_SelectedIndexChanged;
+            cboLineNurse.SelectedIndexChanged += cboLineNurse_SelectedIndexChanged;
+
             _loading = true;
             try
             {
@@ -94,13 +105,6 @@ namespace LittleEreseSystemV3.Forms
                 FillCategories();
                 FillCatalog();
                 FillClients();
-
-                // TODO(logic prompt): the technician, the promotion and the payment pickers are
-                // gone from the dialog; the next prompt wires cboLineTech, cboLineNurse and the
-                // promo categories of cboCategoryFilter.
-                // FillTechnicians();
-                // FillPromotions();
-                // FillPaymentMethods();
             }
             finally
             {
@@ -118,9 +122,10 @@ namespace LittleEreseSystemV3.Forms
             }
             else
             {
-                lblClientInfo.Text = "Pick a client to see the consent status and the medical alerts.";
+                lblClientInfo.Text = NoClientMessage;
             }
 
+            UpdateLinePanel();
             Recalculate();
         }
 
@@ -142,11 +147,28 @@ namespace LittleEreseSystemV3.Forms
             _lines.Columns.Add(AppointmentRepository.ColSessionNumber, typeof(int));
             _lines.Columns.Add(AppointmentRepository.ColTotalSessions, typeof(int));
 
-            // The technician may be changed by the user, so it is the last column (see the
-            // technician combo column of dgvSelected).
+            // The technician may be changed by the user, so it is the last column (the grid shows
+            // technician_name as plain text; technician_id is written by cboLineTech).
             _lines.Columns.Add(AppointmentRepository.ColTechnicianId, typeof(int));
+            _lines.Columns.Add("technician_name", typeof(string));
+
+            // The columns the booking keeps per line but the grid does not show yet.
+            _lines.Columns.Add(AppointmentRepository.ColStartTime, typeof(TimeSpan));
+            _lines.Columns.Add("start_text", typeof(string));
+            _lines.Columns.Add("end_text", typeof(string));
+            _lines.Columns.Add("nurse_name", typeof(string));
+            _lines.Columns.Add(AppointmentRepository.ColAssessedBy, typeof(int));
+            _lines.Columns.Add("requires_assessment", typeof(bool));
+            _lines.Columns.Add("promo_id", typeof(int));
+            _lines.Columns.Add("category_name", typeof(string));
+            _lines.Columns.Add("staff_busy_minutes", typeof(int));
+
             _lines.DefaultView.Sort = AppointmentRepository.ColServiceName + " ASC";
             _lines.Columns[AppointmentRepository.ColTechnicianId].DefaultValue = 0;
+            _lines.Columns[AppointmentRepository.ColStartTime].DefaultValue = TimeSpan.Zero;
+            _lines.Columns[AppointmentRepository.ColAssessedBy].DefaultValue = 0;
+            _lines.Columns["promo_id"].DefaultValue = 0;
+            _lines.Columns["staff_busy_minutes"].DefaultValue = 0;
 
             dgvSelected.DataSource = _lines;
         }
@@ -172,14 +194,26 @@ namespace LittleEreseSystemV3.Forms
 
         private void FillCategories()
         {
+            _promoIds.Clear();
             cboCategoryFilter.Items.Clear();
+
             cboCategoryFilter.Items.Add("All categories");
+            _promoIds.Add(0);
 
             try
             {
                 foreach (DataRow row in ServiceRepository.GetCategories().Rows)
                 {
                     cboCategoryFilter.Items.Add(Db.Get<string>(row["category_name"]));
+                    _promoIds.Add(0);
+                }
+
+                // A promotion is one more entry of the same filter, so the desk can book a promo
+                // the same way it picks a category ("[PROMO] <name>").
+                foreach (DataRow row in PromotionRepository.GetActiveValid().Rows)
+                {
+                    cboCategoryFilter.Items.Add("[PROMO] " + Db.Get<string>(row["promo_name"]));
+                    _promoIds.Add(Db.Get<int>(row["promo_id"]));
                 }
             }
             catch (Exception ex)
@@ -217,6 +251,16 @@ namespace LittleEreseSystemV3.Forms
             }
 
             DataView view = new DataView(_catalog);
+            int promoId = SelectedPromoCategoryId();
+
+            // A promo entry shows the services the promotion is made of, so the desk sees what it
+            // is about to add.
+            if (promoId > 0)
+            {
+                dgvCatalog.DataSource = PromoServicesView(promoId);
+                return;
+            }
+
             string category = cboCategoryFilter.SelectedItem == null
                 ? "All categories"
                 : cboCategoryFilter.SelectedItem.ToString();
@@ -229,6 +273,47 @@ namespace LittleEreseSystemV3.Forms
             }
 
             dgvCatalog.DataSource = view;
+        }
+
+        /// <summary>
+        /// The ids of the services of the promotion the filter points at, or an empty list when the
+        /// selection is not a promo entry (or the promo is not linked to a single service).
+        /// </summary>
+        private List<int> SelectedPromoServices()
+        {
+            int promoId = SelectedPromoCategoryId();
+            if (promoId <= 0) return new List<int>();
+
+            try
+            {
+                return PromotionRepository.GetServiceIds(promoId);
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+                return new List<int>();
+            }
+        }
+
+        /// <summary>The catalog rows of a promotion: only the services the promo is made of.</summary>
+        private DataView PromoServicesView(int promoId)
+        {
+            List<int> ids = SelectedPromoServices();
+            DataView view = new DataView(_catalog);
+
+            // A promotion with no linked service has nothing to add yet, so the catalog is empty
+            // instead of offering services that are not part of it.
+            if (ids.Count == 0)
+            {
+                view.RowFilter = "service_id = 0";
+                return view;
+            }
+
+            List<string> parts = new List<string>();
+            foreach (int id in ids) parts.Add("service_id = " + id.ToString());
+
+            view.RowFilter = string.Join(" OR ", parts.ToArray());
+            return view;
         }
 
         private void FillClients()
@@ -247,125 +332,6 @@ namespace LittleEreseSystemV3.Forms
                 Messages.DbError(ex);
             }
         }
-
-        // TODO(logic prompt): cboLineTech replaces the old technician combo column of the grid.
-        // /// <summary>
-        // /// The technician drop-down of the selected-services grid: every Active Staff member plus a
-        // /// blank "Any available" line, so a service may be left unassigned.
-        // /// </summary>
-        // private void FillTechnicians()
-        // {
-        //     DataTable staff = new DataTable();
-        //     staff.Columns.Add("user_id", typeof(int));
-        //     staff.Columns.Add("full_name", typeof(string));
-        //     staff.Rows.Add(0, AnyTechnician);
-        //
-        //     try
-        //     {
-        //         foreach (DataRow row in UserRepository.GetActiveStaff().Rows)
-        //         {
-        //             staff.Rows.Add(Db.Get<int>(row["user_id"]), Db.Get<string>(row["full_name"]));
-        //         }
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         Messages.DbError(ex);
-        //     }
-        //
-        //     colSelTechnician.DataSource = staff;
-        //     colSelTechnician.DisplayMember = "full_name";
-        //     colSelTechnician.ValueMember = "user_id";
-        // }
-
-        // TODO(logic prompt): the grid shows the technician name as text now, so nothing has to be
-        // added to a combo list before an old appointment is shown.
-        // /// <summary>
-        // /// Makes sure the technician list of dgvSelected knows this account before a line uses it.
-        // /// WHY: a technician who was deactivated after the appointment was booked is no longer in
-        // /// GetActiveStaff, and a DataGridViewComboBoxColumn throws for a value it does not know.
-        // /// </summary>
-        // private void EnsureTechnicianInList(int technicianId)
-        // {
-        //     if (technicianId <= 0) return;
-        //
-        //     DataTable staff = colSelTechnician.DataSource as DataTable;
-        //     if (staff == null) return;
-        //
-        //     foreach (DataRow row in staff.Rows)
-        //     {
-        //         if (Db.Get<int>(row["user_id"]) == technicianId) return;
-        //     }
-        //
-        //     DataRow user;
-        //     try
-        //     {
-        //         user = UserRepository.GetById(technicianId);
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         Messages.DbError(ex);
-        //         return;
-        //     }
-        //
-        //     string name = user == null
-        //         ? "Technician #" + technicianId
-        //         : Db.Get<string>(user["full_name"]) + " (inactive)";
-        //
-        //     staff.Rows.Add(technicianId, name);
-        // }
-
-        // TODO(logic prompt): the promotions are categories of cboCategoryFilter now, not a combo
-        // of their own.
-        // private void FillPromotions()
-        // {
-        //     _promoIds.Clear();
-        //     cboPromo.Items.Clear();
-        //     cboPromo.Items.Add(NoPromo);
-        //     _promoIds.Add(0);
-        //
-        //     try
-        //     {
-        //         // GetActiveValid already means "Active and valid today".
-        //         foreach (DataRow row in PromotionRepository.GetActiveValid().Rows)
-        //         {
-        //             _promoIds.Add(Db.Get<int>(row["promo_id"]));
-        //
-        //             string type = Db.Get<string>(row["discount_type"]);
-        //             decimal value = Db.Get<decimal>(row["discount_value"]);
-        //             string amount;
-        //
-        //             if (string.Equals(type, "Promo Price", StringComparison.OrdinalIgnoreCase))
-        //             {
-        //                 // A Promo Price promo is a package: the caption is its price, not a discount.
-        //                 amount = Money.Text(Db.Get<decimal>(row["promo_price"]));
-        //             }
-        //             else if (string.Equals(type, "Percentage", StringComparison.OrdinalIgnoreCase))
-        //             {
-        //                 amount = value.ToString("0.##") + " % off";
-        //             }
-        //             else
-        //             {
-        //                 amount = Money.Text(value) + " off";
-        //             }
-        //
-        //             cboPromo.Items.Add(Db.Get<string>(row["promo_name"]) + " - " + amount);
-        //         }
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         Messages.DbError(ex);
-        //     }
-        //
-        //     cboPromo.SelectedIndex = 0;
-        // }
-
-        // TODO(logic prompt): the booking dialog takes no money, so there is no payment method to
-        // fill; the down payment is taken in Billing.
-        // private void FillPaymentMethods()
-        // {
-        //     if (cboPayMethod.Items.Count > 0) cboPayMethod.SelectedIndex = 0;   // "Cash"
-        //     UpdatePaymentFields();
-        // }
 
         /// <summary>
         /// Reschedule mode: the appointment is loaded and everything except the date and the time
@@ -420,38 +386,60 @@ namespace LittleEreseSystemV3.Forms
                 int slotIndex = _slots.IndexOf(start);
                 if (slotIndex >= 0) cboLineTime.SelectedIndex = slotIndex;
 
+                // The promotion the bill was made with is passed on, so the totals below match the
+                // original bill instead of pretending the booking has no promotion.
+                int savedPromoId = SavedPromoId(RescheduleId);
+                List<int> savedPromoServices = savedPromoId > 0
+                    ? PromotionRepository.GetServiceIds(savedPromoId)
+                    : new List<int>();
+
                 // The existing services are shown as they are (the user cannot change them).
                 foreach (DataRow line in lines.Rows)
                 {
                     int technicianId = Db.Get<int>(line[AppointmentRepository.ColTechnicianId]);
+                    int serviceId = Db.Get<int>(line[AppointmentRepository.ColServiceId]);
+                    int sessionNumber = Db.Get<int>(line[AppointmentRepository.ColSessionNumber]);
+                    int totalSessions = Db.Get<int>(line[AppointmentRepository.ColTotalSessions]);
+                    int assessedBy = Db.Get<int>(line[AppointmentRepository.ColAssessedBy]);
 
-                    // A technician who has since been deactivated is not in the list of the combo
-                    // column, and a value the combo does not know makes the grid throw. The name is
-                    // added here so an old appointment still opens.
-                    // TODO(logic prompt): the grid shows the technician as text, so the name does
-                    // not have to be added to a combo list any more.
-                    // EnsureTechnicianInList(technicianId);
+                    // requires_assessment and the category name are not part of a stored line, so
+                    // they are read from the catalog the dialog already loaded.
+                    DataRow catalogRow = CatalogRow(serviceId);
+                    bool requiresAssessment = catalogRow != null
+                        && Db.Get<bool>(catalogRow["requires_assessment"]);
+                    string categoryName = catalogRow == null
+                        ? string.Empty
+                        : Db.Get<string>(catalogRow["category_name"]);
+
+                    int promoId = savedPromoId > 0 && savedPromoServices.Contains(serviceId)
+                        ? savedPromoId
+                        : 0;
 
                     _lines.Rows.Add(
-                        Db.Get<int>(line[AppointmentRepository.ColServiceId]),
+                        serviceId,
                         Db.Get<string>(line[AppointmentRepository.ColServiceName]),
                         Db.Get<int>(line[AppointmentRepository.ColQuantity], 1),
                         Db.Get<decimal>(line[AppointmentRepository.ColPrice]),
                         Db.Get<int>(line[AppointmentRepository.ColDuration]),
-                        PackageLabel(line),
+                        AppointmentRepository.SessionText(sessionNumber, totalSessions),
                         Db.Get<int>(line["default_total_sessions"], 1),
                         Db.Get<int>(line[AppointmentRepository.ColPackageId]),
-                        Db.Get<int>(line[AppointmentRepository.ColSessionNumber]),
-                        Db.Get<int>(line[AppointmentRepository.ColTotalSessions]),
-                        technicianId);
+                        sessionNumber,
+                        totalSessions,
+                        technicianId,
+                        StaffName(technicianId),
+                        Db.Get<TimeSpan>(line[AppointmentRepository.ColStartTime], TimeSpan.Zero),
+                        string.Empty,
+                        string.Empty,
+                        StaffName(assessedBy),
+                        assessedBy,
+                        requiresAssessment,
+                        promoId,
+                        categoryName,
+                        Db.Get<int>(line["staff_busy_minutes"], 0));
                 }
 
                 txtNotes.Text = Db.Get<string>(row["notes"]);
-
-                // The promotion the bill was made with is shown too, so the totals below match
-                // the original bill instead of pretending the booking has no promotion.
-                // TODO(logic prompt): the promo is a category of cboCategoryFilter now.
-                // ShowSavedPromo();
 
                 // Only the date and the time may change.
                 cboClient.Enabled = false;
@@ -462,10 +450,6 @@ namespace LittleEreseSystemV3.Forms
                 btnAddService.Enabled = false;
                 btnRemoveService.Enabled = false;
                 dgvSelected.ReadOnly = true;
-                // TODO(logic prompt): cboLineTime is the only time control left, and the payment
-                // group is gone.
-                // cboPromo.Enabled = false;
-                // grpPayment.Enabled = false;
                 txtNotes.ReadOnly = true;
             }
             finally
@@ -474,40 +458,53 @@ namespace LittleEreseSystemV3.Forms
             }
         }
 
-        // TODO(logic prompt): the saved promotion is a category of cboCategoryFilter now, so it is
-        // selected there instead of in the removed promo combo.
-        // /// <summary>
-        // /// Selects the promotion of the appointment being rescheduled (read only, the user cannot
-        // /// change the money of a booking that is only being moved).
-        // /// </summary>
-        // private void ShowSavedPromo()
-        // {
-        //     DataRow billing;
-        //     try
-        //     {
-        //         billing = BillingRepository.GetByAppointment(RescheduleId);
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         Messages.DbError(ex);
-        //         return;
-        //     }
-        //
-        //     if (billing == null) return;
-        //
-        //     int promoId = Db.Get<int>(billing["promo_id"]);
-        //     int index = _promoIds.IndexOf(promoId);
-        //     if (index > 0) cboPromo.SelectedIndex = index;
-        // }
-
-        /// <summary>The "Session 3 of 8" / empty label of a stored appointment line.</summary>
-        private static string PackageLabel(DataRow line)
+        /// <summary>The promotion the appointment being moved was billed with, or 0.</summary>
+        private static int SavedPromoId(int appointmentId)
         {
-            int sessionNumber = Db.Get<int>(line[AppointmentRepository.ColSessionNumber]);
-            int totalSessions = Db.Get<int>(line[AppointmentRepository.ColTotalSessions]);
+            DataRow billing;
+            try
+            {
+                billing = BillingRepository.GetByAppointment(appointmentId);
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+                return 0;
+            }
 
-            if (sessionNumber <= 0 || totalSessions <= 0) return string.Empty;
-            return "Session " + sessionNumber + " of " + totalSessions;
+            return billing == null ? 0 : Db.Get<int>(billing["promo_id"]);
+        }
+
+        /// <summary>The catalog row of one service, or null when the service is not Active any more.</summary>
+        private DataRow CatalogRow(int serviceId)
+        {
+            if (_catalog == null) return null;
+
+            foreach (DataRow row in _catalog.Rows)
+            {
+                if (Db.Get<int>(row["service_id"]) == serviceId) return row;
+            }
+
+            return null;
+        }
+
+        /// <summary>The full name of an account id, or an empty string when nobody is set.</summary>
+        private static string StaffName(int userId)
+        {
+            if (userId <= 0) return string.Empty;
+
+            DataRow user;
+            try
+            {
+                user = UserRepository.GetById(userId);
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+                return string.Empty;
+            }
+
+            return user == null ? string.Empty : Db.Get<string>(user["full_name"]);
         }
 
         /// <summary>Selects the row of a bound combo box whose value column equals value.</summary>
@@ -559,7 +556,7 @@ namespace LittleEreseSystemV3.Forms
         {
             if (clientId <= 0)
             {
-                lblClientInfo.Text = "Pick a client to see the consent status and the medical alerts.";
+                lblClientInfo.Text = NoClientMessage;
                 lblClientInfo.ForeColor = Theme.TextDark;
                 return;
             }
@@ -582,7 +579,6 @@ namespace LittleEreseSystemV3.Forms
                 return;
             }
 
-            bool signed = Db.Get<bool>(row["consent_status"]);
             string allergies = Db.Get<string>(row["allergies"]);
             string medical = Db.Get<string>(row["medical_history"]);
 
@@ -590,11 +586,16 @@ namespace LittleEreseSystemV3.Forms
             if (!string.IsNullOrWhiteSpace(allergies)) alerts.Add("allergies: " + allergies.Trim());
             if (!string.IsNullOrWhiteSpace(medical)) alerts.Add("medical history: " + medical.Trim());
 
-            string text = signed ? "Consent form signed." : "Consent form NOT signed yet.";
-            text += alerts.Count == 0 ? "  No medical alerts." : "  Alert - " + string.Join("; ", alerts.ToArray());
+            // The consent form is no longer part of the booking rules, so only the medical alerts
+            // are shown: in the normal text color, because this dialog has no red text at all.
+            if (alerts.Count == 0)
+            {
+                lblClientInfo.Text = "No medical alerts.";
+                lblClientInfo.ForeColor = Theme.TextMuted;
+                return;
+            }
 
-            lblClientInfo.Text = text;
-            // This dialog has no red text at all; the wording carries the warning.
+            lblClientInfo.Text = "Alerts: " + string.Join("; ", alerts.ToArray());
             lblClientInfo.ForeColor = Theme.TextDark;
         }
 
@@ -622,11 +623,65 @@ namespace LittleEreseSystemV3.Forms
         /// </summary>
         private void AddSelectedCatalogService()
         {
+            // A promo entry adds the whole promotion, not the row under the pointer.
+            int promoId = SelectedPromoCategoryId();
+            if (promoId > 0)
+            {
+                AddPromoLines(promoId);
+                return;
+            }
+
             if (dgvCatalog.CurrentRow == null) return;
 
             int serviceId = Db.Get<int>(dgvCatalog.CurrentRow.Cells["colCatServiceId"].Value);
             if (serviceId <= 0) return;
 
+            AddServiceLine(serviceId, 0);
+        }
+
+        /// <summary>
+        /// Adds every service of a promotion as its own line (quantity 1, regular price, the promo
+        /// id set). Only ONE promotion per booking: a second one is refused until the lines of the
+        /// current promotion are removed.
+        /// </summary>
+        private void AddPromoLines(int promoId)
+        {
+            if (PromoIdInLines() > 0)
+            {
+                Messages.Info("Only one promotion per appointment. Remove the current promo lines first.");
+                return;
+            }
+
+            List<int> serviceIds = SelectedPromoServices();
+            if (serviceIds.Count == 0)
+            {
+                Messages.Info("This promotion is not linked to a service, so nothing can be added.");
+                return;
+            }
+
+            // The lines are added quietly, so the totals are worked out once at the end.
+            _loading = true;
+            try
+            {
+                foreach (int serviceId in serviceIds)
+                {
+                    AddServiceLine(serviceId, promoId);
+                }
+            }
+            finally
+            {
+                _loading = false;
+            }
+
+            Recalculate();
+        }
+
+        /// <summary>
+        /// Adds one service line, or one more session of a line that is already there. promoId > 0
+        /// marks the line as part of a promotion (its name reads "[PROMO] <service name>").
+        /// </summary>
+        private void AddServiceLine(int serviceId, int promoId)
+        {
             int clientId = SelectedClientId();
 
             DataRow service;
@@ -650,6 +705,15 @@ namespace LittleEreseSystemV3.Forms
             DataRowView existing = FindLine(serviceId);
             if (existing != null)
             {
+                // A line that is already there simply joins the promotion (its quantity stays 1).
+                if (promoId > 0)
+                {
+                    existing["promo_id"] = promoId;
+                    existing["quantity"] = 1;
+                    existing["service_name"] = "[PROMO] " + serviceName;
+                    return;
+                }
+
                 if (defaultSessions > 1)
                 {
                     Messages.Info("'" + serviceName + "' is a package and is already in this appointment. " +
@@ -667,19 +731,16 @@ namespace LittleEreseSystemV3.Forms
             int sessionNumber = 0;
             int totalSessions = 0;
             bool isNewPackage = false;
-            string label = string.Empty;
 
-            if (clientId > 0 && defaultSessions > 1)
+            // A promo line keeps the regular price of its service and is never split into
+            // sessions, because the promotion is sold as one package for one promotional price.
+            if (promoId <= 0 && clientId > 0 && defaultSessions > 1)
             {
                 try
                 {
                     if (AppointmentRepository.TryGetPackagePlan(clientId, serviceId,
                         out packageId, out sessionNumber, out totalSessions, out isNewPackage))
                     {
-                        label = isNewPackage
-                            ? "New package (" + sessionNumber + " of " + totalSessions + ")"
-                            : "Session " + sessionNumber + " of " + totalSessions;
-
                         // The whole package price sits on the first session; later sessions are free.
                         if (!isNewPackage || sessionNumber > 1) price = 0m;
                     }
@@ -691,8 +752,19 @@ namespace LittleEreseSystemV3.Forms
                 }
             }
 
-            _lines.Rows.Add(serviceId, serviceName, 1, price, duration, label, defaultSessions,
-                packageId, sessionNumber, totalSessions, 0);
+            bool requiresAssessment = Db.Get<bool>(service["requires_assessment"]);
+            string categoryName = CategoryName(serviceId);
+            int staffBusyMinutes = Db.Get<int>(service["staff_busy_minutes"], 0);
+
+            // A promo line is quantity 1 and marked, so the whole booking can tell which services
+            // belong to the one promotion it may hold.
+            string shownName = promoId > 0 ? "[PROMO] " + serviceName : serviceName;
+
+            _lines.Rows.Add(serviceId, shownName, 1, price, duration,
+                AppointmentRepository.SessionText(sessionNumber, totalSessions),
+                defaultSessions, packageId, sessionNumber, totalSessions, 0,
+                string.Empty, TimeSpan.Zero, string.Empty, string.Empty, string.Empty, 0,
+                requiresAssessment, promoId, categoryName, staffBusyMinutes);
 
             Recalculate();
 
@@ -710,8 +782,220 @@ namespace LittleEreseSystemV3.Forms
             DataRowView line = FindLine(serviceId);
             if (line == null) return;
 
+            int promoId = Db.Get<int>(line["promo_id"]);
+
+            // A promo line belongs to its promotion, so removing it removes the whole promo.
+            if (promoId > 0)
+            {
+                RemovePromoLines(promoId);
+                return;
+            }
+
+            // The block must not keep pointing at a row that is about to disappear.
+            _selectedLine = null;
             _lines.Rows.Remove(line.Row);
+
+            UpdateLinePanel();
             Recalculate();
+        }
+
+        /// <summary>Removes every line that belongs to one promotion.</summary>
+        private void RemovePromoLines(int promoId)
+        {
+            // The rows are collected first, because a DataTable cannot be changed while it is
+            // being walked over.
+            List<DataRow> doomed = new List<DataRow>();
+            foreach (DataRow row in _lines.Rows)
+            {
+                if (Db.Get<int>(row["promo_id"]) == promoId) doomed.Add(row);
+            }
+
+            _selectedLine = null;
+            foreach (DataRow row in doomed) _lines.Rows.Remove(row);
+
+            UpdateLinePanel();
+            Recalculate();
+        }
+
+        // ---------------------------------------------------------------- the selected line
+
+        /// <summary>
+        /// Fills the "Selected service" block from the row selected in dgvSelected: its name, the
+        /// technicians of its own category and (only for a service that needs one) the nurses.
+        /// Called whenever the selection changes or the lines are rebuilt.
+        /// </summary>
+        private void UpdateLinePanel()
+        {
+            _selectedLine = SelectedLine();
+
+            if (_selectedLine == null)
+            {
+                lblLineService.Text = "No service selected";
+                lblLineNote.Text = "Select a service above to set its technician and, when the " +
+                    "service needs an assessment, the nurse who assessed the client.";
+                lblSessionPlan.Text = string.Empty;
+                cboLineTech.DataSource = null;
+                cboLineTech.Enabled = false;
+                cboLineNurse.DataSource = null;
+                cboLineNurse.Enabled = false;
+                return;
+            }
+
+            bool wasLoading = _loading;
+            _loading = true;
+            try
+            {
+                string categoryName = Db.Get<string>(_selectedLine["category_name"]);
+                bool requiresAssessment = Db.Get<bool>(_selectedLine["requires_assessment"]);
+                int staffBusyMinutes = Db.Get<int>(_selectedLine["staff_busy_minutes"]);
+                int technicianId = Db.Get<int>(_selectedLine[AppointmentRepository.ColTechnicianId]);
+                int nurseId = Db.Get<int>(_selectedLine[AppointmentRepository.ColAssessedBy]);
+
+                lblLineService.Text = Db.Get<string>(_selectedLine[AppointmentRepository.ColServiceName]);
+                lblSessionPlan.Text = PackagePlanText(_selectedLine);
+
+                FillLineTechnicians(categoryName, technicianId);
+                FillLineNurses(requiresAssessment, nurseId);
+
+                lblLineNote.Text = LineNote(requiresAssessment, staffBusyMinutes,
+                    Db.Get<int>(_selectedLine[AppointmentRepository.ColDuration]));
+            }
+            finally
+            {
+                _loading = wasLoading;
+            }
+        }
+
+        /// <summary>The technicians of one line: "Any available" plus the staff of its category.</summary>
+        private void FillLineTechnicians(string categoryName, int technicianId)
+        {
+            DataTable staff = new DataTable();
+            staff.Columns.Add("user_id", typeof(int));
+            staff.Columns.Add("full_name", typeof(string));
+            staff.Rows.Add(0, AnyTechnician);
+
+            try
+            {
+                foreach (DataRow row in UserRepository.GetActiveStaffFor(categoryName).Rows)
+                {
+                    staff.Rows.Add(Db.Get<int>(row["user_id"]), Db.Get<string>(row["full_name"]));
+                }
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+            }
+
+            // A technician who was deactivated after the appointment was booked is not in the list
+            // any more, but the line still has to show who did the service.
+            if (technicianId > 0 && !HasUserId(staff, technicianId))
+            {
+                staff.Rows.Add(technicianId, StaffName(technicianId) + " (inactive)");
+            }
+
+            cboLineTech.DataSource = staff;
+            cboLineTech.DisplayMember = "full_name";
+            cboLineTech.ValueMember = "user_id";
+            cboLineTech.Enabled = !dgvSelected.ReadOnly;
+            SelectUserId(cboLineTech, technicianId);
+        }
+
+        /// <summary>
+        /// The nurses of one line. The dropdown is only usable for a service that requires an
+        /// assessment; otherwise it is disabled and reads "None".
+        /// </summary>
+        private void FillLineNurses(bool requiresAssessment, int nurseId)
+        {
+            DataTable nurses = new DataTable();
+            nurses.Columns.Add("user_id", typeof(int));
+            nurses.Columns.Add("full_name", typeof(string));
+            nurses.Rows.Add(0, NoNurse);
+
+            try
+            {
+                foreach (DataRow row in UserRepository.GetActiveNurses().Rows)
+                {
+                    nurses.Rows.Add(Db.Get<int>(row["user_id"]), Db.Get<string>(row["full_name"]));
+                }
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+            }
+
+            if (nurseId > 0 && !HasUserId(nurses, nurseId))
+            {
+                nurses.Rows.Add(nurseId, StaffName(nurseId) + " (inactive)");
+            }
+
+            cboLineNurse.DataSource = nurses;
+            cboLineNurse.DisplayMember = "full_name";
+            cboLineNurse.ValueMember = "user_id";
+            cboLineNurse.Enabled = requiresAssessment && !dgvSelected.ReadOnly;
+            SelectUserId(cboLineNurse, requiresAssessment ? nurseId : 0);
+        }
+
+        /// <summary>
+        /// The note under the two dropdowns: the assessment warning of the service and, when the
+        /// service has staff_busy_minutes, how long the chair is kept against how long the staff
+        /// member is needed.
+        /// </summary>
+        private static string LineNote(bool requiresAssessment, int staffBusyMinutes, int durationMinutes)
+        {
+            List<string> notes = new List<string>();
+
+            if (requiresAssessment) notes.Add("Needs a nurse assessment first.");
+
+            if (staffBusyMinutes > 0)
+            {
+                notes.Add("The chair is busy " + durationMinutes + " min, the staff only " +
+                    staffBusyMinutes + " min.");
+            }
+
+            return string.Join(" ", notes.ToArray());
+        }
+
+        /// <summary>The "Session 2 of 4" line of the selected service.</summary>
+        private static string PackagePlanText(DataRowView line)
+        {
+            int sessionNumber = Db.Get<int>(line[AppointmentRepository.ColSessionNumber]);
+            int totalSessions = Db.Get<int>(line[AppointmentRepository.ColTotalSessions]);
+
+            if (totalSessions <= 1) return string.Empty;
+            return AppointmentRepository.SessionText(sessionNumber, totalSessions);
+        }
+
+        /// <summary>The line of the row selected in dgvSelected, or null when nothing is selected.</summary>
+        private DataRowView SelectedLine()
+        {
+            int serviceId = GridHelper.GetSelectedId(dgvSelected, "colSelServiceId");
+            return serviceId <= 0 ? null : FindLine(serviceId);
+        }
+
+        private static bool HasUserId(DataTable table, int userId)
+        {
+            foreach (DataRow row in table.Rows)
+            {
+                if (Db.Get<int>(row["user_id"]) == userId) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Selects the row of a bound combo whose user_id column equals userId.</summary>
+        private static void SelectUserId(ComboBox combo, int userId)
+        {
+            for (int i = 0; i < combo.Items.Count; i++)
+            {
+                DataRowView view = combo.Items[i] as DataRowView;
+                if (view == null) continue;
+
+                if (Db.Get<int>(view["user_id"]) == userId)
+                {
+                    combo.SelectedIndex = i;
+                    return;
+                }
+            }
         }
 
         /// <summary>The line of a service in dgvSelected, or null when it is not there yet.</summary>
@@ -755,11 +1039,15 @@ namespace LittleEreseSystemV3.Forms
                 int serviceId = Db.Get<int>(line[AppointmentRepository.ColServiceId]);
                 int defaultSessions = Db.Get<int>(line["default_total_sessions"], 1);
 
-                if (defaultSessions <= 1) continue;
-
                 if (clientId <= 0)
                 {
-                    line["package_label"] = string.Empty;
+                    line["package_label"] = AppointmentRepository.SessionText(0, 0);
+                    continue;
+                }
+
+                if (defaultSessions <= 1)
+                {
+                    line["package_label"] = AppointmentRepository.SessionText(0, 0);
                     continue;
                 }
 
@@ -773,9 +1061,7 @@ namespace LittleEreseSystemV3.Forms
                     if (!AppointmentRepository.TryGetPackagePlan(clientId, serviceId,
                         out packageId, out sessionNumber, out totalSessions, out isNewPackage)) continue;
 
-                    line["package_label"] = isNewPackage
-                        ? "New package (" + sessionNumber + " of " + totalSessions + ")"
-                        : "Session " + sessionNumber + " of " + totalSessions;
+                    line["package_label"] = AppointmentRepository.SessionText(sessionNumber, totalSessions);
 
                     line[AppointmentRepository.ColPackageId] = packageId;
                     line[AppointmentRepository.ColSessionNumber] = sessionNumber;
@@ -789,12 +1075,7 @@ namespace LittleEreseSystemV3.Forms
             }
         }
 
-        // TODO(logic prompt): the start time is picked per line in cboLineTime.
-        // private void cboTime_SelectedIndexChanged(object sender, EventArgs e)
-        // {
-        //     if (_loading) return;
-        //     Recalculate();
-        // }
+        // TODO(logic prompt): the start time per line is wired by E2-G (times).
 
         private void dtpDate_ValueChanged(object sender, EventArgs e)
         {
@@ -808,39 +1089,59 @@ namespace LittleEreseSystemV3.Forms
             Recalculate();
         }
 
-        // TODO(logic prompt): the promo is a category of cboCategoryFilter now.
-        // private void cboPromo_SelectedIndexChanged(object sender, EventArgs e)
-        // {
-        //     if (_loading) return;
-        //     Recalculate();
-        // }
+        /// <summary>
+        /// Writes the chosen technician of the selected line into that row. The technician is a
+        /// text column now, so the name is written next to the id.
+        /// </summary>
+        private void cboLineTech_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_loading || _selectedLine == null) return;
 
-        // TODO(logic prompt): the booking dialog takes no money, so there is no payment method.
-        // private void cboPayMethod_SelectedIndexChanged(object sender, EventArgs e)
-        // {
-        //     if (_loading) return;
-        //     UpdatePaymentFields();
-        // }
-        //
-        // /// <summary>
-        // /// A GCash or bank payment needs a reference number and a verified tick; cash does not,
-        // /// so those two controls follow the method.
-        // /// </summary>
-        // private void UpdatePaymentFields()
-        // {
-        //     string method = SelectedPaymentMethod();
-        //     bool needsReference = string.Equals(method, "GCash", StringComparison.OrdinalIgnoreCase)
-        //         || string.Equals(method, "Bank Transfer", StringComparison.OrdinalIgnoreCase);
-        //
-        //     txtPayReference.Enabled = needsReference;
-        //     chkPayVerified.Enabled = needsReference;
-        //
-        //     if (!needsReference)
-        //     {
-        //         txtPayReference.Clear();
-        //         chkPayVerified.Checked = false;
-        //     }
-        // }
+            DataRowView picked = cboLineTech.SelectedItem as DataRowView;
+            int technicianId = picked == null ? 0 : Db.Get<int>(picked["user_id"]);
+            string technicianName = picked == null ? string.Empty : Db.Get<string>(picked["full_name"]);
+
+            _loading = true;
+            try
+            {
+                _selectedLine[AppointmentRepository.ColTechnicianId] = technicianId;
+                _selectedLine["technician_name"] = technicianId > 0 ? technicianName : string.Empty;
+            }
+            finally
+            {
+                _loading = false;
+            }
+
+            Recalculate();
+        }
+
+        /// <summary>Writes the assessing nurse of the selected line into that row.</summary>
+        private void cboLineNurse_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_loading || _selectedLine == null) return;
+
+            DataRowView picked = cboLineNurse.SelectedItem as DataRowView;
+            int nurseId = picked == null ? 0 : Db.Get<int>(picked["user_id"]);
+            string nurseName = picked == null ? string.Empty : Db.Get<string>(picked["full_name"]);
+
+            _loading = true;
+            try
+            {
+                _selectedLine[AppointmentRepository.ColAssessedBy] = nurseId;
+                _selectedLine["nurse_name"] = nurseId > 0 ? nurseName : string.Empty;
+            }
+            finally
+            {
+                _loading = false;
+            }
+
+            Recalculate();
+        }
+
+        private void dgvSelected_SelectionChanged(object sender, EventArgs e)
+        {
+            UpdateLinePanel();
+        }
 
         private void dgvSelected_CurrentCellDirtyStateChanged(object sender, EventArgs e)
         {
@@ -900,14 +1201,6 @@ namespace LittleEreseSystemV3.Forms
             return Db.Get<int>(cboClient.SelectedValue);
         }
 
-        // TODO(logic prompt): the promo comes from the promo category of cboCategoryFilter.
-        // private int SelectedPromoId()
-        // {
-        //     int index = cboPromo.SelectedIndex;
-        //     if (index < 0 || index >= _promoIds.Count) return 0;
-        //     return _promoIds[index];
-        // }
-
         private TimeSpan SelectedStartTime()
         {
             int index = cboLineTime.SelectedIndex;
@@ -919,12 +1212,6 @@ namespace LittleEreseSystemV3.Forms
         {
             return cboSource.SelectedItem == null ? "Walk-in" : cboSource.SelectedItem.ToString();
         }
-
-        // TODO(logic prompt): the booking dialog takes no money, so there is no payment method.
-        // private string SelectedPaymentMethod()
-        // {
-        //     return cboPayMethod.SelectedItem == null ? "Cash" : cboPayMethod.SelectedItem.ToString();
-        // }
 
         /// <summary>
         /// Recomputes everything the user can see: the end time, the subtotal, the discount, the
@@ -938,57 +1225,61 @@ namespace LittleEreseSystemV3.Forms
             _subtotal = AppointmentRepository.Subtotal(_lines);
             _discount = 0m;
 
-            // TODO(logic prompt): the promotion is a category of cboCategoryFilter now, so the
-            // discount comes from there through PromotionRepository.CalculateDiscount.
-            // int promoId = SelectedPromoId();
-            //
-            // if (promoId > 0)
-            // {
-            //     string message;
-            //     _discount = PromotionRepository.CalculateDiscount(promoId, PromoLines(), out message);
-            //     lblPromoNote.Text = string.IsNullOrEmpty(message)
-            //         ? PromoNames(promoId) + " applies to: " + EligibleNames(promoId)
-            //         : message;
-            // }
+            // The discount comes from the promotion the LINES carry (0 = no promo). Billing reads
+            // the promo id from the bill; here the promo lives in the lines the user just picked.
+            int promoId = PromoIdInLines();
 
-            // The note is only there while it has something to say.
-            lblPromoNote.Text = string.Empty;
-            lblPromoNote.Visible = false;
+            if (promoId > 0)
+            {
+                string message;
+                _discount = PromotionRepository.CalculateDiscount(promoId, PromoLines(), out message);
+
+                lblPromoNote.Text = PromoNames(promoId) + ": " +
+                    (string.IsNullOrEmpty(message) ? "applied" : message);
+                lblPromoNote.Visible = true;
+            }
+            else
+            {
+                // The note is only there while it has something to say.
+                lblPromoNote.Text = string.Empty;
+                lblPromoNote.Visible = false;
+            }
 
             decimal total = _subtotal - _discount;
             if (total < 0m) total = 0m;
 
             _required = AppointmentRepository.DownpaymentDue(_subtotal, _discount);
 
-            // TODO(logic prompt): the start and the end of every line are columns of the grid now,
-            // so the dialog has no single end time to show.
-            // TimeSpan duration = AppointmentRepository.TotalDuration(_lines);
-            // TimeSpan start = SelectedStartTime();
-            //
-            // lblEndTime.Text = duration <= TimeSpan.Zero
-            //     ? "Ends -"
-            //     : "Ends " + Clock(start + duration) + " (" + duration.TotalMinutes.ToString("0") + " min)";
-
             lblSubtotal.Text = "Subtotal: " + Money.Text(_subtotal);
             lblDiscount.Text = "Discount: -" + Money.Text(_discount);
             lblTotal.Text = "Total: " + Money.Text(total);
-            lblRequired.Text = _required > 0m
-                ? "Down payment due after saving: " + Money.Text(_required)
-                : "Down payment due after saving: " + Money.Text(0m);
+            lblRequired.Text = "Down payment due after saving: " + Money.Text(_required) +
+                (promoId > 0 ? " (promotion: paid in full)" : string.Empty);
 
-            // TODO(logic prompt): the payment group is gone; the down payment is taken in Billing.
-            // grpPayment.Enabled = _required > 0m && RescheduleId <= 0;
-            //
-            // if (_required > 0m)
-            // {
-            //     txtPayAmount.Text = _required.ToString("0.00");
-            // }
-            // else
-            // {
-            //     txtPayAmount.Clear();
-            // }
-
+            LockSessionQtyCells();
             CheckAvailability();
+        }
+
+        /// <summary>
+        /// A package and a promo line are ONE line for ONE price, so their Qty cell is read only;
+        /// only a plain service may be repeated.
+        /// </summary>
+        private void LockSessionQtyCells()
+        {
+            foreach (DataGridViewRow row in dgvSelected.Rows)
+            {
+                int serviceId = Db.Get<int>(row.Cells["colSelServiceId"].Value);
+                DataRowView line = serviceId <= 0 ? null : FindLine(serviceId);
+                if (line == null) continue;
+
+                int totalSessions = Db.Get<int>(line[AppointmentRepository.ColTotalSessions]);
+                int defaultSessions = Db.Get<int>(line["default_total_sessions"], 1);
+                int promoId = Db.Get<int>(line["promo_id"]);
+
+                // A package is a service with more than one session; its label may still read
+                // "Session 1 of 1" until a client turns it into a real plan.
+                row.Cells["colSelQty"].ReadOnly = defaultSessions > 1 || totalSessions > 1 || promoId > 0;
+            }
         }
 
         /// <summary>The lines of the booking in the shape the discount formula wants them.</summary>
@@ -1026,36 +1317,31 @@ namespace LittleEreseSystemV3.Forms
             return promo == null ? "The promotion" : Db.Get<string>(promo["promo_name"]);
         }
 
-        /// <summary>
-        /// The names of the selected services the promotion really discounts. When the promotion is
-        /// linked to no service at all, it applies to the whole bill.
-        /// </summary>
-        private string EligibleNames(int promoId)
+        /// <summary>The promotion id the lines of the booking carry (0 = no promotion).</summary>
+        private int PromoIdInLines()
         {
-            List<int> linked;
-            try
-            {
-                linked = PromotionRepository.GetServiceIds(promoId);
-            }
-            catch (Exception ex)
-            {
-                Messages.DbError(ex);
-                return "the whole bill";
-            }
-
-            if (linked.Count == 0) return "every service on the bill";
-
-            List<string> names = new List<string>();
             foreach (DataRow row in _lines.Rows)
             {
-                int serviceId = Db.Get<int>(row[AppointmentRepository.ColServiceId]);
-                if (!linked.Contains(serviceId)) continue;
-
-                string name = Db.Get<string>(row[AppointmentRepository.ColServiceName]);
-                if (!names.Contains(name)) names.Add(name);
+                int promoId = Db.Get<int>(row["promo_id"]);
+                if (promoId > 0) return promoId;
             }
 
-            return names.Count == 0 ? "no service of this appointment" : string.Join(", ", names.ToArray());
+            return 0;
+        }
+
+        /// <summary>The promo id behind the selected entry of cboCategoryFilter (0 = a category).</summary>
+        private int SelectedPromoCategoryId()
+        {
+            int index = cboCategoryFilter.SelectedIndex;
+            if (index < 0 || index >= _promoIds.Count) return 0;
+            return _promoIds[index];
+        }
+
+        /// <summary>The category name of one service, from the catalog the dialog already loaded.</summary>
+        private string CategoryName(int serviceId)
+        {
+            DataRow row = CatalogRow(serviceId);
+            return row == null ? string.Empty : Db.Get<string>(row["category_name"]);
         }
 
         /// <summary>
@@ -1075,7 +1361,7 @@ namespace LittleEreseSystemV3.Forms
             try
             {
                 problems = AppointmentRepository.ValidateBooking(RescheduleId, SelectedClientId(),
-                    dtpDate.Value.Date, SelectedStartTime(), SelectedSource(), _lines, 0);
+                    dtpDate.Value.Date, SelectedStartTime(), SelectedSource(), _lines, PromoIdInLines());
             }
             catch (Exception ex)
             {
@@ -1100,14 +1386,6 @@ namespace LittleEreseSystemV3.Forms
                 ? Theme.TextMuted
                 : Theme.Warning;
         }
-
-        // TODO(logic prompt): the booking dialog takes no money, so there is no amount to read.
-        // private decimal PaymentAmount()
-        // {
-        //     decimal amount;
-        //     if (!Validators.TryMoney(txtPayAmount.Text, out amount)) return 0m;
-        //     return amount < 0m ? 0m : amount;
-        // }
 
         // ---------------------------------------------------------------- saving
 
@@ -1143,18 +1421,6 @@ namespace LittleEreseSystemV3.Forms
                 return false;
             }
 
-            // TODO(logic prompt): the payment amount box is gone; the down payment is taken in
-            // Billing, so there is no amount to check here.
-            // // The amount box may be left empty (a walk-in pays at the counter), but a value that
-            // // is not a number is a typing mistake and would silently become "nothing".
-            // if (!string.IsNullOrWhiteSpace(txtPayAmount.Text) && !Validators.TryMoney(txtPayAmount.Text, out _))
-            // {
-            //     Validators.SetError(errorProvider1, txtPayAmount, "Enter a number, for example 500.00.");
-            //     Messages.Warn("The amount paid must be a number, for example 500.00.");
-            //     txtPayAmount.Focus();
-            //     return false;
-            // }
-
             return true;
         }
 
@@ -1165,7 +1431,7 @@ namespace LittleEreseSystemV3.Forms
             try
             {
                 problems = AppointmentRepository.ValidateBooking(0, SelectedClientId(), dtpDate.Value.Date,
-                    SelectedStartTime(), SelectedSource(), _lines, 0);
+                    SelectedStartTime(), SelectedSource(), _lines, PromoIdInLines());
             }
             catch (Exception ex)
             {
@@ -1185,7 +1451,7 @@ namespace LittleEreseSystemV3.Forms
             {
                 appointmentId = AppointmentRepository.Create(SelectedClientId(), Session.UserId,
                     dtpDate.Value.Date, SelectedStartTime(), SelectedSource(), txtNotes.Text, _lines,
-                    0);
+                    PromoIdInLines());
             }
             catch (Exception ex)
             {

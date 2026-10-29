@@ -2,6 +2,47 @@
 
 Update this file at the end of every task.
 
+- Step 57 (this task): the left and middle part of the booking dialog works (E2-F). Times are still
+  E2-G, so every line keeps start_time = TimeSpan.Zero and the repository chains the lines.
+  - _lines now also carries start_time (TimeSpan.Zero), start_text, end_text, technician_name,
+    nurse_name, assessed_by (0), requires_assessment, promo_id (0), category_name and
+    staff_busy_minutes. A promo line is named "[PROMO] <service name>".
+  - FillCategories adds "All categories", the real categories and one "[PROMO] <name>" entry per
+    promotion of PromotionRepository.GetActiveValid(); the promo ids sit in _promoIds aligned with
+    the combo items (0 = normal entry). Selecting a promo shows its services in dgvCatalog and
+    btnAddService adds ALL of them as lines (quantity 1, regular price, promo_id set). Only one
+    promo per booking ("Only one promotion per appointment. Remove the current promo lines first.")
+    and btnRemoveService on a promo line removes every line of that promo.
+  - The discount now comes only from PromotionRepository.CalculateDiscount(promoId, PromoLines(),
+    out message) using the promo_id found in _lines. lblPromoNote reads "<promo name>: <message or
+    'applied'>" and is hidden without a promo. cboPromo is gone.
+  - Package/promo lines: the label column and the price keep the old behaviour, the text is
+    AppointmentRepository.SessionText(sessionNumber, totalSessions) ("Session 1 of 1" for a single
+    service), quantity 1 and the Qty cell read only for a package and a promo line.
+  - grpLine follows the selected row: lblLineService, cboLineTech ("Any available" +
+    UserRepository.GetActiveStaffFor(category_name)) and cboLineNurse ("None" +
+    UserRepository.GetActiveNurses(), enabled only for requires_assessment). lblLineNote says
+    "Needs a nurse assessment first." and/or "The chair is busy <duration> min, the staff only
+    <busy> min.". Changing either combo writes technician_id/technician_name or
+    assessed_by/nurse_name into the row and calls Recalculate().
+  - FillTechnicians and EnsureTechnicianInList are deleted (the technician column is text).
+    ShowClientInfo shows only the medical alerts ("Alerts: allergies ...; medical history ...") in
+    Theme.TextDark, or "No medical alerts." in Theme.TextMuted - no consent sentence, no red.
+  - lblRequired reads "Down payment due after saving: <Money.Text(DownpaymentDue(...))>" plus
+    " (promotion: paid in full)" when a promo applies. The old payment lines of Recalculate and the
+    E2-E TODO(logic prompt) blocks of this part are gone.
+  - LittleEreseSystemV3.csproj was NOT edited and neither was AppointmentForm.Designer.cs (the
+    three new events dgvSelected.SelectionChanged and the two line combos are wired in code, like
+    the existing DataError). PROJECT_RULES.md was edited: the "Promos" rule now says one promotion
+    per appointment and describes the promo entries of the category filter.
+  - Checks: clean build 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --preview
+    AppointmentForm checked; --smoketest 90 passed / 0 failed / 0 skipped; app started once, stayed
+    open, closed, no error.log.
+  - Still open (the times part, E2-G): the // TODO(logic prompt) at "the start time per line is
+    wired by E2-G (times)" (cboLineTime), the start_text/end_text columns are still empty,
+    lblSlotInfo/CheckAvailability still use one start time for the whole booking, and
+    cboLineTime is not written into the selected line yet.
+  - Next: E2-G, the per-line times.
 - Step 56 (this task): compact layout of the booking dialog only (no logic, no new control, nothing
   renamed). ClientSize stays 980 x 640, pnlScroll still scrolls.
   - tlpContent went from 1 column / 17 rows to 6 equal columns / 11 rows, so a block can sit on
