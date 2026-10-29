@@ -2,6 +2,40 @@
 
 Update this file at the end of every task.
 
+- Step 69 (this task): there is no "Start Service" button any more. An appointment becomes 'Ongoing'
+  by itself when its scheduled time arrives; 'Completed' is still set in Billing.
+  - Data\AppointmentRepository.cs: new AutoStartDue() - in ONE Db.InTransaction it starts every
+    'Upcoming' appointment whose appointment_date + start_time <= GETDATE() (status 'Ongoing',
+    updated_at, one AppointmentHistory row per appointment, change_type 'Status Change', reason
+    "Started automatically at the scheduled time.", changed_by = Session.UserId), returns the count
+    and writes ONE ActivityRepository.Log line "Auto-start: <n> appointment(s) became Ongoing" when
+    the count is above 0. A past day counts too (a forgotten appointment is Ongoing and can still be
+    paid out in Billing). SetStatus (the appointment one) was DELETED - after removing the button
+    nothing used it.
+  - Forms\MainForm.Designer.cs: new System.Windows.Forms.Timer tmrAutoStart (in components,
+    Interval 60000, Enabled false). Forms\MainForm.cs: MainForm_Load calls AutoStartDue once and
+    enables the timer; every tick calls AutoStartDue (any Exception is swallowed, a timer never shows
+    a message) and, when the count is above 0 and _currentPage is a ucAppointments, calls its new
+    public ReloadList(). Other pages are left alone.
+  - Controls\ucAppointments.cs + .Designer.cs: btnStart removed completely (field, creation,
+    flpButtons entry, its block, the click handler, the styling line, the enable logic). The buttons
+    that stay moved left (Reschedule 382->266, Cancel 492->376, Refresh 648->532) and TabIndex was
+    renumbered 0..4, flpButtons 728 -> 612 px wide, so nothing overlaps. New public ReloadList()
+    reloads the day list and keeps the selected row.
+  - Session text in the lists: AppointmentRepository.GetByDate, GetMonthAppointments and
+    BillingRepository.NamesForDate / NamesForIds now also select total_sessions / session_number, so a
+    package line reads "Tirzepatide (4 sessions) - Session 2 of 4" (AppointmentRepository.SessionText);
+    a normal service reads as before.
+  - PROJECT_RULES.md: new appointment status rule (Upcoming -> Ongoing automatically, checked every
+    minute and when the app opens; Completed only by Billing; no Start Service button; only an
+    Upcoming appointment can be cancelled or rescheduled). No .csproj change.
+  - SmokeTest: no write test added; no smoke check used SetStatus, so nothing had to be deleted.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --preview
+    ucAppointments exit 0 (screenshot checked: the row is now New Appointment / Take Payment /
+    Reschedule / Cancel Appointment / Refresh, nothing overlaps or is cut off); --smoketest 94 passed
+    / 0 failed / 0 skipped; app started once, stayed open, closed, no error.log.
+  - Open Controls\ucAppointments.cs in the Designer to check the button row.
+
 - Step 68 (this task): the Billing screen can take a payment on its own, on any date.
   - Controls\ucBilling.Designer.cs: new Button btnTakePayment ("Take Payment", same size and style
     as its neighbour) in a new tlpBillButtons row next to btnCollect, whose text is now "Collect and

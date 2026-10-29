@@ -8,7 +8,7 @@ namespace LittleEreseSystemV3.Data
 {
     /// <summary>
     /// Every database rule about appointments lives here: the day list, the booking, the
-    /// reschedule, the cancel and the "start service" step.
+    /// reschedule, the cancel and the automatic start (AutoStartDue).
     ///
     /// The business rules of PROJECT_RULES.md (opening hours, daily capacity, rooms,
     /// technicians, downpayment and promos) are written down ONLY here, so a screen can never
@@ -103,7 +103,9 @@ ORDER BY a.start_time, a.appointment_id",
 
             Dictionary<int, string> services = ChildNames(date,
 @"SELECT asv.appointment_id,
-         s.service_name + CASE WHEN asv.quantity > 1 THEN ' x' + CAST(asv.quantity AS varchar(10)) ELSE '' END AS name
+         s.service_name + CASE WHEN asv.quantity > 1 THEN ' x' + CAST(asv.quantity AS varchar(10)) ELSE '' END AS name,
+         ISNULL(asv.total_sessions, 1) AS total_sessions,
+         ISNULL(asv.session_number, 0) AS session_number
 FROM AppointmentServices asv
 INNER JOIN Services s ON s.service_id = asv.service_id
 INNER JOIN Appointments a ON a.appointment_id = asv.appointment_id
@@ -170,6 +172,18 @@ ORDER BY ar.appointment_room_id");
                 string name = Db.Get<string>(row["name"]);
                 if (string.IsNullOrEmpty(name)) continue;
 
+                // A package line also says which session it is ("Tirzepatide (4 sessions) -
+                // Session 2 of 4"). Only the services query selects those two columns.
+                if (rows.Columns.Contains("total_sessions"))
+                {
+                    int totalSessions = Db.Get<int>(row["total_sessions"], 1);
+                    if (totalSessions > 1)
+                    {
+                        name = name + " (" + totalSessions + " sessions) - " +
+                            SessionText(Db.Get<int>(row["session_number"], 0), totalSessions);
+                    }
+                }
+
                 string existing;
                 // Two services of the same appointment end up as one comma separated list.
                 if (values.TryGetValue(appointmentId, out existing))
@@ -223,7 +237,9 @@ ORDER BY a.appointment_date, a.start_time, a.appointment_id",
 
             Dictionary<int, string> services = ChildNamesForRange(first, last,
 @"SELECT asv.appointment_id,
-         s.service_name + CASE WHEN asv.quantity > 1 THEN ' x' + CAST(asv.quantity AS varchar(10)) ELSE '' END AS name
+         s.service_name + CASE WHEN asv.quantity > 1 THEN ' x' + CAST(asv.quantity AS varchar(10)) ELSE '' END AS name,
+         ISNULL(asv.total_sessions, 1) AS total_sessions,
+         ISNULL(asv.session_number, 0) AS session_number
 FROM AppointmentServices asv
 INNER JOIN Services s ON s.service_id = asv.service_id
 INNER JOIN Appointments a ON a.appointment_id = asv.appointment_id
@@ -1636,47 +1652,53 @@ ORDER BY asv.appointment_service_id",
         }
 
         /// <summary>
-        /// Moves an appointment from 'Upcoming' to 'Ongoing' ("Start Service").
-        /// WHY the date check: a service can only start on the day of the appointment itself.
+        /// Starts every appointment whose scheduled time has arrived: 'Upcoming' becomes 'Ongoing'.
+        /// WHY a past day counts too: a forgotten appointment must still be payable in Billing.
+        /// Returns how many appointments were started (0 when nothing was due yet).
         /// </summary>
-        public static void SetStatus(int appointmentId, string newStatus)
+        public static int AutoStartDue()
         {
-            DataRow appointment = GetById(appointmentId);
-            if (appointment == null) throw new InvalidOperationException("This appointment no longer exists.");
-
-            string currentStatus = Db.Get<string>(appointment["status"]);
-            if (!string.Equals(currentStatus, "Upcoming", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException("Only an upcoming appointment can be started.");
-            }
-
-            if (Db.Get<DateTime>(appointment["appointment_date"]).Date != DateTime.Today)
-            {
-                throw new InvalidOperationException("An appointment can only be started on its own day.");
-            }
-
             int userId = Helpers.Session.UserId;
+            int started = 0;
 
             Db.InTransaction(delegate (SqlConnection connection, SqlTransaction transaction)
             {
-                Db.Execute(connection, transaction,
-@"UPDATE Appointments SET status = @status, updated_at = GETDATE()
-WHERE appointment_id = @appointment_id",
-                    Db.P("@status", newStatus),
-                    Db.P("@appointment_id", appointmentId));
+                // The whole set is read first, because each row is written one by one below.
+                DataTable due = Db.Query(connection, transaction,
+@"SELECT appointment_id
+FROM Appointments
+WHERE status = 'Upcoming'
+  AND CAST(appointment_date AS datetime) + CAST(start_time AS datetime) <= GETDATE()
+ORDER BY appointment_id");
 
-                Db.Execute(connection, transaction,
+                foreach (DataRow row in due.Rows)
+                {
+                    int appointmentId = Db.Get<int>(row["appointment_id"]);
+
+                    Db.Execute(connection, transaction,
+@"UPDATE Appointments SET status = 'Ongoing', updated_at = GETDATE()
+WHERE appointment_id = @appointment_id",
+                        Db.P("@appointment_id", appointmentId));
+
+                    Db.Execute(connection, transaction,
 @"INSERT INTO AppointmentHistory (appointment_id, changed_by, change_type, old_status, new_status, reason)
-VALUES (@appointment_id, @changed_by, 'Status Change', @old_status, @new_status, @reason)",
-                    Db.P("@appointment_id", appointmentId),
-                    Db.P("@changed_by", userId),
-                    Db.P("@old_status", currentStatus),
-                    Db.P("@new_status", newStatus),
-                    Db.P("@reason", "Service started."));
+VALUES (@appointment_id, @changed_by, 'Status Change', 'Upcoming', 'Ongoing', @reason)",
+                        Db.P("@appointment_id", appointmentId),
+                        Db.P("@changed_by", userId),
+                        Db.P("@reason", "Started automatically at the scheduled time."));
+
+                    started++;
+                }
             });
 
-            ActivityRepository.Log(userId, "Start Service", "Appointments",
-                "Appointment #" + appointmentId + " started (" + currentStatus + " -> " + newStatus + ")");
+            // One line for the whole run, so the activity log is not flooded by the timer.
+            if (started > 0)
+            {
+                ActivityRepository.Log(userId, "Auto-start", "Appointments",
+                    "Auto-start: " + started + " appointment(s) became Ongoing");
+            }
+
+            return started;
         }
 
         // ---------------------------------------------------------------------

@@ -67,7 +67,38 @@ namespace LittleEreseSystemV3.Forms
             lblUserName.Text = Session.FullName;
             lblUserRole.Text = Session.Role;
 
+            // Anything whose time already passed becomes 'Ongoing' right away, and the timer
+            // keeps checking, so the app never needs a "Start Service" button.
+            AutoStartDue();
+            tmrAutoStart.Enabled = true;
+
             Navigate(PageDashboard);
+        }
+
+        /// <summary>
+        /// Starts every appointment whose time has arrived. Called when the app opens and every
+        /// minute afterwards; failures stay silent here so a timer never interrupts the user.
+        /// </summary>
+        private void AutoStartDue()
+        {
+            try
+            {
+                int started = AppointmentRepository.AutoStartDue();
+
+                // Only the Appointments page shows the status, so only it is refreshed. The day
+                // list is reloaded with the same selected row (the user may be reading a card).
+                ucAppointments appointments = _currentPage as ucAppointments;
+                if (started > 0 && appointments != null) appointments.ReloadList();
+            }
+            catch
+            {
+                // A timer must never show a message: the next tick tries again.
+            }
+        }
+
+        private void tmrAutoStart_Tick(object sender, EventArgs e)
+        {
+            AutoStartDue();
         }
 
         /// <summary>

@@ -63,6 +63,7 @@ namespace LittleEreseSystemV3.Forms
             this.pnlHeaderLine = new System.Windows.Forms.Panel();
             this.pnlContent = new System.Windows.Forms.Panel();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.tmrAutoStart = new System.Windows.Forms.Timer(this.components);
             this.pnlSidebar.SuspendLayout();
             this.pnlNav.SuspendLayout();
             this.pnlBrand.SuspendLayout();
@@ -624,6 +625,11 @@ namespace LittleEreseSystemV3.Forms
             this.toolTip1.SetToolTip(this.btnSettings, "Settings");
             this.toolTip1.SetToolTip(this.btnLogout, "Log out");
             // 
+            // tmrAutoStart
+            // 
+            this.tmrAutoStart.Interval = 60000;
+            this.tmrAutoStart.Tick += new System.EventHandler(this.tmrAutoStart_Tick);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -657,6 +663,7 @@ namespace LittleEreseSystemV3.Forms
         #endregion
 
         private System.Windows.Forms.ToolTip toolTip1;
+        private System.Windows.Forms.Timer tmrAutoStart;
         private System.Windows.Forms.Panel pnlSidebar;
         private System.Windows.Forms.Panel pnlBrand;
         private System.Windows.Forms.PictureBox picBrand;

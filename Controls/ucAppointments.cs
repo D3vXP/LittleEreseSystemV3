@@ -41,7 +41,6 @@ namespace LittleEreseSystemV3.Controls
 
             Theme.StylePrimaryButton(btnNew);
             Theme.StyleSecondaryButton(btnTakePayment);
-            Theme.StyleSecondaryButton(btnStart);
             Theme.StyleSecondaryButton(btnReschedule);
             Theme.StyleDangerButton(btnCancelAppointment);
             Theme.StyleSecondaryButton(btnRefresh);
@@ -107,6 +106,15 @@ namespace LittleEreseSystemV3.Controls
             int appointmentId = CurrentAppointmentId();
             if (appointmentId > 0) ShowDetails(appointmentId);
             else ClearDetails();
+        }
+
+        /// <summary>
+        /// Reloads the day list and keeps the selected row. MainForm calls this from the auto-start
+        /// timer when an appointment of this day just became 'Ongoing'.
+        /// </summary>
+        public void ReloadList()
+        {
+            LoadAppointments(CurrentAppointmentId());
         }
 
         /// <summary>The strip on the toolbar: how busy the day is (the example "3 appointments - 1 massage").</summary>
@@ -188,12 +196,9 @@ namespace LittleEreseSystemV3.Controls
                 Messages.DbError(ex);
             }
 
-            // Start Service only makes sense while the appointment is upcoming AND today.
-            bool isToday = Db.Get<DateTime>(row["appointment_date"]).Date == DateTime.Today;
             bool upcoming = string.Equals(status, StatusUpcoming, StringComparison.OrdinalIgnoreCase);
             bool ongoing = string.Equals(status, "Ongoing", StringComparison.OrdinalIgnoreCase);
 
-            btnStart.Enabled = upcoming && isToday;
             btnReschedule.Enabled = upcoming;
             btnCancelAppointment.Enabled = upcoming;
 
@@ -211,7 +216,6 @@ namespace LittleEreseSystemV3.Controls
             txtDetailNotes.Text = string.Empty;
             dgvDetailServices.DataSource = null;
 
-            btnStart.Enabled = false;
             btnReschedule.Enabled = false;
             btnCancelAppointment.Enabled = false;
             btnTakePayment.Enabled = false;
@@ -374,30 +378,6 @@ namespace LittleEreseSystemV3.Controls
 
                 LoadAppointments(appointmentId);
             }
-        }
-
-        private void btnStart_Click(object sender, EventArgs e)
-        {
-            int appointmentId = CurrentAppointmentId();
-            if (appointmentId <= 0) return;
-
-            if (!Messages.Confirm("Start the service for this appointment now?")) return;
-
-            try
-            {
-                AppointmentRepository.SetStatus(appointmentId, "Ongoing");
-            }
-            catch (Exception ex)
-            {
-                // SetStatus spells out the rule it could not apply ("only on its own day", ...),
-                // so that message is shown as a warning instead of a database error.
-                Messages.Warn(ex.Message);
-                LoadAppointments(appointmentId);
-                return;
-            }
-
-            Messages.Info("The appointment is now ongoing.");
-            LoadAppointments(appointmentId);
         }
 
         private void btnCancelAppointment_Click(object sender, EventArgs e)

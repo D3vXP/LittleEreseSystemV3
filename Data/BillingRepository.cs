@@ -864,7 +864,9 @@ VALUES (@appointment_id, @changed_by, 'Status Change', @old_status, 'Completed',
             DataTable table = Db.Query(
 @"SELECT asv.appointment_id,
          s.service_name + CASE WHEN asv.quantity > 1
-                               THEN ' x' + CAST(asv.quantity AS varchar(10)) ELSE '' END AS name
+                               THEN ' x' + CAST(asv.quantity AS varchar(10)) ELSE '' END AS name,
+         ISNULL(asv.total_sessions, 1) AS total_sessions,
+         ISNULL(asv.session_number, 0) AS session_number
 FROM AppointmentServices asv
 INNER JOIN Services s ON s.service_id = asv.service_id
 INNER JOIN Appointments a ON a.appointment_id = asv.appointment_id
@@ -907,7 +909,9 @@ ORDER BY asv.appointment_service_id",
             DataTable table = Db.Query(
                 "SELECT asv.appointment_id, " +
                 "       s.service_name + CASE WHEN asv.quantity > 1 " +
-                "                             THEN ' x' + CAST(asv.quantity AS varchar(10)) ELSE '' END AS name " +
+                "                             THEN ' x' + CAST(asv.quantity AS varchar(10)) ELSE '' END AS name, " +
+                "       ISNULL(asv.total_sessions, 1) AS total_sessions, " +
+                "       ISNULL(asv.session_number, 0) AS session_number " +
                 "FROM AppointmentServices asv " +
                 "INNER JOIN Services s ON s.service_id = asv.service_id " +
                 "WHERE asv.status <> 'Cancelled' AND asv.appointment_id IN (" + inList + ") " +
@@ -975,6 +979,19 @@ ORDER BY asv.appointment_service_id",
                 int appointmentId = Db.Get<int>(row["appointment_id"]);
                 string name = Db.Get<string>(row["name"]);
                 if (string.IsNullOrEmpty(name)) continue;
+
+                // The services query also selects the package columns, so a session of a package
+                // reads "Tirzepatide (4 sessions) - Session 2 of 4". The staff query has no such
+                // columns, which is why they are checked for first.
+                if (table.Columns.Contains("total_sessions"))
+                {
+                    int totalSessions = Db.Get<int>(row["total_sessions"], 1);
+                    if (totalSessions > 1)
+                    {
+                        name = name + " (" + totalSessions + " sessions) - " +
+                            AppointmentRepository.SessionText(Db.Get<int>(row["session_number"], 0), totalSessions);
+                    }
+                }
 
                 string existing;
                 if (values.TryGetValue(appointmentId, out existing))
