@@ -336,6 +336,52 @@ namespace LittleEreseSystemV3.Helpers
 
             // The read-only service-scheduling check. Nothing is written or changed here.
             CheckServiceScheduleColumns();
+
+            // The read-only package-session check. Nothing is written or changed here.
+            CheckLaterSessionsWithoutPackage();
+        }
+
+        /// <summary>
+        /// AppointmentRepository.GetLaterSessions must answer with an EMPTY table (same columns)
+        /// for an appointment that is not a package session. Read-only: only SELECTs are run.
+        /// Skipped with a note when the database holds no such appointment.
+        /// </summary>
+        private static void CheckLaterSessionsWithoutPackage()
+        {
+            const string label = "AppointmentRepository.GetLaterSessions is empty for an appointment without a package";
+
+            try
+            {
+                object id = Db.Scalar(
+@"SELECT TOP 1 a.appointment_id
+FROM Appointments a
+WHERE NOT EXISTS (SELECT 1 FROM AppointmentServices asv
+                  WHERE asv.appointment_id = a.appointment_id
+                    AND ISNULL(asv.package_id, 0) > 0 AND ISNULL(asv.total_sessions, 0) > 1)
+ORDER BY a.appointment_id");
+
+                if (id == null || id == DBNull.Value)
+                {
+                    _skipped++;
+                    Line("SKIPPED " + label + " (no appointment without a package exists)");
+                    return;
+                }
+
+                DataTable later = AppointmentRepository.GetLaterSessions(Convert.ToInt32(id));
+
+                if (later != null && later.Rows.Count == 0 && later.Columns.Contains("session_number"))
+                {
+                    Pass(label + " (columns = " + later.Columns.Count + ")");
+                }
+                else
+                {
+                    Fail(label + " (rows = " + (later == null ? "null" : later.Rows.Count.ToString()) + ")");
+                }
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
         }
 
         /// <summary>

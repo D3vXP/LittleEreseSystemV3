@@ -380,6 +380,68 @@ ORDER BY asv.appointment_service_id",
                 Db.P("@appointment_id", appointmentId));
         }
 
+        /// <summary>
+        /// The later sessions of the package the given appointment belongs to, ready for the
+        /// "cancel / reschedule together" screens. The package line is the first
+        /// AppointmentServices row of the appointment with package_id > 0 and total_sessions > 1;
+        /// when the appointment is not a package session, an EMPTY table with the same columns
+        /// comes back, so a caller can walk the rows without checking anything else.
+        /// Columns: appointment_id, session_number, total_sessions, service_name, appointment_date,
+        /// start_time (the earliest line start of that appointment, Appointments.start_time when
+        /// the line has none). Rows: the same package_id, a higher session_number than the
+        /// appointment's own line, appointment status 'Upcoming' and line status not 'Cancelled'.
+        /// </summary>
+        public static DataTable GetLaterSessions(int appointmentId)
+        {
+            DataTable result = BuildLaterSessionsTable();
+
+            DataTable line = Db.Query(
+@"SELECT TOP 1 asv.package_id, asv.session_number
+FROM AppointmentServices asv
+WHERE asv.appointment_id = @appointment_id
+  AND ISNULL(asv.package_id, 0) > 0 AND ISNULL(asv.total_sessions, 0) > 1
+ORDER BY asv.appointment_service_id",
+                Db.P("@appointment_id", appointmentId));
+
+            if (line.Rows.Count == 0) return result;
+
+            int packageId = Db.Get<int>(line.Rows[0]["package_id"]);
+            int sessionNumber = Db.Get<int>(line.Rows[0]["session_number"]);
+
+            DataTable rows = Db.Query(
+@"SELECT a.appointment_id, asv.session_number, asv.total_sessions, s.service_name,
+         a.appointment_date,
+         ISNULL((SELECT MIN(ISNULL(every.start_time, a.start_time))
+                 FROM AppointmentServices every
+                 WHERE every.appointment_id = a.appointment_id
+                   AND every.status <> 'Cancelled'), a.start_time) AS start_time
+FROM AppointmentServices asv
+INNER JOIN Appointments a ON a.appointment_id = asv.appointment_id
+INNER JOIN Services s ON s.service_id = asv.service_id
+WHERE asv.package_id = @package_id
+  AND asv.appointment_id <> @appointment_id
+  AND ISNULL(asv.session_number, 0) > @session_number
+  AND a.status = 'Upcoming'
+  AND asv.status <> 'Cancelled'
+ORDER BY asv.session_number",
+                Db.P("@package_id", packageId),
+                Db.P("@appointment_id", appointmentId),
+                Db.P("@session_number", sessionNumber));
+
+            foreach (DataRow row in rows.Rows)
+            {
+                result.Rows.Add(
+                    Db.Get<int>(row["appointment_id"]),
+                    Db.Get<int>(row["session_number"]),
+                    Db.Get<int>(row["total_sessions"]),
+                    Db.Get<string>(row["service_name"]),
+                    Db.Get<DateTime>(row["appointment_date"]).Date,
+                    ReadTime(row["start_time"]));
+            }
+
+            return result;
+        }
+
         // ---------------------------------------------------------------------
         // PACKAGE AND MONEY HELPERS (shared by the form and by the save methods)
         // ---------------------------------------------------------------------
@@ -1284,12 +1346,116 @@ VALUES (@appointment_id, @changed_by, 'Rescheduled', @old_date, CAST(@old_time A
         }
 
         /// <summary>
-        /// Cancels an appointment: the statuses change, the rooms are released, the money paid
+        /// Moves an appointment and, when moveLaterSessions is true, keeps the weekly plan of its
+        /// package by moving every later session by the same date and time delta, each through the
+        /// 4-parameter Reschedule so every step is checked (and valid) on its own.
+        /// WHY the order: a move that goes forward is done from the last session back, a move that
+        /// goes back from the selected one forward, so no step ever breaks the weekly rule that
+        /// PackageSessionProblems enforces for the step after it.
+        /// </summary>
+        public static void Reschedule(int appointmentId, DateTime newDate, TimeSpan newStart,
+            string reason, bool moveLaterSessions)
+        {
+            if (!moveLaterSessions)
+            {
+                Reschedule(appointmentId, newDate, newStart, reason);
+                return;
+            }
+
+            DataRow appointment = GetById(appointmentId);
+            if (appointment == null) throw new InvalidOperationException("This appointment no longer exists.");
+
+            // Appointments.start_time is kept as the earliest line start, so it is the anchor the
+            // dialog's reschedule also uses.
+            DateTime oldDate = Db.Get<DateTime>(appointment["appointment_date"]).Date;
+            TimeSpan oldStart = ReadTime(appointment["start_time"]);
+
+            TimeSpan dateDelta = newDate.Date - oldDate;
+            TimeSpan timeDelta = newStart - oldStart;
+
+            DataTable laterSessions = GetLaterSessions(appointmentId);
+
+            DataRow selectedLine = PackageSessionLine(appointmentId);
+            string selectedName = selectedLine == null
+                ? "This appointment"
+                : Db.Get<string>(selectedLine["service_name"]);
+            int selectedNumber = selectedLine == null ? 0 : Db.Get<int>(selectedLine["session_number"]);
+
+            // The selected appointment is a step like the others; its own row is built in the
+            // shape GetLaterSessions returns so the loop below can treat every step the same way.
+            DataRow selectedStep = laterSessions.NewRow();
+            selectedStep["appointment_id"] = appointmentId;
+            selectedStep["session_number"] = selectedNumber;
+            selectedStep["service_name"] = selectedName;
+            selectedStep["appointment_date"] = oldDate;
+            selectedStep["start_time"] = oldStart;
+
+            List<DataRow> order = new List<DataRow>();
+
+            if (dateDelta + timeDelta > TimeSpan.Zero)
+            {
+                for (int i = laterSessions.Rows.Count - 1; i >= 0; i--) order.Add(laterSessions.Rows[i]);
+                order.Add(selectedStep);
+            }
+            else
+            {
+                order.Add(selectedStep);
+                foreach (DataRow row in laterSessions.Rows) order.Add(row);
+            }
+
+            int moved = 0;
+
+            foreach (DataRow step in order)
+            {
+                int stepAppointmentId = Db.Get<int>(step["appointment_id"]);
+                DateTime stepDate = Db.Get<DateTime>(step["appointment_date"]).Date + dateDelta;
+                TimeSpan stepStart = ReadTime(step["start_time"]) + timeDelta;
+
+                try
+                {
+                    Reschedule(stepAppointmentId, stepDate, stepStart, reason);
+                    moved++;
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // The whole set is not rolled back on purpose: the prompt wants the caller to
+                    // know how many sessions already moved, so the rest can be fixed by hand.
+                    throw new InvalidOperationException(
+                        Db.Get<string>(step["service_name"]) + " session " + Db.Get<int>(step["session_number"]) +
+                        " could not be moved: " + ex.Message + " " + moved +
+                        " session(s) were already moved; the others stayed where they were.");
+                }
+            }
+
+            int laterMoved = moved > 0 ? moved - 1 : 0;
+
+            if (laterMoved > 0)
+            {
+                ActivityRepository.Log(Helpers.Session.UserId, "Reschedule Appointment", "Appointments",
+                    "Appointment #" + appointmentId + " moved together with " + laterMoved +
+                    " later package session(s).");
+            }
+        }
+
+        /// <summary>
+        /// Cancels ONE appointment: the statuses change, the rooms are released, the money paid
         /// upfront is forfeited, a package that was opened for this booking and never used
         /// expires, and the reason is written into the history.
         /// The 3-day rule is the same as for a reschedule (Admin override with a reason).
+        /// The later sessions of the same package stay where they are (see the overload).
         /// </summary>
         public static void Cancel(int appointmentId, string reason)
+        {
+            Cancel(appointmentId, reason, false);
+        }
+
+        /// <summary>
+        /// Cancels an appointment and, when includeLaterSessions is true, its later package
+        /// sessions in the SAME transaction, right after the selected one. Session 1 cannot be
+        /// cancelled alone: it carries the payment of the whole package.
+        /// The 3-day notice rule is checked only for the selected appointment.
+        /// </summary>
+        public static void Cancel(int appointmentId, string reason, bool includeLaterSessions)
         {
             DataRow appointment = GetById(appointmentId);
             if (appointment == null) throw new InvalidOperationException("This appointment no longer exists.");
@@ -1323,57 +1489,145 @@ VALUES (@appointment_id, @changed_by, 'Rescheduled', @old_date, CAST(@old_time A
 
             int userId = Helpers.Session.UserId;
 
+            // The later sessions are read BEFORE the transaction: they are still 'Upcoming' now,
+            // while the selected appointment is about to become 'Cancelled' inside it.
+            DataTable laterSessions = GetLaterSessions(appointmentId);
+
+            // The session number of the SELECTED appointment names it in the history of the
+            // sessions it drags along (0 when the appointment is not a package session).
+            DataRow selectedPackageLine = PackageSessionLine(appointmentId);
+            int selectedSessionNumber = selectedPackageLine == null
+                ? 0
+                : Db.Get<int>(selectedPackageLine["session_number"]);
+
+            // Session 1 carries the payment of the whole package, so it cannot be cancelled alone:
+            // the client has paid for the weeks that come after it too.
+            if (!includeLaterSessions && laterSessions.Rows.Count > 0 && selectedSessionNumber == 1)
+            {
+                throw new InvalidOperationException(
+                    "Session 1 carries the payment of the package, so it can only be cancelled " +
+                    "together with the later sessions.");
+            }
+
+            if (!includeLaterSessions) laterSessions = null;
+
+            int cancelledSessions = 0;
+
             Db.InTransaction(delegate (SqlConnection connection, SqlTransaction transaction)
             {
-                Db.Execute(connection, transaction,
+                CancelCore(connection, transaction, appointmentId, currentStatus, userId, reason);
+
+                // Every later session is cancelled in the SAME transaction, right after the
+                // selected one, with a history row that names the session it followed.
+                if (laterSessions != null)
+                {
+                    foreach (DataRow session in laterSessions.Rows)
+                    {
+                        int sessionAppointmentId = Db.Get<int>(session["appointment_id"]);
+
+                        DataRow later = GetById(sessionAppointmentId);
+                        string laterStatus = later == null ? "Upcoming" : Db.Get<string>(later["status"]);
+
+                        CancelCore(connection, transaction, sessionAppointmentId, laterStatus, userId,
+                            "Cancelled together with session " + selectedSessionNumber + " (appointment #" +
+                            appointmentId + ")." +
+                            (string.IsNullOrWhiteSpace(reason) ? string.Empty : " " + reason.Trim()));
+
+                        cancelledSessions++;
+                    }
+                }
+
+                // The package expires only AFTER every cancellation of this transaction, and only
+                // when it was never used and no session of it is still booked. Cancelling one
+                // middle session must not expire a package that still has sessions ahead.
+                ExpireUnusedPackage(connection, transaction, appointmentId);
+            });
+
+            ActivityRepository.Log(userId, "Cancel Appointment", "Appointments",
+                "Appointment #" + appointmentId + " cancelled" +
+                (cancelledSessions > 0 ? " together with " + cancelledSessions + " later package session(s)" : "") +
+                (string.IsNullOrWhiteSpace(reason) ? "." : ": " + reason.Trim()));
+        }
+
+        /// <summary>
+        /// The per-appointment writes of a cancellation: statuses, rooms, forfeit and the history
+        /// row. Shared by Cancel so a package session is cancelled exactly like a single one.
+        /// </summary>
+        private static void CancelCore(SqlConnection connection, SqlTransaction transaction,
+            int appointmentId, string currentStatus, int userId, string reason)
+        {
+            Db.Execute(connection, transaction,
 @"UPDATE Appointments
 SET status = 'Cancelled', cancelled_at = GETDATE(), updated_at = GETDATE()
 WHERE appointment_id = @appointment_id",
-                    Db.P("@appointment_id", appointmentId));
+                Db.P("@appointment_id", appointmentId));
 
-                Db.Execute(connection, transaction,
-                    "UPDATE AppointmentServices SET status = 'Cancelled' WHERE appointment_id = @appointment_id",
-                    Db.P("@appointment_id", appointmentId));
+            Db.Execute(connection, transaction,
+                "UPDATE AppointmentServices SET status = 'Cancelled' WHERE appointment_id = @appointment_id",
+                Db.P("@appointment_id", appointmentId));
 
-                // The rooms are free again, so release them instead of leaving them blocked.
-                Db.Execute(connection, transaction,
-                    "UPDATE AppointmentRooms SET status = 'Released' WHERE appointment_id = @appointment_id",
-                    Db.P("@appointment_id", appointmentId));
+            // The rooms are free again, so release them instead of leaving them blocked.
+            Db.Execute(connection, transaction,
+                "UPDATE AppointmentRooms SET status = 'Released' WHERE appointment_id = @appointment_id",
+                Db.P("@appointment_id", appointmentId));
 
-                // A cancellation always forfeits the money paid upfront. A deposit becomes
-                // 'Forfeited'; a promotion that was paid in full makes the bill 'Forfeited'.
-                Db.Execute(connection, transaction,
+            // A cancellation always forfeits the money paid upfront. A deposit becomes
+            // 'Forfeited'; a promotion that was paid in full makes the bill 'Forfeited'.
+            Db.Execute(connection, transaction,
 @"UPDATE Billing SET
         downpayment_status = CASE WHEN downpayment_status IN ('Held', 'Applied') THEN 'Forfeited'
                                   ELSE downpayment_status END,
         payment_status = CASE WHEN payment_status = 'Paid' THEN 'Forfeited' ELSE payment_status END,
         updated_at = GETDATE()
 WHERE appointment_id = @appointment_id",
-                    Db.P("@appointment_id", appointmentId));
+                Db.P("@appointment_id", appointmentId));
 
-                // A package opened for this booking that has not been used yet is expired,
-                // so the client is not charged for a treatment that never happened.
-                Db.Execute(connection, transaction,
+            Db.Execute(connection, transaction,
+@"INSERT INTO AppointmentHistory (appointment_id, changed_by, change_type, old_status, new_status, reason)
+VALUES (@appointment_id, @changed_by, 'Cancelled', @old_status, 'Cancelled', @reason)",
+                Db.P("@appointment_id", appointmentId),
+                Db.P("@changed_by", userId),
+                Db.P("@old_status", currentStatus),
+                Db.P("@reason", string.IsNullOrWhiteSpace(reason)
+                    ? "Cancelled with more than " + NoticeDays + " days notice."
+                    : reason.Trim()));
+        }
+
+        /// <summary>
+        /// Expires the package of the cancelled appointment, but only when it was never used
+        /// (sessions_completed = 0) AND no session of it is left booked. Runs after every
+        /// cancellation of the transaction, so a package with sessions still ahead stays Active.
+        /// </summary>
+        private static void ExpireUnusedPackage(SqlConnection connection, SqlTransaction transaction,
+            int appointmentId)
+        {
+            Db.Execute(connection, transaction,
 @"UPDATE cp SET status = 'Expired'
 FROM ClientPackages cp
 INNER JOIN AppointmentServices asv ON asv.package_id = cp.package_id
-WHERE asv.appointment_id = @appointment_id AND cp.sessions_completed = 0 AND cp.status = 'Active'",
-                    Db.P("@appointment_id", appointmentId));
+WHERE asv.appointment_id = @appointment_id
+  AND cp.sessions_completed = 0 AND cp.status = 'Active'
+  AND NOT EXISTS (SELECT 1 FROM AppointmentServices other
+                  WHERE other.package_id = cp.package_id AND other.status <> 'Cancelled')",
+                Db.P("@appointment_id", appointmentId));
+        }
 
-                Db.Execute(connection, transaction,
-@"INSERT INTO AppointmentHistory (appointment_id, changed_by, change_type, old_status, new_status, reason)
-VALUES (@appointment_id, @changed_by, 'Cancelled', @old_status, 'Cancelled', @reason)",
-                    Db.P("@appointment_id", appointmentId),
-                    Db.P("@changed_by", userId),
-                    Db.P("@old_status", currentStatus),
-                    Db.P("@reason", string.IsNullOrWhiteSpace(reason)
-                        ? "Cancelled with more than " + NoticeDays + " days notice."
-                        : reason.Trim()));
-            });
+        /// <summary>
+        /// The appointment's own package line (session_number and service_name), or null when the
+        /// appointment is not a package session. Session 1 is the one that carries the payment.
+        /// </summary>
+        private static DataRow PackageSessionLine(int appointmentId)
+        {
+            DataTable line = Db.Query(
+@"SELECT TOP 1 asv.session_number, s.service_name
+FROM AppointmentServices asv
+INNER JOIN Services s ON s.service_id = asv.service_id
+WHERE asv.appointment_id = @appointment_id
+  AND ISNULL(asv.package_id, 0) > 0 AND ISNULL(asv.total_sessions, 0) > 1
+ORDER BY asv.appointment_service_id",
+                Db.P("@appointment_id", appointmentId));
 
-            ActivityRepository.Log(userId, "Cancel Appointment", "Appointments",
-                "Appointment #" + appointmentId + " cancelled" +
-                (string.IsNullOrWhiteSpace(reason) ? "." : ": " + reason.Trim()));
+            return line.Rows.Count == 0 ? null : line.Rows[0];
         }
 
         /// <summary>
@@ -1620,6 +1874,23 @@ SELECT CAST(SCOPE_IDENTITY() AS int);",
             // The line's own start travels with the resolved row, so Create keeps the times the
             // validator already approved. A line without one is placed after the line above.
             table.Columns.Add(ColStartTime, typeof(TimeSpan));
+            return table;
+        }
+
+        /// <summary>
+        /// An empty table with the columns GetLaterSessions promises, so an appointment without a
+        /// package returns the same shape as one with later sessions (and a caller can read it
+        /// without checking for null or for missing columns).
+        /// </summary>
+        private static DataTable BuildLaterSessionsTable()
+        {
+            DataTable table = new DataTable();
+            table.Columns.Add("appointment_id", typeof(int));
+            table.Columns.Add("session_number", typeof(int));
+            table.Columns.Add("total_sessions", typeof(int));
+            table.Columns.Add("service_name", typeof(string));
+            table.Columns.Add("appointment_date", typeof(DateTime));
+            table.Columns.Add("start_time", typeof(TimeSpan));
             return table;
         }
 

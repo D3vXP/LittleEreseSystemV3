@@ -2,6 +2,48 @@
 
 Update this file at the end of every task.
 
+- Step 62 (this task): packages cancel and reschedule as a set (repository only).
+  - Data\AppointmentRepository.cs: new public GetLaterSessions(appointmentId) returns the later
+    sessions of the appointment's package (columns appointment_id, session_number,
+    total_sessions, service_name, appointment_date, start_time = the earliest non-cancelled line
+    start of that appointment, ISNULL to Appointments.start_time); package line = the first
+    AppointmentServices row with package_id > 0 and total_sessions > 1. It returns an EMPTY table
+    with the same columns when the appointment is not a package session.
+  - Cancel keeps its 2-argument form (calls the new overload with false) and gains
+    Cancel(appointmentId, reason, includeLaterSessions). The per-appointment writes moved into
+    private CancelCore(connection, transaction, appointmentId, currentStatus, userId, reason).
+    The later sessions are read BEFORE the transaction and cancelled through CancelCore in the
+    SAME transaction, after the selected appointment; their history reason is "Cancelled together
+    with session <n> (appointment #<id>)." plus the user's reason when one was typed. The 3-day
+    rule is checked only for the selected appointment.
+  - Rule: a package line with session_number = 1, total_sessions > 1 and later sessions, cancelled
+    without includeLaterSessions, throws "Session 1 carries the payment of the package, so it can
+    only be cancelled together with the later sessions.".
+  - Package expiry: the UPDATE ClientPackages ... SET status = 'Expired' moved into private
+    ExpireUnusedPackage, which runs AFTER every cancellation of the transaction and only for a
+    package with sessions_completed = 0 AND no AppointmentServices row whose status is not
+    'Cancelled'. A middle session cancelled alone no longer expires a package with sessions left.
+  - Reschedule keeps its 4-argument form and gains
+    Reschedule(appointmentId, newDate, newStart, reason, moveLaterSessions). True moves every later
+    session by dateDelta (new date - old date) and timeDelta (new start - old appointment start),
+    each step through the 4-argument method. Order: forward moves run from the LAST later session
+    to the selected appointment; backward moves run from the selected appointment to the later
+    sessions in ascending order. A failing step throws "<service> session <n> could not be moved:
+    <inner> <k> session(s) were already moved; the others stayed where they were.".
+  - ActivityRepository.Log is unchanged (same 4 arguments, called with a richer description): the
+    cancel says "together with <k> later package session(s)" and the move logs one extra entry
+    when later sessions came along.
+  - Helpers\SmokeTest.cs: one read-only check, "GetLaterSessions is empty for an appointment
+    without a package" (skipped with a note when no such appointment exists).
+  - PROJECT_RULES.md: the package rule gained "Cancelling or rescheduling a package session can
+    include all the later sessions. Session 1 carries the payment, so it can only be cancelled
+    together with them." and the package-session sentence now names the later-sessions overload.
+  - No form, Designer or .csproj change; no migration.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --smoketest 91
+    passed / 0 failed / 0 skipped; app started once, stayed open, closed, no error.log.
+  - Not verified by hand (no UI automation and the smoke test stays read-only): cancelling or
+    moving a whole package from the Appointments page.
+
 - Step 61 (this task): a rescheduled package session must keep its weekly place.
   - Data\AppointmentRepository.cs: Reschedule now calls the new private PackageSessionProblems
     (appointmentId, newDate, lines) right after the ValidateBooking problems check and before the
