@@ -53,6 +53,10 @@ namespace LittleEreseSystemV3.Forms
         // The line grpLine is showing, so its two dropdowns know which row to write into.
         private DataRowView _selectedLine;
 
+        // The EARLIEST line of the appointment being rescheduled. Only its time is picked and the
+        // other lines follow it, so the dialog remembers which row that is.
+        private DataRowView _rescheduleLine;
+
         // The services of the appointment being built (bound to dgvSelected).
         private DataTable _lines;
 
@@ -368,10 +372,6 @@ namespace LittleEreseSystemV3.Forms
                 int sourceIndex = cboSource.Items.IndexOf(source);
                 if (sourceIndex >= 0) cboSource.SelectedIndex = sourceIndex;
 
-                TimeSpan start = ReadTime(row["start_time"]);
-                int slotIndex = _slots.IndexOf(start);
-                if (slotIndex >= 0) cboLineTime.SelectedIndex = slotIndex;
-
                 // The promotion the bill was made with is passed on, so the totals below match the
                 // original bill instead of pretending the booking has no promotion.
                 int savedPromoId = SavedPromoId(RescheduleId);
@@ -401,6 +401,11 @@ namespace LittleEreseSystemV3.Forms
                         ? savedPromoId
                         : 0;
 
+                    // Each line keeps its own stored start and end, so the grid shows the real plan
+                    // that is being moved instead of one shared time.
+                    TimeSpan lineStart = ReadTime(line[AppointmentRepository.ColStartTime]);
+                    TimeSpan lineEnd = ReadTime(line[AppointmentRepository.ColEndTime]);
+
                     _lines.Rows.Add(
                         serviceId,
                         Db.Get<string>(line[AppointmentRepository.ColServiceName]),
@@ -414,9 +419,9 @@ namespace LittleEreseSystemV3.Forms
                         totalSessions,
                         technicianId,
                         StaffName(technicianId),
-                        Db.Get<TimeSpan>(line[AppointmentRepository.ColStartTime], TimeSpan.Zero),
-                        string.Empty,
-                        string.Empty,
+                        lineStart,
+                        lineStart == TimeSpan.Zero ? string.Empty : Clock(lineStart),
+                        lineStart == TimeSpan.Zero ? string.Empty : Clock(lineEnd),
                         StaffName(assessedBy),
                         assessedBy,
                         requiresAssessment,
@@ -437,6 +442,15 @@ namespace LittleEreseSystemV3.Forms
                 btnRemoveService.Enabled = false;
                 dgvSelected.ReadOnly = true;
                 txtNotes.ReadOnly = true;
+
+                // The EARLIEST placed line is the one the desk moves; the other lines keep their
+                // distance from it, so it is selected in the grid right away.
+                _rescheduleLine = EarliestLine();
+                if (_rescheduleLine != null)
+                {
+                    GridHelper.SelectRowById(dgvSelected, "colSelServiceId",
+                        Db.Get<int>(_rescheduleLine[AppointmentRepository.ColServiceId]));
+                }
             }
             finally
             {
@@ -536,6 +550,9 @@ namespace LittleEreseSystemV3.Forms
             // so the lines are rebuilt from the catalog for the new client.
             RefreshLinePackages();
             RevalidateLines();
+            // The free times also depend on the client (the client cannot be in two places), so the
+            // time list of the selected line is refilled here as well.
+            UpdateLinePanel();
             Recalculate();
         }
 
@@ -842,9 +859,12 @@ namespace LittleEreseSystemV3.Forms
                 List<TimeSpan> free;
                 try
                 {
+                    // In a reschedule the whole booking moves together, so the other lines are NOT
+                    // counted as busy (they would block the very slots the booking is coming from)
+                    // and the appointment itself is excluded from the occupancy check.
                     free = AvailabilityRepository.GetFreeStarts(null, null, dtpDate.Value.Date,
                         serviceId, quantity, technicianId, SelectedClientId(), RescheduleId,
-                        OtherLines(_selectedLine));
+                        RescheduleId > 0 ? null : OtherLines(_selectedLine));
                 }
                 catch (Exception ex)
                 {
@@ -872,8 +892,11 @@ namespace LittleEreseSystemV3.Forms
                 }
 
                 // A reschedule only moves the booking, so its time list stays usable even though the
-                // services themselves are locked.
-                cboLineTime.Enabled = RescheduleId > 0 || !dgvSelected.ReadOnly;
+                // services themselves are locked. Only the EARLIEST line may be moved: the other
+                // lines follow it, so their time list is of no use.
+                cboLineTime.Enabled = RescheduleId > 0
+                    ? _rescheduleLine != null && ReferenceEquals(_selectedLine.Row, _rescheduleLine.Row)
+                    : !dgvSelected.ReadOnly;
             }
             finally
             {
@@ -1179,14 +1202,63 @@ namespace LittleEreseSystemV3.Forms
             return string.Join(" ", notes.ToArray());
         }
 
-        /// <summary>The "Session 2 of 4" line of the selected service.</summary>
-        private static string PackagePlanText(DataRowView line)
+        /// <summary>
+        /// The weekly plan of a package line: the first session and the dates of the later ones,
+        /// as AvailabilityRepository.PlanSessions works them out. It is empty for a normal line,
+        /// for a line that has no start yet and when no client has been chosen.
+        /// </summary>
+        private string PackagePlanText(DataRowView line)
         {
             int sessionNumber = Db.Get<int>(line[AppointmentRepository.ColSessionNumber]);
             int totalSessions = Db.Get<int>(line[AppointmentRepository.ColTotalSessions]);
 
             if (totalSessions <= 1) return string.Empty;
-            return AppointmentRepository.SessionText(sessionNumber, totalSessions);
+
+            TimeSpan start = AppointmentRepository.ReadTime(line[AppointmentRepository.ColStartTime]);
+            int clientId = SelectedClientId();
+            if (start == TimeSpan.Zero || clientId <= 0) return string.Empty;
+
+            int serviceId = Db.Get<int>(line[AppointmentRepository.ColServiceId]);
+
+            DataTable plan;
+            try
+            {
+                plan = AvailabilityRepository.PlanSessions(null, null, clientId, serviceId,
+                    dtpDate.Value.Date, start, sessionNumber, totalSessions, RescheduleId);
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+                return string.Empty;
+            }
+
+            string serviceName = Db.Get<string>(line[AppointmentRepository.ColServiceName]);
+            string time = Clock(start);
+
+            List<string> parts = new List<string>();
+            foreach (DataRow session in plan.Rows)
+            {
+                DateTime sessionDate = Db.Get<DateTime>(session["session_date"]);
+                int number = Db.Get<int>(session["session_number"]);
+
+                if (Db.Get<bool>(session["ok"]))
+                {
+                    parts.Add(sessionDate.ToString("MMM dd") + " (Session " + number + ")");
+                }
+                else
+                {
+                    // A session that cannot be booked still shows its date, so the desk can see
+                    // which week is in the way and why.
+                    parts.Add(sessionDate.ToString("MMM dd") + " (Session " + number + ") is not available: " +
+                        Db.Get<string>(session["problem"]));
+                }
+            }
+
+            string first = serviceName + ": " + AppointmentRepository.SessionText(sessionNumber, totalSessions) +
+                " on " + dtpDate.Value.Date.ToString("MMM dd") + " at " + time;
+
+            if (parts.Count == 0) return first + ".";
+            return first + ", then " + string.Join(", ", parts.ToArray()) + ", same time.";
         }
 
         /// <summary>The line of the row selected in dgvSelected, or null when nothing is selected.</summary>
@@ -1303,6 +1375,8 @@ namespace LittleEreseSystemV3.Forms
         {
             if (_loading) return;
             RevalidateLines();
+            // The free times belong to the date, so the list of the selected line is refilled too.
+            UpdateLinePanel();
             Recalculate();
         }
 
@@ -1471,6 +1545,30 @@ namespace LittleEreseSystemV3.Forms
             return earliest == TimeSpan.Zero ? AppointmentRepository.AestheticOpening : earliest;
         }
 
+        /// <summary>
+        /// The EARLIEST placed line of the booking. A reschedule moves the whole appointment from
+        /// this line, so it is the line the desk picks a new time for.
+        /// </summary>
+        private DataRowView EarliestLine()
+        {
+            DataRowView earliest = null;
+            TimeSpan earliestStart = TimeSpan.Zero;
+
+            foreach (DataRowView view in _lines.DefaultView)
+            {
+                TimeSpan start = AppointmentRepository.ReadTime(view[AppointmentRepository.ColStartTime]);
+                if (start == TimeSpan.Zero) continue;
+
+                if (earliest == null || start < earliestStart)
+                {
+                    earliest = view;
+                    earliestStart = start;
+                }
+            }
+
+            return earliest;
+        }
+
         private string SelectedSource()
         {
             return cboSource.SelectedItem == null ? "Walk-in" : cboSource.SelectedItem.ToString();
@@ -1520,6 +1618,10 @@ namespace LittleEreseSystemV3.Forms
                 (promoId > 0 ? " (promotion: paid in full)" : string.Empty);
 
             LockSessionQtyCells();
+
+            // The weekly plan of a package moves with the money, so it is refreshed here too.
+            if (_selectedLine != null) lblSessionPlan.Text = PackagePlanText(_selectedLine);
+
             CheckAvailability();
         }
 
@@ -1723,12 +1825,36 @@ namespace LittleEreseSystemV3.Forms
             SavedAppointmentId = appointmentId;
             SavedAppointmentDate = dtpDate.Value.Date;
 
-            // The booking takes no money, so the desk is told where the down payment goes next.
-            Messages.Info("Appointment #" + appointmentId + " was booked. Next: take the down payment of " +
-                Money.Text(_required) + " in Billing.");
+            // The booking takes no money, so the desk is told where the down payment goes next and
+            // how many of the sessions of a package are already scheduled.
+            Messages.Info("Appointment #" + appointmentId + " was booked for " +
+                dtpDate.Value.Date.ToString("MMM dd, yyyy") + " at " + Clock(EarliestStart()) +
+                ". Next: take the down payment of " + Money.Text(_required) + " in Billing." +
+                PackageSessionsMessage());
 
             DialogResult = DialogResult.OK;
             Close();
+        }
+
+        /// <summary>
+        /// " 3 weekly sessions were scheduled too." when the booking holds package lines, otherwise
+        /// an empty string. The count is the sessions that come AFTER the one being booked.
+        /// </summary>
+        private string PackageSessionsMessage()
+        {
+            int laterSessions = 0;
+
+            foreach (DataRow line in _lines.Rows)
+            {
+                int totalSessions = Db.Get<int>(line[AppointmentRepository.ColTotalSessions]);
+                if (totalSessions <= 1) continue;
+
+                int sessionNumber = Db.Get<int>(line[AppointmentRepository.ColSessionNumber]);
+                laterSessions += totalSessions - sessionNumber;
+            }
+
+            if (laterSessions <= 0) return string.Empty;
+            return " " + laterSessions + " weekly sessions were scheduled too.";
         }
 
         private void SaveReschedule()
@@ -1767,7 +1893,7 @@ namespace LittleEreseSystemV3.Forms
             try
             {
                 AppointmentRepository.Reschedule(RescheduleId, dtpDate.Value.Date,
-                    EarliestStart(), reason);
+                    RescheduleStart(), reason);
             }
             catch (Exception ex)
             {
@@ -1781,10 +1907,24 @@ namespace LittleEreseSystemV3.Forms
             SavedAppointmentDate = dtpDate.Value.Date;
 
             Messages.Info("Appointment #" + RescheduleId + " moved to " +
-                dtpDate.Value.ToString("MMM dd, yyyy") + " at " + Clock(EarliestStart()) + ".");
+                dtpDate.Value.ToString("MMM dd, yyyy") + " at " + Clock(RescheduleStart()) + ".");
 
             DialogResult = DialogResult.OK;
             Close();
+        }
+
+        /// <summary>
+        /// The new start of the appointment being moved: the picked time of its EARLIEST line. The
+        /// repository moves every other line by the same amount, so this is the whole move.
+        /// </summary>
+        private TimeSpan RescheduleStart()
+        {
+            if (_rescheduleLine == null) return EarliestStart();
+
+            TimeSpan start = AppointmentRepository.ReadTime(
+                _rescheduleLine[AppointmentRepository.ColStartTime]);
+
+            return start == TimeSpan.Zero ? EarliestStart() : start;
         }
 
         private void btnCancel_Click(object sender, EventArgs e)

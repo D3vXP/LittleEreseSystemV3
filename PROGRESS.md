@@ -2,6 +2,36 @@
 
 Update this file at the end of every task.
 
+- Step 59 (this task): the booking dialog is finished (E2-H); the reschedule mode is rebuilt.
+  - Date and client changes now also call UpdateLinePanel(), so cboLineTime is refilled for the
+    new date or client instead of keeping the times of the old one (in reschedule mode
+    RevalidateLines() is a no-op, so this call is the only refresh there).
+  - PackagePlanText now returns the whole weekly plan of a package line through
+    AvailabilityRepository.PlanSessions ("<service>: Session 1 of 4 on <MMM dd> at <time>, then
+    <MMM dd> (Session 2), ..., same time."; a failing session reads "<MMM dd> (Session n) is not
+    available: <problem>"); empty for a normal line, a line without a start or without a client.
+    Refreshed by UpdateLinePanel and Recalculate.
+  - SaveNewBooking says "Appointment #n was booked for <date> at <earliest start>. Next: take the
+    down payment of <amount> in Billing." plus " <k> weekly sessions were scheduled too."
+    (PackageSessionsMessage).
+  - SetupRescheduleMode loads every line with its own stored start/end and the technician and
+    nurse names, and selects the EARLIEST placed line (_rescheduleLine, EarliestLine()).
+    RefreshLineTimes uses otherLines = null and excludeAppointmentId = RescheduleId in reschedule
+    mode, and cboLineTime is enabled only for that earliest line (cboLineTech / cboLineNurse stay
+    disabled). SaveReschedule passes RescheduleStart() (the picked start of the earliest line) to
+    AppointmentRepository.Reschedule; the 3-day reason rule is untouched.
+  - No TODO(logic prompt) is left in the form. PROJECT_RULES.md gained the booking-dialog rule
+    (per-line start times, only the free times listed, "[PROMO] ..." categories, the weekly plan
+    of a package). Methods added: EarliestLine, RescheduleStart, PackageSessionsMessage. No
+    Designer file and no .csproj change.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --preview
+    AppointmentForm exit 0 with nothing overlapping or truncated; --smoketest 90 passed / 0
+    failed / 0 skipped; app started once, stayed open, closed, no error.log.
+  - Not verified by hand (no UI automation): clicking a facial at 10:00 AM plus a massage at
+    1:00 PM, the Appointments page after a 4-session Tirzepatide booking, and a two-service
+    reschedule. The two rules behind them are covered by the smoke checks "ValidateBooking
+    accepts a massage at 1:00 PM plus a facial at 10:00 AM" and "PlanSessions plans 3 weekly
+    Tirzepatide sessions".
 - Step 58 (this task): the per-line times of the booking dialog (E2-G). Every service line now has
   its own start time and cboLineTime only offers the times that really work.
   - New private methods in Forms\AppointmentForm.cs: RefreshLineTimes (fills cboLineTime for the
