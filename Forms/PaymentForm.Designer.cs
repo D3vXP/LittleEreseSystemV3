@@ -40,6 +40,10 @@ namespace LittleEreseSystemV3.Forms
             this.lblClientName = new System.Windows.Forms.Label();
             this.lblAmountDueTitle = new System.Windows.Forms.Label();
             this.lblAmountDue = new System.Windows.Forms.Label();
+            this.lblAmountToPay = new System.Windows.Forms.Label();
+            this.txtAmountToPay = new System.Windows.Forms.TextBox();
+            this.btnPayFull = new System.Windows.Forms.Button();
+            this.lblMinimumNote = new System.Windows.Forms.Label();
             this.lblMethod = new System.Windows.Forms.Label();
             this.cboMethod = new System.Windows.Forms.ComboBox();
             this.lblReference = new System.Windows.Forms.Label();
@@ -95,7 +99,7 @@ namespace LittleEreseSystemV3.Forms
             this.pnlFooter.Controls.Add(this.btnConfirm);
             this.pnlFooter.Controls.Add(this.pnlFooterLine);
             this.pnlFooter.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.pnlFooter.Location = new System.Drawing.Point(0, 496);
+            this.pnlFooter.Location = new System.Drawing.Point(0, 556);
             this.pnlFooter.Name = "pnlFooter";
             this.pnlFooter.Size = new System.Drawing.Size(460, 64);
             this.pnlFooter.TabIndex = 2;
@@ -155,6 +159,10 @@ namespace LittleEreseSystemV3.Forms
             this.pnlContent.Controls.Add(this.lblClientName);
             this.pnlContent.Controls.Add(this.lblAmountDueTitle);
             this.pnlContent.Controls.Add(this.lblAmountDue);
+            this.pnlContent.Controls.Add(this.lblAmountToPay);
+            this.pnlContent.Controls.Add(this.txtAmountToPay);
+            this.pnlContent.Controls.Add(this.btnPayFull);
+            this.pnlContent.Controls.Add(this.lblMinimumNote);
             this.pnlContent.Controls.Add(this.lblMethod);
             this.pnlContent.Controls.Add(this.cboMethod);
             this.pnlContent.Controls.Add(this.lblReference);
@@ -168,7 +176,7 @@ namespace LittleEreseSystemV3.Forms
             this.pnlContent.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pnlContent.Location = new System.Drawing.Point(0, 56);
             this.pnlContent.Name = "pnlContent";
-            this.pnlContent.Size = new System.Drawing.Size(460, 440);
+            this.pnlContent.Size = new System.Drawing.Size(460, 500);
             this.pnlContent.TabIndex = 1;
             // 
             // lblClientName
@@ -204,14 +212,64 @@ namespace LittleEreseSystemV3.Forms
             this.lblAmountDue.Text = "0.00";
             this.lblAmountDue.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
+            // lblAmountToPay
+            // 
+            this.lblAmountToPay.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblAmountToPay.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.lblAmountToPay.Location = new System.Drawing.Point(16, 112);
+            this.lblAmountToPay.Name = "lblAmountToPay";
+            this.lblAmountToPay.Size = new System.Drawing.Size(200, 18);
+            this.lblAmountToPay.TabIndex = 3;
+            this.lblAmountToPay.Text = "Amount to pay now";
+            this.lblAmountToPay.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // txtAmountToPay
+            // 
+            this.txtAmountToPay.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.txtAmountToPay.Location = new System.Drawing.Point(16, 132);
+            this.txtAmountToPay.Name = "txtAmountToPay";
+            this.txtAmountToPay.Size = new System.Drawing.Size(220, 25);
+            this.txtAmountToPay.TabIndex = 4;
+            this.txtAmountToPay.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.txtAmountToPay.TextChanged += new System.EventHandler(this.txtAmountToPay_TextChanged);
+            // 
+            // btnPayFull
+            // 
+            this.btnPayFull.BackColor = System.Drawing.Color.White;
+            this.btnPayFull.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnPayFull.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(164)))), ((int)(((byte)(123)))), ((int)(((byte)(43)))));
+            this.btnPayFull.FlatAppearance.BorderSize = 1;
+            this.btnPayFull.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(227)))), ((int)(((byte)(218)))), ((int)(((byte)(198)))));
+            this.btnPayFull.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
+            this.btnPayFull.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnPayFull.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnPayFull.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(164)))), ((int)(((byte)(123)))), ((int)(((byte)(43)))));
+            this.btnPayFull.Location = new System.Drawing.Point(244, 131);
+            this.btnPayFull.Name = "btnPayFull";
+            this.btnPayFull.Size = new System.Drawing.Size(196, 27);
+            this.btnPayFull.TabIndex = 5;
+            this.btnPayFull.Text = "Pay in full";
+            this.btnPayFull.UseVisualStyleBackColor = false;
+            this.btnPayFull.Click += new System.EventHandler(this.btnPayFull_Click);
+            // 
+            // lblMinimumNote
+            // 
+            this.lblMinimumNote.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblMinimumNote.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.lblMinimumNote.Location = new System.Drawing.Point(16, 160);
+            this.lblMinimumNote.Name = "lblMinimumNote";
+            this.lblMinimumNote.Size = new System.Drawing.Size(424, 18);
+            this.lblMinimumNote.TabIndex = 6;
+            this.lblMinimumNote.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
             // lblMethod
             // 
             this.lblMethod.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblMethod.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblMethod.Location = new System.Drawing.Point(16, 110);
+            this.lblMethod.Location = new System.Drawing.Point(16, 180);
             this.lblMethod.Name = "lblMethod";
             this.lblMethod.Size = new System.Drawing.Size(200, 18);
-            this.lblMethod.TabIndex = 3;
+            this.lblMethod.TabIndex = 7;
             this.lblMethod.Text = "Payment method";
             this.lblMethod.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
@@ -224,59 +282,59 @@ namespace LittleEreseSystemV3.Forms
             "Cash",
             "GCash",
             "Bank Transfer"});
-            this.cboMethod.Location = new System.Drawing.Point(16, 130);
+            this.cboMethod.Location = new System.Drawing.Point(16, 200);
             this.cboMethod.Name = "cboMethod";
             this.cboMethod.Size = new System.Drawing.Size(220, 25);
-            this.cboMethod.TabIndex = 4;
+            this.cboMethod.TabIndex = 8;
             this.cboMethod.SelectedIndexChanged += new System.EventHandler(this.cboMethod_SelectedIndexChanged);
             // 
             // lblReference
             // 
             this.lblReference.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblReference.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblReference.Location = new System.Drawing.Point(16, 166);
+            this.lblReference.Location = new System.Drawing.Point(16, 236);
             this.lblReference.Name = "lblReference";
             this.lblReference.Size = new System.Drawing.Size(200, 18);
-            this.lblReference.TabIndex = 5;
+            this.lblReference.TabIndex = 9;
             this.lblReference.Text = "Reference number";
             this.lblReference.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // txtReference
             // 
             this.txtReference.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtReference.Location = new System.Drawing.Point(16, 186);
+            this.txtReference.Location = new System.Drawing.Point(16, 256);
             this.txtReference.Name = "txtReference";
             this.txtReference.Size = new System.Drawing.Size(220, 25);
-            this.txtReference.TabIndex = 6;
+            this.txtReference.TabIndex = 10;
             // 
             // lblTendered
             // 
             this.lblTendered.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblTendered.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblTendered.Location = new System.Drawing.Point(16, 222);
+            this.lblTendered.Location = new System.Drawing.Point(16, 292);
             this.lblTendered.Name = "lblTendered";
             this.lblTendered.Size = new System.Drawing.Size(200, 18);
-            this.lblTendered.TabIndex = 7;
+            this.lblTendered.TabIndex = 11;
             this.lblTendered.Text = "Amount tendered";
             this.lblTendered.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // txtTendered
             // 
             this.txtTendered.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtTendered.Location = new System.Drawing.Point(16, 242);
+            this.txtTendered.Location = new System.Drawing.Point(16, 312);
             this.txtTendered.Name = "txtTendered";
             this.txtTendered.Size = new System.Drawing.Size(220, 25);
-            this.txtTendered.TabIndex = 8;
+            this.txtTendered.TabIndex = 12;
             this.txtTendered.TextChanged += new System.EventHandler(this.txtTendered_TextChanged);
             // 
             // lblChangeTitle
             // 
             this.lblChangeTitle.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblChangeTitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblChangeTitle.Location = new System.Drawing.Point(16, 278);
+            this.lblChangeTitle.Location = new System.Drawing.Point(16, 348);
             this.lblChangeTitle.Name = "lblChangeTitle";
             this.lblChangeTitle.Size = new System.Drawing.Size(200, 18);
-            this.lblChangeTitle.TabIndex = 9;
+            this.lblChangeTitle.TabIndex = 13;
             this.lblChangeTitle.Text = "Change";
             this.lblChangeTitle.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
@@ -284,10 +342,10 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.lblChange.Font = new System.Drawing.Font("Segoe UI Semibold", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblChange.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(62)))), ((int)(((byte)(142)))), ((int)(((byte)(90)))));
-            this.lblChange.Location = new System.Drawing.Point(16, 298);
+            this.lblChange.Location = new System.Drawing.Point(16, 368);
             this.lblChange.Name = "lblChange";
             this.lblChange.Size = new System.Drawing.Size(220, 32);
-            this.lblChange.TabIndex = 10;
+            this.lblChange.TabIndex = 14;
             this.lblChange.Text = "0.00";
             this.lblChange.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
@@ -295,10 +353,10 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.chkVerified.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.chkVerified.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.chkVerified.Location = new System.Drawing.Point(16, 338);
+            this.chkVerified.Location = new System.Drawing.Point(16, 408);
             this.chkVerified.Name = "chkVerified";
             this.chkVerified.Size = new System.Drawing.Size(424, 24);
-            this.chkVerified.TabIndex = 11;
+            this.chkVerified.TabIndex = 15;
             this.chkVerified.Text = "I verified this payment in the GCash / bank app";
             this.chkVerified.UseVisualStyleBackColor = true;
             // 
@@ -306,10 +364,10 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.lblNote.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblNote.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblNote.Location = new System.Drawing.Point(16, 370);
+            this.lblNote.Location = new System.Drawing.Point(16, 440);
             this.lblNote.Name = "lblNote";
             this.lblNote.Size = new System.Drawing.Size(424, 56);
-            this.lblNote.TabIndex = 12;
+            this.lblNote.TabIndex = 16;
             this.lblNote.Text = "The system does not contact GCash or any bank. Please check the reference number i" +
     "n your own app before confirming.";
             // 
@@ -324,7 +382,7 @@ namespace LittleEreseSystemV3.Forms
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(460, 560);
+            this.ClientSize = new System.Drawing.Size(460, 620);
             this.Controls.Add(this.pnlContent);
             this.Controls.Add(this.pnlFooter);
             this.Controls.Add(this.pnlHeader);
@@ -357,6 +415,10 @@ namespace LittleEreseSystemV3.Forms
         private System.Windows.Forms.Label lblClientName;
         private System.Windows.Forms.Label lblAmountDueTitle;
         private System.Windows.Forms.Label lblAmountDue;
+        private System.Windows.Forms.Label lblAmountToPay;
+        private System.Windows.Forms.TextBox txtAmountToPay;
+        private System.Windows.Forms.Button btnPayFull;
+        private System.Windows.Forms.Label lblMinimumNote;
         private System.Windows.Forms.Label lblMethod;
         private System.Windows.Forms.ComboBox cboMethod;
         private System.Windows.Forms.Label lblReference;

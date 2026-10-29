@@ -2,6 +2,43 @@
 
 Update this file at the end of every task.
 
+- Step 66 (this task): the SAME payment dialog now serves the down payment, a partial payment and
+  completing a service.
+  - Forms\PaymentForm.Designer.cs: pnlContent gained a row under "Amount due" - lblAmountToPay,
+    txtAmountToPay (right aligned, plain number), btnPayFull ("Pay in full", styled with
+    Theme.StyleSecondaryButton at runtime) and the muted lblMinimumNote below them. Every row
+    under it (method, reference, tendered, change, verified tick, note) moved down 70 px and
+    TabIndex was renumbered 3..16 so the top-to-bottom order still equals the tab order. The form
+    grew by the same 70 px: ClientSize 460x620 (pnlFooter at y 556, pnlContent 460x500). The
+    Designer draws the new values with the literal colors of Theme, as the rules ask.
+  - Forms\PaymentForm.cs: new properties MinimumAmount (0 or above AmountDue means AmountDue - the
+    "complete the service" case), HeaderText (shown in lblTitle when not empty) and AmountToPay
+    (private set). Load prefills txtAmountToPay with MinimumAmount as a plain "N2" number (the same
+    style as txtTendered); when MinimumAmount >= AmountDue the box is read-only and btnPayFull is
+    hidden, so the Checkout call in ucBilling keeps behaving exactly as before; otherwise
+    lblMinimumNote reads "The first payment must be at least P..." (at least half the balance, the
+    first payment case) or "Any amount up to the balance." for a later payment. btnPayFull fills the
+    box with the balance. Change = tendered - AmountToPay (never below 0) and the cash rule is now
+    tendered >= AmountToPay. ValidateInput also checks that AmountToPay is a number, >= MinimumAmount
+    and <= AmountDue, all through errorProvider1 in plain words.
+  - New public static bool PaymentForm.TakePayment(IWin32Window owner, int appointmentId,
+    string headerText): reads BillingRepository.GetBillHeader, says "Nothing is left to pay for this
+    appointment." and returns false when there is no bill or the balance is 0, sets MinimumAmount to
+    DownpaymentDue(subtotal, discount) for the first payment (paid_so_far = 0) and 1.00 later, both
+    capped at the balance, shows the dialog and calls BillingRepository.RecordPayment; an
+    InvalidOperationException is a Messages.Warn, any other exception a Messages.DbError, both false.
+    On success it confirms "Payment of P... received. Balance left: P..." plus " Change: P..." for
+    cash and returns true. ucBilling and its Checkout call were NOT touched (Step 4 of the prompt).
+  - PROJECT_RULES.md: no change - this prompt adds no new business rule (the Payments rule already
+    says a payment can be taken at any time, on any date, in parts).
+  - No .csproj change. docs\screenshots\PaymentForm.png regenerated.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --preview
+    PaymentForm exit 0 (new row and labels look right, nothing overlaps or is cut off);
+    --smoketest 94 passed / 0 failed / 0 skipped; app started once, stayed open, closed, no
+    error.log.
+  - Known issue (unchanged): no Billing screen button calls TakePayment yet; it is ready for a later
+    prompt. Open Forms\PaymentForm.cs in the Designer to see the new row.
+
 - Step 65 (this task): a payment can now be taken at any time, on any date.
   - Data\BillingRepository.RecordPayment(appointmentId, amount, method, reference, verified,
     tendered) returns the billing_id and takes one payment on its own. It throws
