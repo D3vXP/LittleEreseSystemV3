@@ -2,6 +2,36 @@
 
 Update this file at the end of every task.
 
+- Step 56 (this task): compact layout of the booking dialog only (no logic, no new control, nothing
+  renamed). ClientSize stays 980 x 640, pnlScroll still scrolls.
+  - tlpContent went from 1 column / 17 rows to 6 equal columns / 11 rows, so a block can sit on
+    the left or the right half of one row. The content is now 596 px tall (was 936), so inside the
+    520 px pnlScroll only the notes box needs a little scrolling.
+  - One row for the client and the schedule: Client + "+ New" on the left half (flpClient), Date +
+    Source on the right half (flpSchedule). lblClientInfo (medical alerts) is under the client,
+    one line high; lblSlotInfo is under Date/Source, one line high.
+  - The Category filter (flpCatalogHeader) and Add > / Remove (flpServiceButtons) share one row:
+    filter on the left half, the two buttons right-aligned on the right half.
+  - dgvCatalog is 110 px (3 rows + header), dgvSelected 124 px (3 rows + header), so pnlCatalog is
+    112 px and pnlSelected 126 px.
+  - grpLine "Selected service" is one compact block, 126 px: lblLineService (bold) on top, then
+    cboLineTime, cboLineTech and cboLineNurse in a row, each with its small muted caption
+    (lblLineTime, lblLineTech, lblLineNurse) directly above it, and lblLineNote plus
+    lblSessionPlan under them (muted, wrapping, one line high each). lblSessionPlan is now a child
+    of grpLine instead of a table row of its own.
+  - Totals in one row: flpSubtotal, flpDiscount and flpTotal side by side (2 columns each), the
+    lblRequired line right under them, then lblPromoNote, the Notes label and a two-line txtNotes.
+  - Tab order equals the visual order (client 0, schedule 1, buttons 5, grids, grpLine 8, totals
+    9-11, lblRequired 12, lblPromoNote 13, lblNotes 14, txtNotes 15). DataPropertyName of every
+    grid column is untouched.
+  - LittleEreseSystemV3.csproj was NOT edited (no new file). No business rule changed, so
+    PROJECT_RULES.md is unchanged.
+  - docs\screenshots\AppointmentForm.png was regenerated.
+  - Checks: clean build 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --preview
+    AppointmentForm checked (no overlap, headers readable, nothing clipped); --smoketest 90 passed
+    / 0 failed / 0 skipped; app started once, stayed open, closed, no error.log.
+  - Known issue: the Notes box is the only part that still needs a small scroll at 1280 x 720.
+  - Next: E2-C, the booking logic, unchanged.
 - Step 55 (this task): the NEW layout of the booking dialog (no logic). ClientSize stays 980 x 640,
   pnlScroll still scrolls vertically.
   - Schedule row: lblTime, cboTime and lblEndTime are gone; lblDate, dtpDate, lblSource, cboSource
