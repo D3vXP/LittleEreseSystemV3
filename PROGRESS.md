@@ -2,6 +2,51 @@
 
 Update this file at the end of every task.
 
+- Step 65 (this task): a payment can now be taken at any time, on any date.
+  - Data\BillingRepository.RecordPayment(appointmentId, amount, method, reference, verified,
+    tendered) returns the billing_id and takes one payment on its own. It throws
+    InvalidOperationException with one plain sentence per broken rule: the appointment exists and
+    is not Cancelled, the bill exists, balance_due > 0 ("Nothing is left to pay for this
+    appointment."); amount > 0 and <= balance ("The amount cannot be more than the balance of
+    P..."); the FIRST payment (no payment that is not 'Rejected' yet) must reach
+    AppointmentRepository.DownpaymentDue(subtotal, discount) - 50% of the total, or the whole
+    total when the bill has a promo - else "The first payment must be at least P... (50% of the
+    total, a promotion needs full payment)."; later payments are any amount > 0. Cash needs
+    tendered >= amount; GCash / Bank Transfer need a reference and verified = true (same
+    sentences and the same NeedsReference helper as Checkout). One Db.InTransaction writes the
+    payment through AddPayment (which refreshes the balance) with payment_type 'Downpayment' for
+    a first payment below the total otherwise 'Final', verification_status 'Verified',
+    received_by = Session.UserId; for the FIRST payment it also sets downpayment = amount and
+    downpayment_status = 'Held' (a full payment too - Checkout turns 'Held' into 'Applied'), and
+    logs "Payment of P... for appointment #n". Completing the service stays untouched in
+    Checkout.
+  - RefreshBalance now puts "total_amount = 0 -> 'Paid'" FIRST in its CASE, so a bill of 0.00 (a
+    later session of a package) is never Unpaid. Cancel's "UPDATE Billing SET" forfeits
+    payment_status only when it is 'Paid' AND total_amount > 0, so cancelling a zero bill no
+    longer marks it 'Forfeited'.
+  - New Database\Migrations\005_zero_bills_paid.sql (style of 004): UPDATE Billing SET
+    payment_status = 'Paid' WHERE total_amount = 0 AND payment_status = 'Unpaid'. No .csproj or
+    bootstrapper edit was needed: the .csproj already copies Database\Migrations\*.sql
+    (PreserveNewest) and DatabaseBootstrapper.ApplyMigrations runs every *.sql of that folder,
+    so 001-005 all arrive the same way.
+  - New BillingRepository.GetBalances(): same columns as GetQueue, for every 'Upcoming' or
+    'Ongoing' appointment whose bill has balance_due > 0, ANY date, ORDER BY appointment_date,
+    start_time, appointment_id. Its time_range starts with the date: "Nov 19 - 3:00 PM - 3:30
+    PM". The services text is built by a new private helper NamesForIds (takes the appointment
+    ids); NamesForDate is untouched.
+  - Helpers\SmokeTest.cs gained 3 read-only checks: "No bill with a total of 0 is Unpaid",
+    "GetBalances only returns bills with a balance", and "Migration 005 applied = 1".
+  - PROJECT_RULES.md: the Payments rule now reads "a payment can be taken at any time and on any
+    date. The first payment is at least 50% of the total (promo: the whole total); later payments
+    are any amount up to the balance. Completing the service pays the rest. A bill of 0.00 (a
+    later session of a package) is 'Paid'.", and the Billing rule adds total_amount = 0 to the
+    'Paid' condition.
+  - No Designer or .csproj change.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --smoketest 94
+    passed / 0 failed / 0 skipped; app started once, stayed open, closed, no error.log.
+  - Known issue: RecordPayment has no screen yet (no Billing UI was asked for); it is repository
+    -only, ready for a later prompt.
+
 - Step 64 (this task): the "Selected Day" list no longer looks empty while the calendar still
   shows lines for that day.
   - CAUSE: the two feeds disagreed. The Dashboard lists ask for "Active" (everything except

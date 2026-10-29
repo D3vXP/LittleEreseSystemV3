@@ -103,7 +103,8 @@ namespace LittleEreseSystemV3.Data
                 "       balance_due = CASE WHEN total_amount - ISNULL(paid.paid_amount, 0) < 0 " +
                 "                           THEN 0 " +
                 "                           ELSE total_amount - ISNULL(paid.paid_amount, 0) END, " +
-                "       payment_status = CASE WHEN ISNULL(paid.paid_amount, 0) <= 0 THEN 'Unpaid' " +
+                "       payment_status = CASE WHEN total_amount = 0 THEN 'Paid' " +
+                "                             WHEN ISNULL(paid.paid_amount, 0) <= 0 THEN 'Unpaid' " +
                 "                             WHEN total_amount - ISNULL(paid.paid_amount, 0) <= 0 THEN 'Paid' " +
                 "                             ELSE 'Partial' END, " +
                 "       updated_at = GETDATE() " +
@@ -161,6 +162,59 @@ ORDER BY a.start_time, a.appointment_id",
             }
 
             // The raw time columns are not shown anywhere, so they do not travel to the grid.
+            table.Columns.Remove("start_time");
+            table.Columns.Remove("end_time");
+
+            return table;
+        }
+
+        /// <summary>
+        /// Every appointment that still owes money, ANY date: the balances list of the Billing
+        /// screen. Same columns as GetQueue (appointment_id, time_range, client_name, services,
+        /// status, payment_status, balance_due), but the time_range text starts with the date
+        /// ("Nov 19 - 3:00 PM - 3:30 PM"), because these rows are not from one day.
+        /// Only 'Upcoming' and 'Ongoing' appointments whose bill has balance_due > 0 are listed.
+        /// </summary>
+        public static DataTable GetBalances()
+        {
+            DataTable table = Db.Query(
+@"SELECT a.appointment_id, a.appointment_date, a.start_time, a.end_time,
+         c.last_name + ', ' + c.first_name AS client_name,
+         a.status,
+         ISNULL(b.payment_status, 'Unpaid') AS payment_status,
+         ISNULL(b.balance_due, 0) AS balance_due
+FROM Appointments a
+INNER JOIN Clients c ON c.client_id = a.client_id
+INNER JOIN Billing b ON b.appointment_id = a.appointment_id
+WHERE a.status IN ('Upcoming', 'Ongoing') AND b.balance_due > 0
+ORDER BY a.appointment_date, a.start_time, a.appointment_id");
+
+            List<int> ids = new List<int>();
+            foreach (DataRow row in table.Rows)
+            {
+                ids.Add(Db.Get<int>(row["appointment_id"]));
+            }
+
+            Dictionary<int, string> services = NamesForIds(ids);
+
+            table.Columns.Add("time_range", typeof(string));
+            table.Columns.Add("services", typeof(string));
+
+            foreach (DataRow row in table.Rows)
+            {
+                int appointmentId = Db.Get<int>(row["appointment_id"]);
+
+                DateTime date = Db.Get<DateTime>(row["appointment_date"]);
+                TimeSpan start = ReadTime(row["start_time"]);
+                TimeSpan end = ReadTime(row["end_time"]);
+                row["time_range"] = date.ToString("MMM dd") + " - " + Clock(start) + " - " + Clock(end);
+
+                string names;
+                row["services"] = services.TryGetValue(appointmentId, out names) ? names : "-";
+            }
+
+            // The raw date / time columns are not shown anywhere, so they do not travel to the grid.
+            table.Columns.Remove("appointment_date");
             table.Columns.Remove("start_time");
             table.Columns.Remove("end_time");
 
@@ -680,6 +734,124 @@ VALUES (@appointment_id, @changed_by, 'Status Change', @old_status, 'Completed',
             return billingId;
         }
 
+        /// <summary>
+        /// Takes one payment for an appointment at any time and on any date, as a down payment or
+        /// in parts, and returns the billing_id. Completing the service stays in Checkout.
+        /// The first payment of a bill must reach AppointmentRepository.DownpaymentDue (50% of the
+        /// total, the whole total when a promotion is applied); a later payment is any amount up to
+        /// the balance. A cash payment needs tendered >= amount; GCash and Bank Transfer need a
+        /// reference and the verified tick.
+        /// Throws InvalidOperationException with a readable message when a rule is broken.
+        /// </summary>
+        public static int RecordPayment(int appointmentId, decimal amount, string method, string reference,
+            bool verified, decimal tendered)
+        {
+            DataRow appointment = AppointmentRepository.GetById(appointmentId);
+            if (appointment == null) throw new InvalidOperationException("This appointment no longer exists.");
+
+            string appointmentStatus = Db.Get<string>(appointment["status"]);
+            if (string.Equals(appointmentStatus, "Cancelled", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("This appointment is cancelled, so no payment can be taken.");
+            }
+
+            DataRow bill = GetBillHeader(appointmentId);
+            if (bill == null) throw new InvalidOperationException("Nothing is left to pay for this appointment.");
+
+            int billingId = Db.Get<int>(bill["billing_id"]);
+            decimal subtotal = Db.Get<decimal>(bill["subtotal"]);
+            decimal discount = Db.Get<decimal>(bill["discount_amount"]);
+            decimal total = Db.Get<decimal>(bill["total_amount"]);
+            decimal balance = Db.Get<decimal>(bill["balance_due"]);
+
+            if (balance <= 0m)
+            {
+                throw new InvalidOperationException("Nothing is left to pay for this appointment.");
+            }
+
+            if (amount <= 0m)
+            {
+                throw new InvalidOperationException("The amount must be more than " + Money.Text(0m) + ".");
+            }
+
+            if (amount > balance)
+            {
+                throw new InvalidOperationException("The amount cannot be more than the balance of " +
+                    Money.Text(balance) + ".");
+            }
+
+            // The first payment of the bill: no payment that was not rejected exists yet.
+            int paidSoFar = Convert.ToInt32(Db.Scalar(
+                "SELECT COUNT(*) FROM Payments WHERE billing_id = @billing_id " +
+                "AND verification_status <> 'Rejected'",
+                Db.P("@billing_id", billingId)));
+
+            bool firstPayment = paidSoFar == 0;
+
+            if (firstPayment)
+            {
+                decimal required = AppointmentRepository.DownpaymentDue(subtotal, discount);
+                if (amount < required)
+                {
+                    throw new InvalidOperationException("The first payment must be at least " +
+                        Money.Text(required) + " (50% of the total, a promotion needs full payment).");
+                }
+            }
+
+            string paymentMethod = method == null ? string.Empty : method.Trim();
+            string paymentReference = reference == null ? string.Empty : reference.Trim();
+
+            if (string.IsNullOrEmpty(paymentMethod))
+            {
+                throw new InvalidOperationException("Choose a payment method for " + Money.Text(amount) + ".");
+            }
+
+            if (NeedsReference(paymentMethod))
+            {
+                if (string.IsNullOrWhiteSpace(paymentReference))
+                {
+                    throw new InvalidOperationException("Type the " + paymentMethod + " reference number.");
+                }
+
+                if (!verified)
+                {
+                    throw new InvalidOperationException(
+                        "Tick 'I verified this payment in the GCash / bank app' before saving a " +
+                        paymentMethod + " payment.");
+                }
+            }
+            else if (tendered < amount)
+            {
+                throw new InvalidOperationException("The amount tendered does not cover the payment of " +
+                    Money.Text(amount) + ".");
+            }
+
+            // A first payment below the total is a deposit; anything else closes the bill.
+            string paymentType = firstPayment && amount < total ? "Downpayment" : "Final";
+            int userId = Helpers.Session.UserId;
+
+            Db.InTransaction(delegate (SqlConnection connection, SqlTransaction transaction)
+            {
+                AddPayment(connection, transaction, billingId, userId, paymentType, paymentMethod,
+                    paymentReference, amount, "Verified");
+
+                // The bill remembers the deposit so Billing can show it was already paid.
+                if (firstPayment)
+                {
+                    Db.Execute(connection, transaction,
+                        "UPDATE Billing SET downpayment = @downpayment, downpayment_status = 'Held', " +
+                        "updated_at = GETDATE() WHERE billing_id = @billing_id",
+                        Db.P("@downpayment", amount),
+                        Db.P("@billing_id", billingId));
+                }
+            });
+
+            ActivityRepository.Log(userId, "Payment", "Billing",
+                "Payment of " + Money.Text(amount) + " for appointment #" + appointmentId);
+
+            return billingId;
+        }
+
         // ---------------------------------------------------------------------
         // PRIVATE HELPERS
         // ---------------------------------------------------------------------
@@ -699,6 +871,48 @@ INNER JOIN Appointments a ON a.appointment_id = asv.appointment_id
 WHERE a.appointment_date = @appointment_date AND asv.status <> 'Cancelled'
 ORDER BY asv.appointment_service_id",
                 Db.P("@appointment_date", date.Date));
+
+            Merge(values, table);
+            return values;
+        }
+
+        /// <summary>
+        /// The service names of the appointments in <paramref name="ids"/> (for the balances grid,
+        /// which spans many dates). One query for the whole list, so a day is never loaded here.
+        /// </summary>
+        private static Dictionary<int, string> NamesForIds(List<int> ids)
+        {
+            Dictionary<int, string> values = new Dictionary<int, string>();
+            if (ids == null || ids.Count == 0) return values;
+
+            List<int> unique = new List<int>();
+            foreach (int id in ids)
+            {
+                if (id > 0 && !unique.Contains(id)) unique.Add(id);
+            }
+
+            if (unique.Count == 0) return values;
+
+            List<SqlParameter> parameters = new List<SqlParameter>();
+            string[] placeholders = new string[unique.Count];
+
+            for (int i = 0; i < unique.Count; i++)
+            {
+                placeholders[i] = "@id" + i;
+                parameters.Add(Db.P(placeholders[i], unique[i]));
+            }
+
+            string inList = string.Join(", ", placeholders);
+
+            DataTable table = Db.Query(
+                "SELECT asv.appointment_id, " +
+                "       s.service_name + CASE WHEN asv.quantity > 1 " +
+                "                             THEN ' x' + CAST(asv.quantity AS varchar(10)) ELSE '' END AS name " +
+                "FROM AppointmentServices asv " +
+                "INNER JOIN Services s ON s.service_id = asv.service_id " +
+                "WHERE asv.status <> 'Cancelled' AND asv.appointment_id IN (" + inList + ") " +
+                "ORDER BY asv.appointment_service_id",
+                parameters.ToArray());
 
             Merge(values, table);
             return values;

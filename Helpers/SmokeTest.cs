@@ -290,6 +290,8 @@ namespace LittleEreseSystemV3.Helpers
             CheckBillingQueue();
             CheckBillingTransactions();
             CheckBillingHeaderWithoutBill();
+            CheckZeroBillsPaid();
+            CheckBalancesOnlyWithBalance();
 
             // The three read-only Commission / Report checks (Step 20). Nothing is written here.
             CheckCommissionSummary();
@@ -317,6 +319,7 @@ namespace LittleEreseSystemV3.Helpers
             CheckMigration002Columns();
             CheckMigration003Data();
             CheckMigration004Data();
+            CheckMigration005Applied();
 
             // The read-only availability checks (Step 48). Nothing is written here.
             CheckAvailability();
@@ -693,6 +696,16 @@ ORDER BY a.appointment_id");
                 "SELECT COUNT(*) FROM Services WHERE requires_assessment = 1");
         }
 
+        /// <summary>
+        /// Migration 005 must be listed in SchemaVersion. Read-only: the smoke test never applies a
+        /// migration itself, so start the app once first.
+        /// </summary>
+        private static void CheckMigration005Applied()
+        {
+            CheckScalarAtLeast("Migration 005 applied = ", 1,
+                "SELECT COUNT(*) FROM dbo.SchemaVersion WHERE script_name = '005_zero_bills_paid.sql'");
+        }
+
         /// <summary>GetLog for the last 7 days must run and come back with the columns the grid needs.</summary>
         private static void CheckActivityLog()
         {
@@ -794,6 +807,42 @@ ORDER BY a.appointment_id");
                 DataRow header = BillingRepository.GetBillHeader(0);
                 if (header == null) Pass(label);
                 else Fail(label + " (got a row)");
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// A bill with nothing to pay (a later session of a package costs 0.00) must be 'Paid',
+        /// never 'Unpaid'. Read-only: only a SELECT is run.
+        /// </summary>
+        private static void CheckZeroBillsPaid()
+        {
+            CheckScalarZero("No bill with a total of 0 is Unpaid",
+                "SELECT COUNT(*) FROM Billing WHERE total_amount = 0 AND payment_status = 'Unpaid'");
+        }
+
+        /// <summary>
+        /// GetBalances must only return bills that still owe money. Read-only.
+        /// </summary>
+        private static void CheckBalancesOnlyWithBalance()
+        {
+            const string label = "BillingRepository.GetBalances only returns bills with a balance";
+            try
+            {
+                DataTable balances = BillingRepository.GetBalances();
+
+                int wrong = 0;
+                foreach (DataRow row in balances.Rows)
+                {
+                    if (Db.Get<decimal>(row["balance_due"]) <= 0m) wrong++;
+                }
+
+                string message = label + " (rows = " + balances.Rows.Count + ")";
+                if (wrong == 0) Pass(message);
+                else Fail(message + " - " + wrong + " row(s) with balance_due <= 0");
             }
             catch (Exception ex)
             {

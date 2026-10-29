@@ -1581,7 +1581,8 @@ WHERE appointment_id = @appointment_id",
 @"UPDATE Billing SET
         downpayment_status = CASE WHEN downpayment_status IN ('Held', 'Applied') THEN 'Forfeited'
                                   ELSE downpayment_status END,
-        payment_status = CASE WHEN payment_status = 'Paid' THEN 'Forfeited' ELSE payment_status END,
+        payment_status = CASE WHEN payment_status = 'Paid' AND total_amount > 0 THEN 'Forfeited'
+                              ELSE payment_status END,
         updated_at = GETDATE()
 WHERE appointment_id = @appointment_id",
                 Db.P("@appointment_id", appointmentId));
