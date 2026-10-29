@@ -427,9 +427,87 @@ namespace LittleEreseSystemV3.Controls
                 return;
             }
 
+            // A package session can drag its later sessions along, so the desk is asked about them
+            // BEFORE anything is written. Without later sessions the flow is exactly as it was.
+            DataTable laterSessions;
             try
             {
-                AppointmentRepository.Cancel(appointmentId, reason);
+                laterSessions = AppointmentRepository.GetLaterSessions(appointmentId);
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+                return;
+            }
+
+            bool includeLater = false;
+            int laterCount = laterSessions.Rows.Count;
+
+            if (laterCount > 0)
+            {
+                // The question needs the session's own name and number, which the package line of
+                // this appointment carries. Session 0 means the appointment is not a package row.
+                string serviceName = "This service";
+                int sessionNumber = 0;
+                int totalSessions = 0;
+
+                DataTable packageLines;
+                try
+                {
+                    packageLines = AppointmentRepository.GetLinesForBooking(appointmentId);
+                }
+                catch (Exception ex)
+                {
+                    Messages.DbError(ex);
+                    return;
+                }
+
+                foreach (DataRow line in packageLines.Rows)
+                {
+                    if (Db.Get<int>(line[AppointmentRepository.ColPackageId]) <= 0) continue;
+                    if (Db.Get<int>(line[AppointmentRepository.ColTotalSessions]) <= 1) continue;
+
+                    serviceName = Db.Get<string>(line[AppointmentRepository.ColServiceName]);
+                    sessionNumber = Db.Get<int>(line[AppointmentRepository.ColSessionNumber]);
+                    totalSessions = Db.Get<int>(line[AppointmentRepository.ColTotalSessions]);
+                    break;
+                }
+
+                if (sessionNumber <= 1)
+                {
+                    // Session 1 carries the money of the whole package, so it cannot be left behind.
+                    // The repository refuses that anyway, which is why there is no "only this one".
+                    DialogResult choice = MessageBox.Show(
+                        serviceName + " session 1 of " + totalSessions +
+                        " carries the payment of the package, so cancelling it also cancels its " +
+                        laterCount + " later session(s).",
+                        Messages.Title, MessageBoxButtons.OKCancel, MessageBoxIcon.Warning,
+                        MessageBoxDefaultButton.Button2);
+
+                    if (choice != DialogResult.OK) return;
+
+                    includeLater = true;
+                }
+                else
+                {
+                    DialogResult choice = MessageBox.Show(
+                        serviceName + " session " + sessionNumber + " of " + totalSessions +
+                        " has " + laterCount + " later session(s)." +
+                        "\n\nYes = cancel this session and all later sessions" +
+                        "\nNo = cancel only this session" +
+                        "\nCancel = do nothing",
+                        Messages.Title, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question,
+                        MessageBoxDefaultButton.Button3);
+
+                    if (choice == DialogResult.Cancel) return;
+
+                    includeLater = choice == DialogResult.Yes;
+                }
+            }
+
+            try
+            {
+                AppointmentRepository.Cancel(appointmentId, reason, includeLater);
             }
             catch (Exception ex)
             {
@@ -438,7 +516,16 @@ namespace LittleEreseSystemV3.Controls
                 return;
             }
 
-            Messages.Info("The appointment was cancelled and the rooms were released.");
+            if (includeLater)
+            {
+                Messages.Info("The appointment was cancelled and the rooms were released. " +
+                    (1 + laterCount) + " sessions were cancelled.");
+            }
+            else
+            {
+                Messages.Info("The appointment was cancelled and the rooms were released.");
+            }
+
             LoadAppointments(appointmentId);
         }
 

@@ -2,6 +2,33 @@
 
 Update this file at the end of every task.
 
+- Step 63 (this task): the cancel and reschedule screens now drive the package-session overloads.
+  - Controls\ucAppointments.cs (btnCancelAppointment_Click): after the confirmation and the reason
+    prompt, AppointmentRepository.GetLaterSessions(selectedId) is read BEFORE anything is written.
+    When it has rows the session's own name / number / total come from the appointment's package
+    line (GetLinesForBooking): session 1 -> MessageBox OKCancel "…session 1 of <total> carries the
+    payment of the package, so cancelling it also cancels its <k> later session(s).", OK calls
+    Cancel(id, reason, true); another session -> MessageBox YesNoCancel "…session <n> of <total> has
+    <k> later session(s). Yes = all / No = only this / Cancel = do nothing", Yes calls
+    Cancel(id, reason, true), No calls Cancel(id, reason, false), Cancel stops. Without later
+    sessions the flow is unchanged. The success message now reads "… <1 + k> sessions were
+    cancelled." when the later sessions came along.
+  - Forms\AppointmentForm.cs (SaveReschedule): after the reason and before Reschedule, when the
+    date or the picked start really changed and GetLaterSessions(RescheduleId) has rows, a YesNo
+    box asks "<service> has <k> later session(s). Move them by the same amount too? Yes = move all,
+    No = move only this session."; Yes calls the 5-argument Reschedule(…, true), No (the default)
+    calls the 4-argument one. The success message adds " <1 + k> sessions were moved." when they did.
+    Picking the same date and time again asks nothing.
+  - New message boxes go through System.Windows.Forms.MessageBox with the caption Messages.Title
+    ("Little Erese's"), because Messages has no Yes/No/Cancel or OK/Cancel dialog.
+  - No Designer, .csproj or migration change; no other method touched. PROJECT_RULES.md needed no
+    edit: the package rule already says a cancel or a reschedule can include all the later sessions
+    and that session 1 can only be cancelled together with them.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --smoketest 91
+    passed / 0 failed / 0 skipped; app started once, stayed open, closed, no error.log.
+  - Known issue: the new dialogs were not verified by hand (no UI automation).
+
+
 - Step 62 (this task): packages cancel and reschedule as a set (repository only).
   - Data\AppointmentRepository.cs: new public GetLaterSessions(appointmentId) returns the later
     sessions of the appointment's package (columns appointment_id, session_number,

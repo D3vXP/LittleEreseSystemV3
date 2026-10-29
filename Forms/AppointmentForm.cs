@@ -1920,10 +1920,51 @@ namespace LittleEreseSystemV3.Forms
                 if (!AskReason(this, "Reason for rescheduling (required)", out reason)) return;
             }
 
+            int laterMoved = 0;
+
             try
             {
+                // A package session can take its later sessions with it, but only when the desk says
+                // so and only when there is a real move: picking the same date and time again must
+                // not ask anything.
+                bool moveLater = false;
+                int laterCount = 0;
+
+                bool moved = dtpDate.Value.Date != appointmentDate.Date ||
+                    RescheduleStart() != AppointmentRepository.ReadTime(appointment["start_time"]);
+
+                if (moved)
+                {
+                    DataTable later = AppointmentRepository.GetLaterSessions(RescheduleId);
+                    laterCount = later.Rows.Count;
+
+                    if (laterCount > 0)
+                    {
+                        // The package line of this appointment names the service in the question.
+                        string serviceName = "This service";
+                        DataTable packageLines = AppointmentRepository.GetLinesForBooking(RescheduleId);
+
+                        foreach (DataRow line in packageLines.Rows)
+                        {
+                            if (Db.Get<int>(line[AppointmentRepository.ColPackageId]) <= 0) continue;
+                            if (Db.Get<int>(line[AppointmentRepository.ColTotalSessions]) <= 1) continue;
+
+                            serviceName = Db.Get<string>(line[AppointmentRepository.ColServiceName]);
+                            break;
+                        }
+
+                        moveLater = MessageBox.Show(serviceName + " has " + laterCount +
+                            " later session(s)." + "\n\nMove them by the same amount too?" +
+                            "\nYes = move all, No = move only this session.",
+                            Messages.Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question,
+                            MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+                    }
+                }
+
                 AppointmentRepository.Reschedule(RescheduleId, dtpDate.Value.Date,
-                    RescheduleStart(), reason);
+                    RescheduleStart(), reason, moveLater);
+
+                if (moveLater) laterMoved = laterCount;
             }
             catch (Exception ex)
             {
@@ -1936,8 +1977,12 @@ namespace LittleEreseSystemV3.Forms
             SavedAppointmentId = RescheduleId;
             SavedAppointmentDate = dtpDate.Value.Date;
 
-            Messages.Info("Appointment #" + RescheduleId + " moved to " +
-                dtpDate.Value.ToString("MMM dd, yyyy") + " at " + Clock(RescheduleStart()) + ".");
+            string movedText = "Appointment #" + RescheduleId + " moved to " +
+                dtpDate.Value.ToString("MMM dd, yyyy") + " at " + Clock(RescheduleStart()) + ".";
+
+            Messages.Info(laterMoved > 0
+                ? movedText + " " + (1 + laterMoved) + " sessions were moved."
+                : movedText);
 
             DialogResult = DialogResult.OK;
             Close();
