@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Windows.Forms;
 using LittleEreseSystemV3.Data;
@@ -38,6 +39,11 @@ namespace LittleEreseSystemV3.Forms
             // that is not checked would otherwise leave the box looking filled in.
             dtpBirthDate.Value = DateTime.Today;
             dtpBirthDate.Checked = false;
+
+            // The tick list comes from the ONE list in ClientRepository, so a new condition
+            // is added there and appears here without touching this form.
+            clbHealth.Items.Clear();
+            clbHealth.Items.AddRange(ClientRepository.HealthConditionOptions);
 
             if (EditId > 0) LoadClient(EditId);
 
@@ -95,9 +101,34 @@ namespace LittleEreseSystemV3.Forms
             txtContact.Text = Db.Get<string>(row["contact_number"]);
             txtAddress.Text = Db.Get<string>(row["address"]);
             txtAllergies.Text = Db.Get<string>(row["allergies"]);
+            TickHealthConditions(Db.Get<string>(row["health_conditions"]));
             txtMedicalHistory.Text = Db.Get<string>(row["medical_history"]);
             txtTreatmentHistory.Text = Db.Get<string>(row["treatment_history"]);
             chkConsentSigned.Checked = Db.Get<bool>(row["consent_status"]);
+        }
+
+        /// <summary>Ticks the boxes this client's stored health_conditions already holds.</summary>
+        private void TickHealthConditions(string stored)
+        {
+            foreach (string condition in ClientRepository.SplitHealthConditions(stored))
+            {
+                int index = clbHealth.Items.IndexOf(condition);
+                // An old row may hold a wording the list no longer has; a missing tick is
+                // better than adding a value the list does not know about.
+                if (index >= 0) clbHealth.SetItemChecked(index, true);
+            }
+        }
+
+        /// <summary>The ticked items as the comma separated text the Clients column stores.</summary>
+        private string CheckedHealthConditions()
+        {
+            List<string> ticked = new List<string>();
+            foreach (object item in clbHealth.CheckedItems)
+            {
+                ticked.Add(item.ToString());
+            }
+
+            return ClientRepository.JoinHealthConditions(ticked);
         }
 
         /// <summary>
@@ -165,7 +196,7 @@ namespace LittleEreseSystemV3.Forms
                 {
                     ClientRepository.Update(EditId, firstName, lastName, birthDate, gender, contact,
                         txtAddress.Text, txtAllergies.Text, txtMedicalHistory.Text,
-                        string.Empty, txtTreatmentHistory.Text, chkConsentSigned.Checked);
+                        CheckedHealthConditions(), txtTreatmentHistory.Text, chkConsentSigned.Checked);
                     SavedClientId = EditId;
 
                     ActivityRepository.Log(Session.UserId, "Edit", "Clients",
@@ -175,7 +206,7 @@ namespace LittleEreseSystemV3.Forms
                 {
                     SavedClientId = ClientRepository.Add(firstName, lastName, birthDate, gender, contact,
                         txtAddress.Text, txtAllergies.Text, txtMedicalHistory.Text,
-                        string.Empty, txtTreatmentHistory.Text, chkConsentSigned.Checked);
+                        CheckedHealthConditions(), txtTreatmentHistory.Text, chkConsentSigned.Checked);
 
                     ActivityRepository.Log(Session.UserId, "Add", "Clients",
                         lastName + ", " + firstName);

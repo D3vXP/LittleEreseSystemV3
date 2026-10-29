@@ -2,6 +2,29 @@
 
 Update this file at the end of every task.
 
+- Step 71 (this task): the new / edit client dialog now follows the paper intake form.
+  - Forms\ClientEditForm.Designer.cs: new label lblHealth ("Health conditions (tick all that
+    apply)") and CheckedListBox clbHealth (MultiColumn, ColumnWidth 170, CheckOnClick, 3 columns,
+    110 px tall, 9 pt font so no entry is cut off) placed between txtAllergies and the medical box.
+    lblMedicalHistory now reads "Other medical conditions" and lblTreatmentHistory "Treatments in
+    the past 6 months (other clinics)". Every control below the new list moved down 128 px and the
+    form grew to ClientSize 560x760 (pnlContent 640, pnlFooter at y=696); TabIndex runs 0..21 in
+    visual order (clbHealth 16, medical 17/18, treatment 19/20, consent 21). chkConsentSigned keeps
+    its text and the normal dark ForeColor (43,38,34).
+  - Forms\ClientEditForm.cs: clbHealth is filled from ClientRepository.HealthConditionOptions in
+    the Load event; TickHealthConditions ticks the items found by SplitHealthConditions of
+    row["health_conditions"] in edit mode; CheckedHealthConditions gives the ticked items to
+    ClientRepository.Add / Update (the string.Empty placeholder of step 70 is gone). The file
+    gained a using System.Collections.Generic.
+  - No business rule changed, so PROJECT_RULES.md was not edited. LittleEreseSystemV3.csproj was
+    NOT edited.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --preview
+    ClientEditForm looked at (first round moved the list up and shrank its font so
+    "Bleeding or clotting problem" / "Pregnant or breastfeeding" are no longer clipped); --smoketest
+    96 passed / 0 failed / 0 skipped; app started once, stayed open, closed, no error.log.
+  - The dialog is shared by Clients and the "new client" button of the booking screen, so both now
+    show the health checkboxes.
+
 - Step 70 (this task): the health checkboxes, the treatment-history meaning and the package rule.
   - Data\ClientRepository.cs: new public static readonly string[] HealthConditionOptions (the ONE
     list of the paper-form conditions), JoinHealthConditions / SplitHealthConditions, GetClinicHistory

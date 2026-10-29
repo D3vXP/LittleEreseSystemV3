@@ -40,6 +40,8 @@ namespace LittleEreseSystemV3.Forms
             this.lblMedicalHistory = new System.Windows.Forms.Label();
             this.txtAllergies = new System.Windows.Forms.TextBox();
             this.lblAllergies = new System.Windows.Forms.Label();
+            this.clbHealth = new System.Windows.Forms.CheckedListBox();
+            this.lblHealth = new System.Windows.Forms.Label();
             this.txtAddress = new System.Windows.Forms.TextBox();
             this.lblAddress = new System.Windows.Forms.Label();
             this.txtContact = new System.Windows.Forms.TextBox();
@@ -104,6 +106,8 @@ namespace LittleEreseSystemV3.Forms
             this.pnlContent.Controls.Add(this.lblTreatmentHistory);
             this.pnlContent.Controls.Add(this.txtMedicalHistory);
             this.pnlContent.Controls.Add(this.lblMedicalHistory);
+            this.pnlContent.Controls.Add(this.clbHealth);
+            this.pnlContent.Controls.Add(this.lblHealth);
             this.pnlContent.Controls.Add(this.txtAllergies);
             this.pnlContent.Controls.Add(this.lblAllergies);
             this.pnlContent.Controls.Add(this.txtAddress);
@@ -122,60 +126,83 @@ namespace LittleEreseSystemV3.Forms
             this.pnlContent.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pnlContent.Location = new System.Drawing.Point(0, 56);
             this.pnlContent.Name = "pnlContent";
-            this.pnlContent.Size = new System.Drawing.Size(560, 520);
+            this.pnlContent.Size = new System.Drawing.Size(560, 640);
             this.pnlContent.TabIndex = 1;
             // 
             // chkConsentSigned
             // 
             this.chkConsentSigned.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.chkConsentSigned.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.chkConsentSigned.Location = new System.Drawing.Point(16, 492);
+            this.chkConsentSigned.Location = new System.Drawing.Point(16, 616);
             this.chkConsentSigned.Name = "chkConsentSigned";
             this.chkConsentSigned.Size = new System.Drawing.Size(520, 24);
-            this.chkConsentSigned.TabIndex = 19;
+            this.chkConsentSigned.TabIndex = 21;
             this.chkConsentSigned.Text = "Consent / waiver form signed (paper form)";
             this.chkConsentSigned.UseVisualStyleBackColor = true;
+            // 
+            // lblHealth
+            // 
+            this.lblHealth.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblHealth.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.lblHealth.Location = new System.Drawing.Point(16, 354);
+            this.lblHealth.Name = "lblHealth";
+            this.lblHealth.Size = new System.Drawing.Size(520, 18);
+            this.lblHealth.TabIndex = 15;
+            this.lblHealth.Text = "Health conditions (tick all that apply)";
+            this.lblHealth.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // clbHealth
+            // 
+            this.clbHealth.CheckOnClick = true;
+            this.clbHealth.ColumnWidth = 170;
+            this.clbHealth.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.clbHealth.FormattingEnabled = true;
+            this.clbHealth.Location = new System.Drawing.Point(16, 372);
+            this.clbHealth.MultiColumn = true;
+            this.clbHealth.Name = "clbHealth";
+            this.clbHealth.Size = new System.Drawing.Size(520, 110);
+            this.clbHealth.TabIndex = 16;
             // 
             // txtTreatmentHistory
             // 
             this.txtTreatmentHistory.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtTreatmentHistory.Location = new System.Drawing.Point(16, 442);
+            this.txtTreatmentHistory.Location = new System.Drawing.Point(16, 568);
             this.txtTreatmentHistory.Multiline = true;
             this.txtTreatmentHistory.Name = "txtTreatmentHistory";
             this.txtTreatmentHistory.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.txtTreatmentHistory.Size = new System.Drawing.Size(520, 46);
-            this.txtTreatmentHistory.TabIndex = 18;
+            this.txtTreatmentHistory.TabIndex = 20;
             // 
             // lblTreatmentHistory
             // 
             this.lblTreatmentHistory.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblTreatmentHistory.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblTreatmentHistory.Location = new System.Drawing.Point(16, 424);
+            this.lblTreatmentHistory.Location = new System.Drawing.Point(16, 550);
             this.lblTreatmentHistory.Name = "lblTreatmentHistory";
             this.lblTreatmentHistory.Size = new System.Drawing.Size(520, 18);
-            this.lblTreatmentHistory.TabIndex = 17;
-            this.lblTreatmentHistory.Text = "Treatments received in the last 6 months";
+            this.lblTreatmentHistory.TabIndex = 19;
+            this.lblTreatmentHistory.Text = "Treatments in the past 6 months (other clinics)";
             this.lblTreatmentHistory.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // txtMedicalHistory
             // 
             this.txtMedicalHistory.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtMedicalHistory.Location = new System.Drawing.Point(16, 374);
+            this.txtMedicalHistory.Location = new System.Drawing.Point(16, 502);
             this.txtMedicalHistory.Multiline = true;
             this.txtMedicalHistory.Name = "txtMedicalHistory";
             this.txtMedicalHistory.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.txtMedicalHistory.Size = new System.Drawing.Size(520, 46);
-            this.txtMedicalHistory.TabIndex = 16;
+            this.txtMedicalHistory.TabIndex = 18;
             // 
             // lblMedicalHistory
             // 
             this.lblMedicalHistory.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblMedicalHistory.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblMedicalHistory.Location = new System.Drawing.Point(16, 356);
+            this.lblMedicalHistory.Location = new System.Drawing.Point(16, 484);
             this.lblMedicalHistory.Name = "lblMedicalHistory";
             this.lblMedicalHistory.Size = new System.Drawing.Size(520, 18);
-            this.lblMedicalHistory.TabIndex = 15;
-            this.lblMedicalHistory.Text = "Medical history";
+            this.lblMedicalHistory.TabIndex = 17;
+            this.lblMedicalHistory.Text = "Other medical conditions";
             this.lblMedicalHistory.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // txtAllergies
@@ -340,7 +367,7 @@ namespace LittleEreseSystemV3.Forms
             this.pnlFooter.Controls.Add(this.btnSave);
             this.pnlFooter.Controls.Add(this.pnlFooterLine);
             this.pnlFooter.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.pnlFooter.Location = new System.Drawing.Point(0, 576);
+            this.pnlFooter.Location = new System.Drawing.Point(0, 696);
             this.pnlFooter.Name = "pnlFooter";
             this.pnlFooter.Size = new System.Drawing.Size(560, 64);
             this.pnlFooter.TabIndex = 2;
@@ -404,7 +431,7 @@ namespace LittleEreseSystemV3.Forms
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(560, 640);
+            this.ClientSize = new System.Drawing.Size(560, 760);
             this.Controls.Add(this.pnlContent);
             this.Controls.Add(this.pnlFooter);
             this.Controls.Add(this.pnlHeader);
@@ -445,6 +472,8 @@ namespace LittleEreseSystemV3.Forms
         private System.Windows.Forms.TextBox txtAddress;
         private System.Windows.Forms.Label lblAllergies;
         private System.Windows.Forms.TextBox txtAllergies;
+        private System.Windows.Forms.Label lblHealth;
+        private System.Windows.Forms.CheckedListBox clbHealth;
         private System.Windows.Forms.Label lblMedicalHistory;
         private System.Windows.Forms.TextBox txtMedicalHistory;
         private System.Windows.Forms.Label lblTreatmentHistory;
