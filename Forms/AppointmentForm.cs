@@ -88,6 +88,7 @@ namespace LittleEreseSystemV3.Forms
             // These three are wired in code for the same reason the DataError above is: the grid
             // and the two line dropdowns only exist to feed the "Selected service" block.
             dgvSelected.SelectionChanged += dgvSelected_SelectionChanged;
+            cboLineTime.SelectedIndexChanged += cboLineTime_SelectedIndexChanged;
             cboLineTech.SelectedIndexChanged += cboLineTech_SelectedIndexChanged;
             cboLineNurse.SelectedIndexChanged += cboLineNurse_SelectedIndexChanged;
 
@@ -100,7 +101,6 @@ namespace LittleEreseSystemV3.Forms
                 dtpDate.Value = DateTime.Today;
 
                 BuildLinesTable();
-                FillTimeSlots();
                 FillSources();
                 FillCategories();
                 FillCatalog();
@@ -171,20 +171,6 @@ namespace LittleEreseSystemV3.Forms
             _lines.Columns["staff_busy_minutes"].DefaultValue = 0;
 
             dgvSelected.DataSource = _lines;
-        }
-
-        private void FillTimeSlots()
-        {
-            _slots.Clear();
-            cboLineTime.Items.Clear();
-
-            foreach (TimeSpan slot in AppointmentRepository.GetTimeSlots())
-            {
-                _slots.Add(slot);
-                cboLineTime.Items.Add(Clock(slot));
-            }
-
-            if (cboLineTime.Items.Count > 0) cboLineTime.SelectedIndex = 0;
         }
 
         private void FillSources()
@@ -549,6 +535,7 @@ namespace LittleEreseSystemV3.Forms
             // The package label and the price of a package service depend on the client,
             // so the lines are rebuilt from the catalog for the new client.
             RefreshLinePackages();
+            RevalidateLines();
             Recalculate();
         }
 
@@ -766,6 +753,10 @@ namespace LittleEreseSystemV3.Forms
                 string.Empty, TimeSpan.Zero, string.Empty, string.Empty, string.Empty, 0,
                 requiresAssessment, promoId, categoryName, staffBusyMinutes);
 
+            // Every line is placed on the day as soon as it is added, so the booking always reads
+            // as a real plan (the first free time after the lines that are already placed).
+            PlaceLine(FindLine(serviceId));
+
             Recalculate();
 
             // The new line is the one being worked on, so it is selected (Qty and Technician).
@@ -795,6 +786,7 @@ namespace LittleEreseSystemV3.Forms
             _selectedLine = null;
             _lines.Rows.Remove(line.Row);
 
+            RevalidateLines();
             UpdateLinePanel();
             Recalculate();
         }
@@ -813,11 +805,238 @@ namespace LittleEreseSystemV3.Forms
             _selectedLine = null;
             foreach (DataRow row in doomed) _lines.Rows.Remove(row);
 
+            RevalidateLines();
             UpdateLinePanel();
             Recalculate();
         }
 
         // ---------------------------------------------------------------- the selected line
+
+        /// <summary>
+        /// Fills cboLineTime with the start times at which the SELECTED line really fits: the past
+        /// times and the busy times are simply not in the list. _slots keeps the real values in the
+        /// same order as the items, so an index always maps back to a time. The line's own start is
+        /// selected again when it is still free; otherwise nothing is selected.
+        /// </summary>
+        private void RefreshLineTimes()
+        {
+            bool wasLoading = _loading;
+            _loading = true;
+            try
+            {
+                _slots.Clear();
+                cboLineTime.Items.Clear();
+
+                if (_selectedLine == null)
+                {
+                    cboLineTime.Enabled = false;
+                    return;
+                }
+
+                int serviceId = Db.Get<int>(_selectedLine[AppointmentRepository.ColServiceId]);
+                int quantity = Db.Get<int>(_selectedLine[AppointmentRepository.ColQuantity], 1);
+                int technicianId = Db.Get<int>(_selectedLine[AppointmentRepository.ColTechnicianId]);
+                TimeSpan current = AppointmentRepository.ReadTime(
+                    _selectedLine[AppointmentRepository.ColStartTime]);
+
+                List<TimeSpan> free;
+                try
+                {
+                    free = AvailabilityRepository.GetFreeStarts(null, null, dtpDate.Value.Date,
+                        serviceId, quantity, technicianId, SelectedClientId(), RescheduleId,
+                        OtherLines(_selectedLine));
+                }
+                catch (Exception ex)
+                {
+                    Messages.DbError(ex);
+                    cboLineTime.Enabled = false;
+                    return;
+                }
+
+                int selectedIndex = -1;
+                for (int i = 0; i < free.Count; i++)
+                {
+                    _slots.Add(free[i]);
+                    cboLineTime.Items.Add(Clock(free[i]));
+
+                    if (free[i] == current) selectedIndex = i;
+                }
+
+                if (selectedIndex >= 0) cboLineTime.SelectedIndex = selectedIndex;
+
+                if (free.Count == 0)
+                {
+                    cboLineTime.Enabled = false;
+                    lblLineNote.Text = "No free time for this service on this date. Choose another date.";
+                    return;
+                }
+
+                // A reschedule only moves the booking, so its time list stays usable even though the
+                // services themselves are locked.
+                cboLineTime.Enabled = RescheduleId > 0 || !dgvSelected.ReadOnly;
+            }
+            finally
+            {
+                _loading = wasLoading;
+            }
+        }
+
+        /// <summary>
+        /// Gives a line that has no start yet its default time: the first free start that is on or
+        /// after the end of the latest PLACED line, otherwise the first free start of the day.
+        /// </summary>
+        private void PlaceLine(DataRowView line)
+        {
+            if (line == null) return;
+            if (AppointmentRepository.ReadTime(line[AppointmentRepository.ColStartTime]) != TimeSpan.Zero) return;
+
+            int serviceId = Db.Get<int>(line[AppointmentRepository.ColServiceId]);
+            int quantity = Db.Get<int>(line[AppointmentRepository.ColQuantity], 1);
+            int technicianId = Db.Get<int>(line[AppointmentRepository.ColTechnicianId]);
+
+            List<TimeSpan> free;
+            try
+            {
+                free = AvailabilityRepository.GetFreeStarts(null, null, dtpDate.Value.Date, serviceId,
+                    quantity, technicianId, SelectedClientId(), RescheduleId, OtherLines(line));
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+                return;
+            }
+
+            if (free.Count == 0) return;
+
+            // The line is put after the lines that are already on the day, so the booking reads
+            // like a plan instead of stacking everything on one time.
+            TimeSpan after = LatestPlacedEnd(line);
+            TimeSpan chosen = TimeSpan.Zero;
+
+            foreach (TimeSpan slot in free)
+            {
+                if (slot >= after)
+                {
+                    chosen = slot;
+                    break;
+                }
+            }
+
+            if (chosen == TimeSpan.Zero) chosen = free[0];
+
+            WriteLineStart(line, chosen);
+        }
+
+        /// <summary>
+        /// Re-checks every placed line against its own date and time. A line that no longer fits
+        /// (the date or the client changed, or another line took its slot) loses its time and is
+        /// placed again. A reschedule does nothing here: it moves the whole booking at once.
+        /// </summary>
+        private void RevalidateLines()
+        {
+            if (RescheduleId > 0) return;
+
+            // The rows are collected first, because placing a line writes into the table while the
+            // collection is being walked over.
+            List<DataRowView> views = new List<DataRowView>();
+            foreach (DataRowView view in _lines.DefaultView) views.Add(view);
+
+            bool wasLoading = _loading;
+            _loading = true;
+            try
+            {
+                foreach (DataRowView view in views)
+                {
+                    TimeSpan start = AppointmentRepository.ReadTime(view[AppointmentRepository.ColStartTime]);
+                    if (start == TimeSpan.Zero) continue;
+
+                    string answer;
+                    try
+                    {
+                        answer = AvailabilityRepository.WhyNotPossible(null, null, dtpDate.Value.Date,
+                            Db.Get<int>(view[AppointmentRepository.ColServiceId]),
+                            Db.Get<int>(view[AppointmentRepository.ColQuantity], 1), start,
+                            Db.Get<int>(view[AppointmentRepository.ColTechnicianId]),
+                            SelectedClientId(), RescheduleId, OtherLines(view));
+                    }
+                    catch (Exception ex)
+                    {
+                        Messages.DbError(ex);
+                        return;
+                    }
+
+                    if (string.IsNullOrEmpty(answer)) continue;
+
+                    view[AppointmentRepository.ColStartTime] = TimeSpan.Zero;
+                    view["start_text"] = string.Empty;
+                    view["end_text"] = string.Empty;
+
+                    PlaceLine(view);
+                }
+            }
+            finally
+            {
+                _loading = wasLoading;
+            }
+        }
+
+        /// <summary>Writes the time of one line: its start, and the texts the grid shows.</summary>
+        private static void WriteLineStart(DataRowView line, TimeSpan start)
+        {
+            int duration = Db.Get<int>(line[AppointmentRepository.ColDuration]);
+            int quantity = Db.Get<int>(line[AppointmentRepository.ColQuantity], 1);
+
+            line[AppointmentRepository.ColStartTime] = start;
+            line["start_text"] = Clock(start);
+            line["end_text"] = Clock(AvailabilityRepository.LineEnd(start, duration, quantity));
+        }
+
+        /// <summary>The end of the latest line that already has a time, or 0 when none has one.</summary>
+        private TimeSpan LatestPlacedEnd(DataRowView except)
+        {
+            TimeSpan latest = TimeSpan.Zero;
+
+            foreach (DataRow row in _lines.Rows)
+            {
+                if (except != null && ReferenceEquals(row, except.Row)) continue;
+
+                TimeSpan start = AppointmentRepository.ReadTime(row[AppointmentRepository.ColStartTime]);
+                if (start == TimeSpan.Zero) continue;
+
+                TimeSpan end = AvailabilityRepository.LineEnd(start,
+                    Db.Get<int>(row[AppointmentRepository.ColDuration]),
+                    Db.Get<int>(row[AppointmentRepository.ColQuantity], 1));
+
+                if (end > latest) latest = end;
+            }
+
+            return latest;
+        }
+
+        /// <summary>
+        /// The OTHER lines of the booking in the shape AvailabilityRepository wants them, so a line
+        /// never counts itself as busy.
+        /// </summary>
+        private DataTable OtherLines(DataRowView line)
+        {
+            DataTable table = new DataTable();
+            table.Columns.Add(AppointmentRepository.ColServiceId, typeof(int));
+            table.Columns.Add(AppointmentRepository.ColQuantity, typeof(int));
+            table.Columns.Add(AppointmentRepository.ColDuration, typeof(int));
+            table.Columns.Add(AppointmentRepository.ColStartTime, typeof(TimeSpan));
+
+            foreach (DataRowView view in _lines.DefaultView)
+            {
+                if (line != null && ReferenceEquals(view.Row, line.Row)) continue;
+
+                table.Rows.Add(Db.Get<int>(view[AppointmentRepository.ColServiceId]),
+                    Db.Get<int>(view[AppointmentRepository.ColQuantity], 1),
+                    Db.Get<int>(view[AppointmentRepository.ColDuration]),
+                    AppointmentRepository.ReadTime(view[AppointmentRepository.ColStartTime]));
+            }
+
+            return table;
+        }
 
         /// <summary>
         /// Fills the "Selected service" block from the row selected in dgvSelected: its name, the
@@ -838,6 +1057,7 @@ namespace LittleEreseSystemV3.Forms
                 cboLineTech.Enabled = false;
                 cboLineNurse.DataSource = null;
                 cboLineNurse.Enabled = false;
+                RefreshLineTimes();
                 return;
             }
 
@@ -864,6 +1084,10 @@ namespace LittleEreseSystemV3.Forms
             {
                 _loading = wasLoading;
             }
+
+            // The time list depends on the line (its service, its technician and the other lines),
+            // so it is always refilled after the two dropdowns above.
+            RefreshLineTimes();
         }
 
         /// <summary>The technicians of one line: "Any available" plus the staff of its category.</summary>
@@ -1075,11 +1299,10 @@ namespace LittleEreseSystemV3.Forms
             }
         }
 
-        // TODO(logic prompt): the start time per line is wired by E2-G (times).
-
         private void dtpDate_ValueChanged(object sender, EventArgs e)
         {
             if (_loading) return;
+            RevalidateLines();
             Recalculate();
         }
 
@@ -1112,6 +1335,10 @@ namespace LittleEreseSystemV3.Forms
                 _loading = false;
             }
 
+            // Another technician may free or block the other lines, and this line may now fit at a
+            // different time, so the whole plan is re-checked and the time list is refilled.
+            RevalidateLines();
+            UpdateLinePanel();
             Recalculate();
         }
 
@@ -1141,6 +1368,30 @@ namespace LittleEreseSystemV3.Forms
         private void dgvSelected_SelectionChanged(object sender, EventArgs e)
         {
             UpdateLinePanel();
+        }
+
+        /// <summary>
+        /// Writes the start the user picked into the selected line, with the texts the grid shows
+        /// (start and end). The pick is already a time that fits, so nothing has to be re-checked.
+        /// </summary>
+        private void cboLineTime_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_loading || _selectedLine == null) return;
+
+            int index = cboLineTime.SelectedIndex;
+            if (index < 0 || index >= _slots.Count) return;
+
+            _loading = true;
+            try
+            {
+                WriteLineStart(_selectedLine, _slots[index]);
+            }
+            finally
+            {
+                _loading = false;
+            }
+
+            Recalculate();
         }
 
         private void dgvSelected_CurrentCellDirtyStateChanged(object sender, EventArgs e)
@@ -1201,11 +1452,23 @@ namespace LittleEreseSystemV3.Forms
             return Db.Get<int>(cboClient.SelectedValue);
         }
 
-        private TimeSpan SelectedStartTime()
+        /// <summary>
+        /// The start of the booking: the earliest placed line. Every line has its own start, so the
+        /// dialog only hands the repository the earliest one (it is the appointment's start_time).
+        /// </summary>
+        private TimeSpan EarliestStart()
         {
-            int index = cboLineTime.SelectedIndex;
-            if (index < 0 || index >= _slots.Count) return AppointmentRepository.AestheticOpening;
-            return _slots[index];
+            TimeSpan earliest = TimeSpan.Zero;
+
+            foreach (DataRow row in _lines.Rows)
+            {
+                TimeSpan start = AppointmentRepository.ReadTime(row[AppointmentRepository.ColStartTime]);
+                if (start == TimeSpan.Zero) continue;
+
+                if (earliest == TimeSpan.Zero || start < earliest) earliest = start;
+            }
+
+            return earliest == TimeSpan.Zero ? AppointmentRepository.AestheticOpening : earliest;
         }
 
         private string SelectedSource()
@@ -1361,7 +1624,7 @@ namespace LittleEreseSystemV3.Forms
             try
             {
                 problems = AppointmentRepository.ValidateBooking(RescheduleId, SelectedClientId(),
-                    dtpDate.Value.Date, SelectedStartTime(), SelectedSource(), _lines, PromoIdInLines());
+                    dtpDate.Value.Date, EarliestStart(), SelectedSource(), _lines, PromoIdInLines());
             }
             catch (Exception ex)
             {
@@ -1371,9 +1634,7 @@ namespace LittleEreseSystemV3.Forms
 
             if (problems.Count == 0)
             {
-                lblSlotInfo.Text = "This slot is free: " + dtpDate.Value.ToString("MMM dd, yyyy") + " " +
-                    Clock(SelectedStartTime()) + " - " + Clock(SelectedStartTime() +
-                    AppointmentRepository.TotalDuration(_lines)) + ".";
+                lblSlotInfo.Text = "All services are available.";
                 lblSlotInfo.ForeColor = Theme.Success;
                 return;
             }
@@ -1431,7 +1692,7 @@ namespace LittleEreseSystemV3.Forms
             try
             {
                 problems = AppointmentRepository.ValidateBooking(0, SelectedClientId(), dtpDate.Value.Date,
-                    SelectedStartTime(), SelectedSource(), _lines, PromoIdInLines());
+                    EarliestStart(), SelectedSource(), _lines, PromoIdInLines());
             }
             catch (Exception ex)
             {
@@ -1450,7 +1711,7 @@ namespace LittleEreseSystemV3.Forms
             try
             {
                 appointmentId = AppointmentRepository.Create(SelectedClientId(), Session.UserId,
-                    dtpDate.Value.Date, SelectedStartTime(), SelectedSource(), txtNotes.Text, _lines,
+                    dtpDate.Value.Date, EarliestStart(), SelectedSource(), txtNotes.Text, _lines,
                     PromoIdInLines());
             }
             catch (Exception ex)
@@ -1506,7 +1767,7 @@ namespace LittleEreseSystemV3.Forms
             try
             {
                 AppointmentRepository.Reschedule(RescheduleId, dtpDate.Value.Date,
-                    SelectedStartTime(), reason);
+                    EarliestStart(), reason);
             }
             catch (Exception ex)
             {
@@ -1520,7 +1781,7 @@ namespace LittleEreseSystemV3.Forms
             SavedAppointmentDate = dtpDate.Value.Date;
 
             Messages.Info("Appointment #" + RescheduleId + " moved to " +
-                dtpDate.Value.ToString("MMM dd, yyyy") + " at " + Clock(SelectedStartTime()) + ".");
+                dtpDate.Value.ToString("MMM dd, yyyy") + " at " + Clock(EarliestStart()) + ".");
 
             DialogResult = DialogResult.OK;
             Close();

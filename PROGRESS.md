@@ -2,7 +2,42 @@
 
 Update this file at the end of every task.
 
-- Step 57 (this task): the left and middle part of the booking dialog works (E2-F). Times are still
+- Step 58 (this task): the per-line times of the booking dialog (E2-G). Every service line now has
+  its own start time and cboLineTime only offers the times that really work.
+  - New private methods in Forms\AppointmentForm.cs: RefreshLineTimes (fills cboLineTime for the
+    selected line from AvailabilityRepository.GetFreeStarts with the line's own technician and the
+    OTHER lines as otherLines; the real values sit in _slots, the items read Clock(); the list is
+    empty -> lblLineNote says "No free time for this service on this date. Choose another date." and
+    the combo is disabled), PlaceLine (a line without a start gets the first free start on or after
+    the end of the latest placed line, otherwise the first free start of the day; called at the end
+    of AddServiceLine and once per promo line inside the _loading block of AddPromoLines),
+    RevalidateLines (no-op for a reschedule; every placed line is re-asked with WhyNotPossible and a
+    line that no longer fits loses its time and is placed again; called when the date changes, when
+    the client changes, when a technician changes and after a line is removed), OtherLines (the
+    other rows of _lines as service_id / quantity / duration_minutes / start_time), WriteLineStart
+    (start_time, start_text, end_text from AvailabilityRepository.LineEnd), LatestPlacedEnd and
+    EarliestStart (the smallest non-zero start of _lines, else AppointmentRepository.AestheticOpening).
+  - New handler cboLineTime_SelectedIndexChanged, wired in code in AppointmentForm_Load next to the
+    other three: it writes the picked start into the selected row and calls Recalculate().
+    UpdateLinePanel calls RefreshLineTimes() (and disables cboLineTime when no line is selected).
+    cboLineTech_SelectedIndexChanged now also calls RevalidateLines() and UpdateLinePanel().
+  - Deleted FillTimeSlots, its call in AppointmentForm_Load, and SelectedStartTime. Every call that
+    used SelectedStartTime() (ValidateBooking in CheckAvailability and SaveNewBooking, Create, and
+    SaveReschedule, which the prompt did not list but could not keep a deleted method) passes
+    EarliestStart() instead. SetupRescheduleMode was left alone (G2 rebuilds it).
+  - CheckAvailability now reads "All services are available." in the success color; the problem text
+    is still the first problem of ValidateBooking. The TODO(logic prompt) of the times is gone
+    (no TODO(logic prompt) is left in the file).
+  - LittleEreseSystemV3.csproj and AppointmentForm.Designer.cs were NOT edited (the new event is
+    wired in code, like the existing DataError). PROJECT_RULES.md was NOT edited: the rules already
+    say every line has its own start time and that times are on 30-minute marks.
+  - Checks: clean build 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --preview
+    AppointmentForm checked (no overlap, nothing truncated); --smoketest 90 passed / 0 failed /
+    0 skipped; app started once, stayed open, closed, no error.log.
+  - Known issue: in reschedule mode picking a time moves only the selected line in the dialog; the
+    repository still moves the whole booking from EarliestStart(). G2 rebuilds that path.
+  - Next: G2, the reschedule mode.
+- Step 57: the left and middle part of the booking dialog works (E2-F). Times are still
   E2-G, so every line keeps start_time = TimeSpan.Zero and the repository chains the lines.
   - _lines now also carries start_time (TimeSpan.Zero), start_text, end_text, technician_name,
     nurse_name, assessed_by (0), requires_assessment, promo_id (0), category_name and
