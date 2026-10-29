@@ -65,6 +65,7 @@ namespace LittleEreseSystemV3.Controls
             this.dtpQueueDate = new System.Windows.Forms.DateTimePicker();
             this.btnQueueToday = new System.Windows.Forms.Button();
             this.btnRefresh = new System.Windows.Forms.Button();
+            this.chkAllBalances = new System.Windows.Forms.CheckBox();
             this.lblQueueCount = new System.Windows.Forms.Label();
             this.pnlBill = new System.Windows.Forms.Panel();
             this.tlpBill = new System.Windows.Forms.TableLayoutPanel();
@@ -94,6 +95,8 @@ namespace LittleEreseSystemV3.Controls
             this.lblBalanceTitle = new System.Windows.Forms.Label();
             this.lblBalance = new System.Windows.Forms.Label();
             this.btnCollect = new System.Windows.Forms.Button();
+            this.tlpBillButtons = new System.Windows.Forms.TableLayoutPanel();
+            this.btnTakePayment = new System.Windows.Forms.Button();
             this.btnPrintReceipt = new System.Windows.Forms.Button();
             this.tabTransactions = new System.Windows.Forms.TabPage();
             this.pnlTranGrid = new System.Windows.Forms.Panel();
@@ -139,6 +142,7 @@ namespace LittleEreseSystemV3.Controls
             ((System.ComponentModel.ISupportInitialize)(this.dgvBillLines)).BeginInit();
             this.flpPromo.SuspendLayout();
             this.tlpTotals.SuspendLayout();
+            this.tlpBillButtons.SuspendLayout();
             this.tabTransactions.SuspendLayout();
             this.pnlTranGrid.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvTransactions)).BeginInit();
@@ -347,16 +351,19 @@ namespace LittleEreseSystemV3.Controls
             // tlpQueueToolbar
             // 
             this.tlpQueueToolbar.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            this.tlpQueueToolbar.ColumnCount = 1;
-            this.tlpQueueToolbar.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlpQueueToolbar.ColumnCount = 2;
+            this.tlpQueueToolbar.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 58F));
+            this.tlpQueueToolbar.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 42F));
+            this.tlpQueueToolbar.Controls.Add(this.chkAllBalances, 0, 1);
+            this.tlpQueueToolbar.Controls.Add(this.lblQueueCount, 1, 1);
             this.tlpQueueToolbar.Controls.Add(this.flpQueueTop, 0, 0);
-            this.tlpQueueToolbar.Controls.Add(this.lblQueueCount, 0, 1);
             this.tlpQueueToolbar.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlpQueueToolbar.Location = new System.Drawing.Point(0, 0);
             this.tlpQueueToolbar.Name = "tlpQueueToolbar";
             this.tlpQueueToolbar.RowCount = 2;
             this.tlpQueueToolbar.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 40F));
             this.tlpQueueToolbar.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 34F));
+            this.tlpQueueToolbar.SetColumnSpan(this.flpQueueTop, 2);
             this.tlpQueueToolbar.Size = new System.Drawing.Size(392, 74);
             this.tlpQueueToolbar.TabIndex = 0;
             // 
@@ -441,19 +448,34 @@ namespace LittleEreseSystemV3.Controls
             this.btnRefresh.UseVisualStyleBackColor = false;
             this.btnRefresh.Click += new System.EventHandler(this.btnRefresh_Click);
             // 
+            // chkAllBalances
+            // 
+            this.chkAllBalances.AutoSize = true;
+            this.chkAllBalances.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.chkAllBalances.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.chkAllBalances.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.chkAllBalances.Location = new System.Drawing.Point(12, 46);
+            this.chkAllBalances.Margin = new System.Windows.Forms.Padding(12, 6, 0, 0);
+            this.chkAllBalances.Name = "chkAllBalances";
+            this.chkAllBalances.Size = new System.Drawing.Size(160, 19);
+            this.chkAllBalances.TabIndex = 4;
+            this.chkAllBalances.Text = "Unpaid balances (all dates)";
+            this.chkAllBalances.UseVisualStyleBackColor = true;
+            this.chkAllBalances.CheckedChanged += new System.EventHandler(this.chkAllBalances_CheckedChanged);
+            // 
             // lblQueueCount
             // 
-            this.lblQueueCount.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.lblQueueCount.Anchor = System.Windows.Forms.AnchorStyles.Right;
             this.lblQueueCount.AutoSize = true;
             this.lblQueueCount.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblQueueCount.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblQueueCount.Location = new System.Drawing.Point(12, 49);
-            this.lblQueueCount.Margin = new System.Windows.Forms.Padding(12, 0, 0, 0);
+            this.lblQueueCount.Location = new System.Drawing.Point(299, 49);
+            this.lblQueueCount.Margin = new System.Windows.Forms.Padding(0, 0, 12, 0);
             this.lblQueueCount.Name = "lblQueueCount";
             this.lblQueueCount.Size = new System.Drawing.Size(81, 15);
             this.lblQueueCount.TabIndex = 1;
             this.lblQueueCount.Text = "0 in the queue";
-            this.lblQueueCount.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.lblQueueCount.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // pnlBill
             // 
@@ -481,7 +503,7 @@ namespace LittleEreseSystemV3.Controls
             this.tlpBill.Controls.Add(this.flpPromo, 0, 3);
             this.tlpBill.Controls.Add(this.lblPromoNote, 0, 4);
             this.tlpBill.Controls.Add(this.tlpTotals, 0, 5);
-            this.tlpBill.Controls.Add(this.btnCollect, 0, 6);
+            this.tlpBill.Controls.Add(this.tlpBillButtons, 0, 6);
             this.tlpBill.Controls.Add(this.btnPrintReceipt, 0, 7);
             this.tlpBill.Dock = System.Windows.Forms.DockStyle.Top;
             this.tlpBill.Location = new System.Drawing.Point(16, 16);
@@ -497,6 +519,22 @@ namespace LittleEreseSystemV3.Controls
             this.tlpBill.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 42F));
             this.tlpBill.Size = new System.Drawing.Size(552, 532);
             this.tlpBill.TabIndex = 0;
+            // 
+            // tlpBillButtons
+            // 
+            this.tlpBillButtons.ColumnCount = 2;
+            this.tlpBillButtons.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tlpBillButtons.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tlpBillButtons.Controls.Add(this.btnCollect, 0, 0);
+            this.tlpBillButtons.Controls.Add(this.btnTakePayment, 1, 0);
+            this.tlpBillButtons.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlpBillButtons.Location = new System.Drawing.Point(0, 446);
+            this.tlpBillButtons.Margin = new System.Windows.Forms.Padding(0);
+            this.tlpBillButtons.Name = "tlpBillButtons";
+            this.tlpBillButtons.RowCount = 1;
+            this.tlpBillButtons.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlpBillButtons.Size = new System.Drawing.Size(552, 50);
+            this.tlpBillButtons.TabIndex = 6;
             // 
             // lblBillClient
             // 
@@ -889,14 +927,35 @@ namespace LittleEreseSystemV3.Controls
             this.btnCollect.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnCollect.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnCollect.ForeColor = System.Drawing.Color.White;
-            this.btnCollect.Location = new System.Drawing.Point(0, 446);
-            this.btnCollect.Margin = new System.Windows.Forms.Padding(0, 6, 0, 2);
+            this.btnCollect.Location = new System.Drawing.Point(0, 6);
+            this.btnCollect.Margin = new System.Windows.Forms.Padding(0, 6, 4, 2);
             this.btnCollect.Name = "btnCollect";
-            this.btnCollect.Size = new System.Drawing.Size(552, 48);
-            this.btnCollect.TabIndex = 6;
-            this.btnCollect.Text = "Collect Payment and Complete";
+            this.btnCollect.Size = new System.Drawing.Size(272, 42);
+            this.btnCollect.TabIndex = 0;
+            this.btnCollect.Text = "Collect and Complete";
             this.btnCollect.UseVisualStyleBackColor = false;
             this.btnCollect.Click += new System.EventHandler(this.btnCollect_Click);
+            // 
+            // btnTakePayment
+            // 
+            this.btnTakePayment.BackColor = System.Drawing.Color.White;
+            this.btnTakePayment.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnTakePayment.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.btnTakePayment.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(164)))), ((int)(((byte)(123)))), ((int)(((byte)(43)))));
+            this.btnTakePayment.FlatAppearance.BorderSize = 1;
+            this.btnTakePayment.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(227)))), ((int)(((byte)(218)))), ((int)(((byte)(198)))));
+            this.btnTakePayment.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
+            this.btnTakePayment.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnTakePayment.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnTakePayment.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(164)))), ((int)(((byte)(123)))), ((int)(((byte)(43)))));
+            this.btnTakePayment.Location = new System.Drawing.Point(280, 6);
+            this.btnTakePayment.Margin = new System.Windows.Forms.Padding(4, 6, 0, 2);
+            this.btnTakePayment.Name = "btnTakePayment";
+            this.btnTakePayment.Size = new System.Drawing.Size(272, 42);
+            this.btnTakePayment.TabIndex = 1;
+            this.btnTakePayment.Text = "Take Payment";
+            this.btnTakePayment.UseVisualStyleBackColor = false;
+            this.btnTakePayment.Click += new System.EventHandler(this.btnTakePayment_Click);
             // 
             // btnPrintReceipt
             // 
@@ -1352,6 +1411,7 @@ namespace LittleEreseSystemV3.Controls
             this.flpPromo.ResumeLayout(false);
             this.flpPromo.PerformLayout();
             this.tlpTotals.ResumeLayout(false);
+            this.tlpBillButtons.ResumeLayout(false);
             this.tabTransactions.ResumeLayout(false);
             this.pnlTranGrid.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvTransactions)).EndInit();
@@ -1387,6 +1447,7 @@ namespace LittleEreseSystemV3.Controls
         private System.Windows.Forms.DateTimePicker dtpQueueDate;
         private System.Windows.Forms.Button btnQueueToday;
         private System.Windows.Forms.Button btnRefresh;
+        private System.Windows.Forms.CheckBox chkAllBalances;
         private System.Windows.Forms.Label lblQueueCount;
         private System.Windows.Forms.Panel pnlBill;
         private System.Windows.Forms.TableLayoutPanel tlpBill;
@@ -1416,6 +1477,8 @@ namespace LittleEreseSystemV3.Controls
         private System.Windows.Forms.Label lblBalanceTitle;
         private System.Windows.Forms.Label lblBalance;
         private System.Windows.Forms.Button btnCollect;
+        private System.Windows.Forms.TableLayoutPanel tlpBillButtons;
+        private System.Windows.Forms.Button btnTakePayment;
         private System.Windows.Forms.Button btnPrintReceipt;
         private System.Windows.Forms.Panel pnlTranGrid;
         private System.Windows.Forms.DataGridView dgvTransactions;

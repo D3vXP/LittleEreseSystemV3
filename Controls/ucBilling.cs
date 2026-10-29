@@ -47,6 +47,7 @@ namespace LittleEreseSystemV3.Controls
             Theme.StyleSecondaryButton(btnQueueToday);
             Theme.StyleSecondaryButton(btnRefresh);
             Theme.StylePrimaryButton(btnCollect);
+            Theme.StyleSecondaryButton(btnTakePayment);
             Theme.StyleSecondaryButton(btnPrintReceipt);
             Theme.StylePrimaryButton(btnSearch);
             Theme.StyleSecondaryButton(btnReprint);
@@ -215,7 +216,10 @@ namespace LittleEreseSystemV3.Controls
             {
                 try
                 {
-                    dgvQueue.DataSource = BillingRepository.GetQueue(dtpQueueDate.Value.Date);
+                    // The tick shows every unpaid balance on any date; the day queue is the default.
+                    dgvQueue.DataSource = chkAllBalances.Checked
+                        ? BillingRepository.GetBalances()
+                        : BillingRepository.GetQueue(dtpQueueDate.Value.Date);
                 }
                 catch (Exception ex)
                 {
@@ -242,7 +246,14 @@ namespace LittleEreseSystemV3.Controls
                 _loading = false;
             }
 
-            lblQueueCount.Text = dgvQueue.Rows.Count + " in the queue";
+            // The two lists are counted in their own words: the day queue or every open balance.
+            lblQueueCount.Text = chkAllBalances.Checked
+                ? dgvQueue.Rows.Count + " unpaid balances"
+                : dgvQueue.Rows.Count + " in the queue";
+
+            // The date picker only makes sense for the day queue.
+            dtpQueueDate.Enabled = !chkAllBalances.Checked;
+            btnQueueToday.Enabled = dtpQueueDate.Enabled;
 
             if (appointmentId > 0) ShowBill(appointmentId);
             else ClearBill();
@@ -363,6 +374,11 @@ namespace LittleEreseSystemV3.Controls
             }
 
             btnCollect.Enabled = !completed && !cancelled;
+
+            // A payment can be taken at any time on a bill that still owes something.
+            btnTakePayment.Enabled = !completed && !cancelled &&
+                Db.Get<decimal>(header["balance_due"]) > 0m;
+
             btnPrintReceipt.Enabled = true;
         }
 
@@ -394,6 +410,7 @@ namespace LittleEreseSystemV3.Controls
             lblBalance.Text = Money.Text(0m);
 
             btnCollect.Enabled = false;
+            btnTakePayment.Enabled = false;
             btnPrintReceipt.Enabled = false;
         }
 
@@ -514,6 +531,20 @@ namespace LittleEreseSystemV3.Controls
             ReceiptPrinter.Print(Db.Get<int>(_bill["billing_id"]), true);
         }
 
+        /// <summary>
+        /// Takes a payment on its own (no completion): a down payment at any time, a part of the
+        /// balance or the rest of it. The queue is filled again with the same appointment selected.
+        /// </summary>
+        private void btnTakePayment_Click(object sender, EventArgs e)
+        {
+            int appointmentId = CurrentAppointmentId();
+            if (appointmentId <= 0) return;
+
+            PaymentForm.TakePayment(this, appointmentId, "Payment - appointment #" + appointmentId);
+
+            LoadQueue(appointmentId);
+        }
+
         private void dgvBillLines_CurrentCellDirtyStateChanged(object sender, EventArgs e)
         {
             // The staff drop-down only reports a change once the edit is committed.
@@ -587,6 +618,12 @@ namespace LittleEreseSystemV3.Controls
         private void btnRefresh_Click(object sender, EventArgs e)
         {
             LoadQueue(CurrentAppointmentId());
+        }
+
+        private void chkAllBalances_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_loading) return;
+            LoadQueue(0);
         }
 
         private void dgvQueue_SelectionChanged(object sender, EventArgs e)

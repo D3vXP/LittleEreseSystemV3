@@ -2,6 +2,24 @@
 
 Update this file at the end of every task.
 
+- Step 68 (this task): the Billing screen can take a payment on its own, on any date.
+  - Controls\ucBilling.Designer.cs: new Button btnTakePayment ("Take Payment", same size and style
+    as its neighbour) in a new tlpBillButtons row next to btnCollect, whose text is now "Collect and
+    Complete"; new CheckBox chkAllBalances ("Unpaid balances (all dates)") in pnlQueueToolbar on the
+    second row, left of lblQueueCount (which stays right aligned). Nothing overlaps.
+  - Controls\ucBilling.cs: btnTakePayment is enabled when the appointment is not Completed or
+    Cancelled and balance_due > 0 (UpdateControls); Click -> PaymentForm.TakePayment(this, id,
+    "Payment - appointment #n") then LoadQueue(id). chkAllBalances checked: LoadQueue fills the grid
+    from BillingRepository.GetBalances(), the date picker and "Today" are disabled and lblQueueCount
+    reads "<n> unpaid balances"; unchecked: the day queue exactly as before. The selection is kept.
+  - "Collect and Complete" keeps its rules (future dates still refused, the attending staff
+    dropdown per line unchanged). PROJECT_RULES.md: no change (no new business rule).
+  - No .csproj change. docs\screenshots\ucBilling.png and ucBilling_Staff.png regenerated.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --preview ucBilling
+    exit 0 (screenshot checked: new button and tick fit, nothing overlaps or is cut off);
+    --smoketest 94 passed / 0 failed / 0 skipped; app started once, stayed open, closed, no error.log.
+  - Open Controls\ucBilling.cs in the Designer to check the new button and the new tick.
+
 - Step 67 (this task): the payment dialog is now reachable from the appointment flow.
   - Forms\AppointmentForm.cs SaveNewBooking: right after AppointmentRepository.Create the payment
     dialog opens as the next screen (PaymentForm.TakePayment(this, appointmentId, "Down payment -
