@@ -588,6 +588,10 @@ namespace LittleEreseSystemV3.Forms
 
             List<string> alerts = new List<string>();
             if (!string.IsNullOrWhiteSpace(allergies)) alerts.Add("allergies: " + allergies.Trim());
+            // The paper-form checkboxes (health_conditions) belong to the same medical alert line.
+            string conditions = ClientRepository.JoinHealthConditions(
+                ClientRepository.SplitHealthConditions(Db.Get<string>(row["health_conditions"])));
+            if (conditions.Length > 0) alerts.Add("health conditions: " + conditions);
             if (!string.IsNullOrWhiteSpace(medical)) alerts.Add("medical history: " + medical.Trim());
 
             // The consent form is no longer part of the booking rules, so only the medical alerts

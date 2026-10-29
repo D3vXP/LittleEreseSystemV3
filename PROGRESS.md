@@ -2,6 +2,35 @@
 
 Update this file at the end of every task.
 
+- Step 72 (this task): the client card now shows the paper-form health data and the shop's own
+  treatment history, and the consent badge is never red.
+  - Controls\ucClients.Designer.cs (tlpDetails): lblMedicalTitle reads "Health conditions" (the box
+    holds the ticked checkboxes plus "Other: ..." on the next line); lblTreatmentTitle reads
+    "Treatments at other clinics (past 6 months)"; ONE new row after it - lblClinicHistoryTitle
+    "Treatment history at Little Erese's" and read-only multiline txtDetailClinicHistory (same style
+    as txtDetailTreatment, vertical scroll bars). The three notes boxes shrank 48 -> 36 px, the
+    section margins 10 -> 6, the packages grid 108 -> 80 px and pnlDetails padding 16 -> (10,10,10,6),
+    so the whole card fits the 640 px page without a scrollbar and the packages grid keeps room.
+    TabIndex 11/12 for the new pair, packages 13/14.
+  - Controls\ucClients.cs: txtDetailMedical = the ticked health conditions joined with ", ", then
+    "Other: " + medical_history on a new line when it has text (the Notes("-") text when both are
+    empty); txtDetailClinicHistory = one line per GetClinicHistory row,
+    "MMM dd, yyyy - Service (Session 2 of 4) - Staff name" (session part only for multi-session
+    services); ClearDetails empties the new box too. The consent badge is Theme.Success + white when
+    signed and Theme.Warning + Theme.TextDark when not (was Theme.Danger), so red is reserved for
+    real errors.
+  - Forms\AppointmentForm.cs ShowClientInfo: the alert line also lists the client's
+    health_conditions ("health conditions: ...") after the allergies; still no red text.
+  - No business rule changed (the health_conditions / treatment_history rule of step 70 already
+    covers this), so PROJECT_RULES.md was NOT edited. LittleEreseSystemV3.csproj was NOT edited.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --preview ucClients
+    looked at (round 1 fixed the vertical scrollbar by shrinking the boxes and margins, round 2 is
+    clean); screenshot regenerated; --smoketest 96 passed / 0 failed / 0 skipped; app started once,
+    stayed open, closed, no error.log.
+  - Only Controls\ucClients.cs painted a consent state in red; nothing else in Controls\ or Forms\
+    uses a danger colour for consent (Theme.Danger is now only the Cancel / Archive / Restore style
+    buttons and the Cancelled / Expired status colours).
+
 - Step 71 (this task): the new / edit client dialog now follows the paper intake form.
   - Forms\ClientEditForm.Designer.cs: new label lblHealth ("Health conditions (tick all that
     apply)") and CheckedListBox clbHealth (MultiColumn, ColumnWidth 170, CheckOnClick, 3 columns,

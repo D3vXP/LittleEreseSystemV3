@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Drawing;
+using System.Text;
 using System.Windows.Forms;
 using LittleEreseSystemV3.Data;
 using LittleEreseSystemV3.Forms;
@@ -158,15 +159,37 @@ namespace LittleEreseSystemV3.Controls
             lblDetailAddress.Text = "Address: " + address +
                 (string.IsNullOrWhiteSpace(gender) ? string.Empty : "   -   " + gender);
 
-            // Green badge when the signed paper form is filed, red while it is still missing.
+            // Green badge when the signed paper form is filed, amber while it is still missing.
+            // Red is reserved for real errors, so a missing form never paints the card red.
             bool signed = Db.Get<bool>(row["consent_status"]);
             lblDetailConsent.Text = signed ? "Consent signed" : "Consent form not signed";
-            lblDetailConsent.BackColor = signed ? Theme.Success : Theme.Danger;
-            lblDetailConsent.ForeColor = Color.White;
+            lblDetailConsent.BackColor = signed ? Theme.Success : Theme.Warning;
+            lblDetailConsent.ForeColor = signed ? Color.White : Theme.TextDark;
 
             txtDetailAllergies.Text = Notes(Db.Get<string>(row["allergies"]));
-            txtDetailMedical.Text = Notes(Db.Get<string>(row["medical_history"]));
+
+            // The health box follows the paper form: the ticked checkboxes first, then the
+            // "other conditions" free text under them on its own line.
+            string healthText = ClientRepository.JoinHealthConditions(
+                ClientRepository.SplitHealthConditions(Db.Get<string>(row["health_conditions"])));
+            string otherText = Db.Get<string>(row["medical_history"]);
+            if (healthText.Length == 0 && string.IsNullOrWhiteSpace(otherText))
+            {
+                txtDetailMedical.Text = Notes(string.Empty);
+            }
+            else
+            {
+                string otherLine = string.IsNullOrWhiteSpace(otherText)
+                    ? string.Empty
+                    : "Other: " + otherText.Trim();
+                if (healthText.Length == 0) txtDetailMedical.Text = otherLine;
+                else if (otherLine.Length == 0) txtDetailMedical.Text = healthText;
+                else txtDetailMedical.Text = healthText + Environment.NewLine + otherLine;
+            }
+
             txtDetailTreatment.Text = Notes(Db.Get<string>(row["treatment_history"]));
+
+            txtDetailClinicHistory.Text = ClinicHistoryText(clientId);
 
             LoadPackages(clientId);
 
@@ -189,11 +212,48 @@ namespace LittleEreseSystemV3.Controls
             txtDetailAllergies.Text = string.Empty;
             txtDetailMedical.Text = string.Empty;
             txtDetailTreatment.Text = string.Empty;
+            txtDetailClinicHistory.Text = string.Empty;
 
             dgvPackages.DataSource = null;
 
             btnEdit.Enabled = false;
             btnAddPackage.Enabled = false;
+        }
+
+        /// <summary>The shop's own treatment history, one "date - service - staff" line per visit.</summary>
+        private static string ClinicHistoryText(int clientId)
+        {
+            DataTable history;
+            try
+            {
+                history = ClientRepository.GetClinicHistory(clientId);
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+                return Notes(string.Empty);
+            }
+
+            if (history == null || history.Rows.Count == 0) return Notes(string.Empty);
+
+            StringBuilder text = new StringBuilder();
+            foreach (DataRow visit in history.Rows)
+            {
+                if (text.Length > 0) text.AppendLine();
+
+                DateTime visitDate = Db.Get<DateTime>(visit["visit_date"]);
+                text.Append(visitDate.ToString("MMM dd, yyyy"));
+                text.Append(" - ");
+                text.Append(Db.Get<string>(visit["service_name"]));
+
+                // A package line carries "Session 2 of 4"; a plain service has no session text.
+                string session = Db.Get<string>(visit["session_text"]);
+                if (!string.IsNullOrWhiteSpace(session)) text.Append(" (" + session + ")");
+
+                text.Append(" - " + Db.Get<string>(visit["staff_name"]));
+            }
+
+            return text.ToString();
         }
 
         private void LoadPackages(int clientId)

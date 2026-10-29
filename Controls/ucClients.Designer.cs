@@ -70,6 +70,8 @@ namespace LittleEreseSystemV3.Controls
             this.txtDetailMedical = new System.Windows.Forms.TextBox();
             this.lblTreatmentTitle = new System.Windows.Forms.Label();
             this.txtDetailTreatment = new System.Windows.Forms.TextBox();
+            this.lblClinicHistoryTitle = new System.Windows.Forms.Label();
+            this.txtDetailClinicHistory = new System.Windows.Forms.TextBox();
             this.lblPackagesTitle = new System.Windows.Forms.Label();
             this.dgvPackages = new System.Windows.Forms.DataGridView();
             this.colPackageId = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -441,7 +443,7 @@ namespace LittleEreseSystemV3.Controls
             this.pnlDetails.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pnlDetails.Location = new System.Drawing.Point(0, 0);
             this.pnlDetails.Name = "pnlDetails";
-            this.pnlDetails.Padding = new System.Windows.Forms.Padding(16);
+            this.pnlDetails.Padding = new System.Windows.Forms.Padding(10, 10, 10, 6);
             this.pnlDetails.Size = new System.Drawing.Size(377, 640);
             this.pnlDetails.TabIndex = 0;
             // 
@@ -463,29 +465,33 @@ namespace LittleEreseSystemV3.Controls
             this.tlpDetails.Controls.Add(this.txtDetailMedical, 0, 8);
             this.tlpDetails.Controls.Add(this.lblTreatmentTitle, 0, 9);
             this.tlpDetails.Controls.Add(this.txtDetailTreatment, 0, 10);
-            this.tlpDetails.Controls.Add(this.lblPackagesTitle, 0, 11);
-            this.tlpDetails.Controls.Add(this.dgvPackages, 0, 12);
-            this.tlpDetails.Controls.Add(this.btnAddPackage, 0, 13);
+            this.tlpDetails.Controls.Add(this.lblClinicHistoryTitle, 0, 11);
+            this.tlpDetails.Controls.Add(this.txtDetailClinicHistory, 0, 12);
+            this.tlpDetails.Controls.Add(this.lblPackagesTitle, 0, 13);
+            this.tlpDetails.Controls.Add(this.dgvPackages, 0, 14);
+            this.tlpDetails.Controls.Add(this.btnAddPackage, 0, 15);
             this.tlpDetails.Dock = System.Windows.Forms.DockStyle.Top;
             this.tlpDetails.Location = new System.Drawing.Point(16, 16);
             this.tlpDetails.Name = "tlpDetails";
             this.tlpDetails.Padding = new System.Windows.Forms.Padding(16, 12, 16, 8);
-            this.tlpDetails.RowCount = 14;
+            this.tlpDetails.RowCount = 16;
             this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 22F));
             this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 22F));
             this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 22F));
             this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 29F));
             this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 48F));
+            this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 36F));
             this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 48F));
+            this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 36F));
             this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 48F));
+            this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 36F));
             this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 108F));
+            this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 36F));
+            this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 80F));
             this.tlpDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 44F));
-            this.tlpDetails.Size = new System.Drawing.Size(345, 563);
+            this.tlpDetails.Size = new System.Drawing.Size(345, 596);
             this.tlpDetails.TabIndex = 0;
             // 
             // lblDetailName
@@ -576,7 +582,7 @@ namespace LittleEreseSystemV3.Controls
             this.txtDetailAllergies.Name = "txtDetailAllergies";
             this.txtDetailAllergies.ReadOnly = true;
             this.txtDetailAllergies.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtDetailAllergies.Size = new System.Drawing.Size(313, 48);
+            this.txtDetailAllergies.Size = new System.Drawing.Size(313, 38);
             this.txtDetailAllergies.TabIndex = 6;
             // 
             // lblMedicalTitle
@@ -587,9 +593,9 @@ namespace LittleEreseSystemV3.Controls
             this.lblMedicalTitle.Location = new System.Drawing.Point(16, 228);
             this.lblMedicalTitle.Margin = new System.Windows.Forms.Padding(0, 8, 0, 2);
             this.lblMedicalTitle.Name = "lblMedicalTitle";
-            this.lblMedicalTitle.Size = new System.Drawing.Size(107, 19);
+            this.lblMedicalTitle.Size = new System.Drawing.Size(113, 19);
             this.lblMedicalTitle.TabIndex = 7;
-            this.lblMedicalTitle.Text = "Medical history";
+            this.lblMedicalTitle.Text = "Health conditions";
             // 
             // txtDetailMedical
             // 
@@ -602,7 +608,7 @@ namespace LittleEreseSystemV3.Controls
             this.txtDetailMedical.Name = "txtDetailMedical";
             this.txtDetailMedical.ReadOnly = true;
             this.txtDetailMedical.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtDetailMedical.Size = new System.Drawing.Size(313, 48);
+            this.txtDetailMedical.Size = new System.Drawing.Size(313, 38);
             this.txtDetailMedical.TabIndex = 8;
             // 
             // lblTreatmentTitle
@@ -611,11 +617,11 @@ namespace LittleEreseSystemV3.Controls
             this.lblTreatmentTitle.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblTreatmentTitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
             this.lblTreatmentTitle.Location = new System.Drawing.Point(16, 305);
-            this.lblTreatmentTitle.Margin = new System.Windows.Forms.Padding(0, 10, 0, 2);
+            this.lblTreatmentTitle.Margin = new System.Windows.Forms.Padding(0, 6, 0, 2);
             this.lblTreatmentTitle.Name = "lblTreatmentTitle";
-            this.lblTreatmentTitle.Size = new System.Drawing.Size(223, 19);
+            this.lblTreatmentTitle.Size = new System.Drawing.Size(277, 19);
             this.lblTreatmentTitle.TabIndex = 9;
-            this.lblTreatmentTitle.Text = "Treatment history (last 6 months)";
+            this.lblTreatmentTitle.Text = "Treatments at other clinics (past 6 months)";
             // 
             // txtDetailTreatment
             // 
@@ -628,19 +634,45 @@ namespace LittleEreseSystemV3.Controls
             this.txtDetailTreatment.Name = "txtDetailTreatment";
             this.txtDetailTreatment.ReadOnly = true;
             this.txtDetailTreatment.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtDetailTreatment.Size = new System.Drawing.Size(313, 48);
+            this.txtDetailTreatment.Size = new System.Drawing.Size(313, 38);
             this.txtDetailTreatment.TabIndex = 10;
+            // 
+            // lblClinicHistoryTitle
+            // 
+            this.lblClinicHistoryTitle.AutoSize = true;
+            this.lblClinicHistoryTitle.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblClinicHistoryTitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
+            this.lblClinicHistoryTitle.Location = new System.Drawing.Point(16, 382);
+            this.lblClinicHistoryTitle.Margin = new System.Windows.Forms.Padding(0, 6, 0, 2);
+            this.lblClinicHistoryTitle.Name = "lblClinicHistoryTitle";
+            this.lblClinicHistoryTitle.Size = new System.Drawing.Size(250, 19);
+            this.lblClinicHistoryTitle.TabIndex = 11;
+            this.lblClinicHistoryTitle.Text = "Treatment history at Little Erese\'s";
+            // 
+            // txtDetailClinicHistory
+            // 
+            this.txtDetailClinicHistory.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            this.txtDetailClinicHistory.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtDetailClinicHistory.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.txtDetailClinicHistory.Location = new System.Drawing.Point(16, 403);
+            this.txtDetailClinicHistory.Margin = new System.Windows.Forms.Padding(0);
+            this.txtDetailClinicHistory.Multiline = true;
+            this.txtDetailClinicHistory.Name = "txtDetailClinicHistory";
+            this.txtDetailClinicHistory.ReadOnly = true;
+            this.txtDetailClinicHistory.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.txtDetailClinicHistory.Size = new System.Drawing.Size(313, 38);
+            this.txtDetailClinicHistory.TabIndex = 12;
             // 
             // lblPackagesTitle
             // 
             this.lblPackagesTitle.AutoSize = true;
             this.lblPackagesTitle.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblPackagesTitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
-            this.lblPackagesTitle.Location = new System.Drawing.Point(16, 382);
-            this.lblPackagesTitle.Margin = new System.Windows.Forms.Padding(0, 10, 0, 2);
+            this.lblPackagesTitle.Location = new System.Drawing.Point(16, 435);
+            this.lblPackagesTitle.Margin = new System.Windows.Forms.Padding(0, 6, 0, 2);
             this.lblPackagesTitle.Name = "lblPackagesTitle";
             this.lblPackagesTitle.Size = new System.Drawing.Size(71, 19);
-            this.lblPackagesTitle.TabIndex = 11;
+            this.lblPackagesTitle.TabIndex = 13;
             this.lblPackagesTitle.Text = "Packages";
             // 
             // dgvPackages
@@ -682,7 +714,7 @@ namespace LittleEreseSystemV3.Controls
             this.dgvPackages.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dgvPackages.EnableHeadersVisualStyles = false;
             this.dgvPackages.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(227)))), ((int)(((byte)(218)))), ((int)(((byte)(198)))));
-            this.dgvPackages.Location = new System.Drawing.Point(16, 403);
+            this.dgvPackages.Location = new System.Drawing.Point(16, 456);
             this.dgvPackages.Margin = new System.Windows.Forms.Padding(0);
             this.dgvPackages.MultiSelect = false;
             this.dgvPackages.Name = "dgvPackages";
@@ -690,8 +722,8 @@ namespace LittleEreseSystemV3.Controls
             this.dgvPackages.RowHeadersVisible = false;
             this.dgvPackages.RowTemplate.Height = 26;
             this.dgvPackages.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dgvPackages.Size = new System.Drawing.Size(313, 108);
-            this.dgvPackages.TabIndex = 12;
+            this.dgvPackages.Size = new System.Drawing.Size(313, 80);
+            this.dgvPackages.TabIndex = 14;
             this.dgvPackages.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.dgvPackages_CellFormatting);
             // 
             // colPackageId
@@ -756,7 +788,7 @@ namespace LittleEreseSystemV3.Controls
             this.btnAddPackage.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnAddPackage.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnAddPackage.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(164)))), ((int)(((byte)(123)))), ((int)(((byte)(43)))));
-            this.btnAddPackage.Location = new System.Drawing.Point(205, 519);
+            this.btnAddPackage.Location = new System.Drawing.Point(205, 544);
             this.btnAddPackage.Margin = new System.Windows.Forms.Padding(8, 8, 0, 0);
             this.btnAddPackage.Name = "btnAddPackage";
             this.btnAddPackage.Size = new System.Drawing.Size(116, 32);
@@ -832,6 +864,8 @@ namespace LittleEreseSystemV3.Controls
         private System.Windows.Forms.TextBox txtDetailMedical;
         private System.Windows.Forms.Label lblTreatmentTitle;
         private System.Windows.Forms.TextBox txtDetailTreatment;
+        private System.Windows.Forms.Label lblClinicHistoryTitle;
+        private System.Windows.Forms.TextBox txtDetailClinicHistory;
         private System.Windows.Forms.Label lblPackagesTitle;
         private System.Windows.Forms.DataGridView dgvPackages;
         private System.Windows.Forms.DataGridViewTextBoxColumn colPackageId;
