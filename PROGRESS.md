@@ -2,6 +2,28 @@
 
 Update this file at the end of every task.
 
+- Step 76 (this task): the X button logs out, and a double click in Appointments opens Billing.
+  - Forms\MainForm.cs: btnLogout_Click and the new OnFormClosing (CloseReason.UserClosing) share
+    one private LogOut() that writes the 'Logout' activity row and closes the form; a _loggingOut
+    flag stops the X from asking a second time, and a Windows shutdown / Application.Exit never
+    asks. "No" keeps the window open.
+  - Controls\ucBilling.cs: new public ShowAppointment(int appointmentId) reads the date and status
+    with one small query (new read-only Data\BillingRepository.GetAppointmentStatus), refuses a
+    Cancelled / Rescheduled appointment with Messages.Info and otherwise switches chkAllBalances
+    off, moves dtpQueueDate under _loading (so nothing loads twice) and calls LoadQueue(id).
+  - Controls\ucAppointments.cs: new public event Action<int> OpenBillingRequested; the old empty
+    dgvAppointments_CellDoubleClick ("does nothing on purpose") now ignores the header row
+    (RowIndex < 0) and raises the event with the appointment id. It never repeated a button.
+  - Forms\MainForm.cs: AttachPageEvents (called from Navigate) removes and re-adds the handler, so
+    a rebuilt page is never subscribed twice; ucAppointments_OpenBillingRequested runs the same
+    btnNavBilling_Click code (role check and menu highlight kept) and then calls ShowAppointment on
+    the fresh Billing page.
+  - Helpers\SmokeTest.cs: one new read-only check, GetAppointmentStatus(0) returns no row (96 -> 97).
+  - PROJECT_RULES.md: two new bullets (the X / Logout rule and the Appointments double click).
+    LittleEreseSystemV3.csproj was NOT edited.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --smoketest 97
+    passed / 0 failed / 0 skipped; app started once, stayed open, closed, no error.log.
+
 - Step 75 (this task): the technician / nurse pick of the booking dialog is never lost.
   - Forms\AppointmentForm.cs: the dropdowns cboLineTech and cboLineNurse were wired to
     SelectedIndexChanged, which also fires when UpdateLinePanel refills their DataSource, so the

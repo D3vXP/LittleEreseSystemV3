@@ -48,6 +48,10 @@ namespace LittleEreseSystemV3.Forms
         // The page on screen right now, so it can be disposed when another one is opened.
         private UserControl _currentPage;
 
+        // True only while this form closes itself after a logout, so FormClosing does not ask
+        // the same question a second time.
+        private bool _loggingOut;
+
         public bool LoggedOut { get; private set; }
 
         public MainForm()
@@ -120,6 +124,7 @@ namespace LittleEreseSystemV3.Forms
             try
             {
                 page = CreatePage(pageKey);
+                AttachPageEvents(page);
                 ApplyArgument(page, argument);
             }
             catch (Exception ex)
@@ -179,6 +184,32 @@ namespace LittleEreseSystemV3.Forms
             appointments.StartDate = ((DateTime)argument).Date;
         }
 
+        /// <summary>
+        /// Hooks the page that can ask to open another one. A page is built again on every Navigate,
+        /// so the handler is removed before it is added: a page can never end up subscribed twice.
+        /// </summary>
+        private void AttachPageEvents(UserControl page)
+        {
+            ucAppointments appointments = page as ucAppointments;
+            if (appointments == null) return;
+
+            appointments.OpenBillingRequested -= ucAppointments_OpenBillingRequested;
+            appointments.OpenBillingRequested += ucAppointments_OpenBillingRequested;
+        }
+
+        /// <summary>
+        /// The Appointments page asks for Billing (a double click on a row). The Billing button's
+        /// own code goes first, so the role check and the highlighted menu button are exactly the
+        /// same as a click, and then the fresh page is told which appointment to show.
+        /// </summary>
+        private void ucAppointments_OpenBillingRequested(int appointmentId)
+        {
+            btnNavBilling_Click(this, EventArgs.Empty);
+
+            ucBilling billing = _currentPage as ucBilling;
+            if (billing != null) billing.ShowAppointment(appointmentId);
+        }
+
         private void btnMenuToggle_Click(object sender, EventArgs e)
         {
             SetSidebarCollapsed(!_sidebarCollapsed);
@@ -193,10 +224,41 @@ namespace LittleEreseSystemV3.Forms
         {
             if (!Messages.Confirm("Log out now?")) return;
 
+            LogOut();
+        }
+
+        /// <summary>
+        /// The one place that really logs out, shared by the Logout button and the X button.
+        /// _loggingOut stops the X question from being asked again while this code closes the form.
+        /// </summary>
+        private void LogOut()
+        {
             ActivityRepository.Log(Session.UserId, "Logout", "Authentication", "User logged out");
 
             LoggedOut = true;
+            _loggingOut = true;
             Close();
+        }
+
+        /// <summary>
+        /// The X button asks the same question as the Logout button. A Windows shutdown or
+        /// Application.Exit never asks, so the app can always close without a dialog.
+        /// </summary>
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            base.OnFormClosing(e);
+
+            if (_loggingOut) return;
+            if (e.CloseReason != CloseReason.UserClosing) return;
+
+            // The first "No" keeps the window open; the second question is the one from LogOut.
+            if (!Messages.Confirm("Log out now?"))
+            {
+                e.Cancel = true;
+                return;
+            }
+
+            LogOut();
         }
 
         private void btnNavDashboard_Click(object sender, EventArgs e)

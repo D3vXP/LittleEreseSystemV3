@@ -264,6 +264,60 @@ namespace LittleEreseSystemV3.Controls
             return GridHelper.GetSelectedId(dgvQueue, "colQueueAppointmentId");
         }
 
+        /// <summary>
+        /// Opens this page on one appointment (used when a row of the Appointments page is double
+        /// clicked). A cancelled or rescheduled appointment has nothing to pay, so it is only
+        /// announced. The date picker is moved without loading twice: _loading swallows the change
+        /// events of the tick and the picker, and LoadQueue runs once at the end with that
+        /// appointment as the row to select.
+        /// </summary>
+        public void ShowAppointment(int appointmentId)
+        {
+            if (appointmentId <= 0) return;
+
+            DataRow row;
+            try
+            {
+                row = BillingRepository.GetAppointmentStatus(appointmentId);
+            }
+            catch (Exception ex)
+            {
+                Messages.DbError(ex);
+                return;
+            }
+
+            if (row == null)
+            {
+                Messages.Warn("This appointment no longer exists.");
+                return;
+            }
+
+            string status = Db.Get<string>(row["status"]);
+            if (string.Equals(status, "Cancelled", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(status, "Rescheduled", StringComparison.OrdinalIgnoreCase))
+            {
+                Messages.Info("This appointment was cancelled, so there is nothing to pay.");
+                return;
+            }
+
+            DateTime date = Db.Get<DateTime>(row["appointment_date"]).Date;
+
+            _loading = true;
+            try
+            {
+                chkAllBalances.Checked = false;
+
+                if (date >= dtpQueueDate.MinDate && date <= dtpQueueDate.MaxDate) dtpQueueDate.Value = date;
+                else dtpQueueDate.Value = DateTime.Today;
+            }
+            finally
+            {
+                _loading = false;
+            }
+
+            LoadQueue(appointmentId);
+        }
+
         // ---------------------------------------------------------------- the bill card
 
         /// <summary>Fills the bill card with the bill of one appointment (0 clears it).</summary>

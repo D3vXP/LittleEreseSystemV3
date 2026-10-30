@@ -27,6 +27,12 @@ namespace LittleEreseSystemV3.Controls
         /// </summary>
         public DateTime StartDate { get; set; }
 
+        /// <summary>
+        /// Raised when the user double clicks an appointment row and wants to see its bill.
+        /// The MainForm listens and opens the Billing page on that appointment.
+        /// </summary>
+        public event Action<int> OpenBillingRequested;
+
         public ucAppointments()
         {
             InitializeComponent();
@@ -557,8 +563,14 @@ namespace LittleEreseSystemV3.Controls
 
         private void dgvAppointments_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
-            // A double click on a row does nothing on purpose: the details are already on screen.
-            // (Rescheduling stays on its own button, so nobody moves an appointment by accident.)
+            // The header row has no appointment; RowIndex is -1 there.
+            if (e.RowIndex < 0) return;
+
+            int appointmentId = CurrentAppointmentId();
+            if (appointmentId <= 0) return;
+
+            // Nothing is done here: the page only asks, and the MainForm decides how Billing opens.
+            if (OpenBillingRequested != null) OpenBillingRequested(appointmentId);
         }
 
         // ---------------------------------------------------------------- grid colors

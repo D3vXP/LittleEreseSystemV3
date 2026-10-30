@@ -291,6 +291,7 @@ namespace LittleEreseSystemV3.Helpers
             CheckBillingQueue();
             CheckBillingTransactions();
             CheckBillingHeaderWithoutBill();
+            CheckBillingAppointmentStatusWithoutAppointment();
             CheckZeroBillsPaid();
             CheckBalancesOnlyWithBalance();
 
@@ -880,6 +881,25 @@ ORDER BY a.appointment_id");
             {
                 DataRow header = BillingRepository.GetBillHeader(0);
                 if (header == null) Pass(label);
+                else Fail(label + " (got a row)");
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// An appointment id that does not exist has no date and no status, and that must not throw.
+        /// Read-only: only a SELECT is run.
+        /// </summary>
+        private static void CheckBillingAppointmentStatusWithoutAppointment()
+        {
+            const string label = "BillingRepository.GetAppointmentStatus(0) returns no row";
+            try
+            {
+                DataRow row = BillingRepository.GetAppointmentStatus(0);
+                if (row == null) Pass(label);
                 else Fail(label + " (got a row)");
             }
             catch (Exception ex)

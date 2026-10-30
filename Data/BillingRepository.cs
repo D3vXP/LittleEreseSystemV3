@@ -252,6 +252,20 @@ WHERE a.appointment_id = @appointment_id",
         }
 
         /// <summary>
+        /// The date and status of one appointment, or null when it no longer exists.
+        /// WHY a small query of its own: opening the bill card needs those two values before the
+        /// bill itself matters (a cancelled appointment has nothing to pay).
+        /// </summary>
+        public static DataRow GetAppointmentStatus(int appointmentId)
+        {
+            DataTable table = Db.Query(
+                "SELECT appointment_date, status FROM Appointments WHERE appointment_id = @appointment_id",
+                Db.P("@appointment_id", appointmentId));
+
+            return table.Rows.Count == 0 ? null : table.Rows[0];
+        }
+
+        /// <summary>
         /// The service lines of one appointment for the bill card: appointment_service_id,
         /// service_name, quantity, price, session_label ("2 / 8" or empty),
         /// technician_id (0 when no technician is requested) and line_status.
