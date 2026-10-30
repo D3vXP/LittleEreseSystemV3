@@ -76,6 +76,7 @@ namespace LittleEreseSystemV3.Forms
             lblTitle.Text = "Edit Client";
 
             txtFirstName.Text = Db.Get<string>(row["first_name"]);
+            txtMiddleName.Text = Db.Get<string>(row["middle_name"]);
             txtLastName.Text = Db.Get<string>(row["last_name"]);
 
             DateTime? birth = Db.Get<DateTime?>(row["birth_date"]);
@@ -167,6 +168,7 @@ namespace LittleEreseSystemV3.Forms
             if (!ValidateFields()) return;
 
             string firstName = txtFirstName.Text.Trim();
+            string middleName = txtMiddleName.Text.Trim();
             string lastName = txtLastName.Text.Trim();
             string contact = txtContact.Text.Trim();
             string gender = cboGender.SelectedItem == null ? string.Empty : cboGender.SelectedItem.ToString();
@@ -194,7 +196,7 @@ namespace LittleEreseSystemV3.Forms
             {
                 if (EditId > 0)
                 {
-                    ClientRepository.Update(EditId, firstName, lastName, birthDate, gender, contact,
+                    ClientRepository.Update(EditId, firstName, middleName, lastName, birthDate, gender, contact,
                         txtAddress.Text, txtAllergies.Text, txtMedicalHistory.Text,
                         CheckedHealthConditions(), txtTreatmentHistory.Text, chkConsentSigned.Checked);
                     SavedClientId = EditId;
@@ -204,7 +206,7 @@ namespace LittleEreseSystemV3.Forms
                 }
                 else
                 {
-                    SavedClientId = ClientRepository.Add(firstName, lastName, birthDate, gender, contact,
+                    SavedClientId = ClientRepository.Add(firstName, middleName, lastName, birthDate, gender, contact,
                         txtAddress.Text, txtAllergies.Text, txtMedicalHistory.Text,
                         CheckedHealthConditions(), txtTreatmentHistory.Text, chkConsentSigned.Checked);
 
@@ -237,6 +239,15 @@ namespace LittleEreseSystemV3.Forms
             if (!Validators.IsValidName(txtLastName.Text))
             {
                 Validators.SetError(errorProvider1, txtLastName, "Enter the client's last name.");
+                ok = false;
+            }
+
+            // The middle name is OPTIONAL (two clients may share a first and last name), so an
+            // empty box is fine, but a filled box must still be a real name.
+            if (!Validators.IsOptionalName(txtMiddleName.Text))
+            {
+                Validators.SetError(errorProvider1, txtMiddleName,
+                    "The middle name may only have letters, spaces, hyphens, dots and apostrophes.");
                 ok = false;
             }
 

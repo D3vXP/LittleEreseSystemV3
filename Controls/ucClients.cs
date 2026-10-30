@@ -145,7 +145,10 @@ namespace LittleEreseSystemV3.Controls
                 return;
             }
 
-            lblDetailName.Text = Db.Get<string>(row["last_name"]) + ", " + Db.Get<string>(row["first_name"]);
+            // "Last, First Middle" - the same wording the grid shows, so the two never disagree.
+            string middleName = Db.Get<string>(row["middle_name"]);
+            lblDetailName.Text = Db.Get<string>(row["last_name"]) + ", " + Db.Get<string>(row["first_name"]) +
+                (string.IsNullOrWhiteSpace(middleName) ? string.Empty : " " + middleName);
 
             lblDetailContact.Text = "Contact number: " + ValueOrDash(Db.Get<string>(row["contact_number"]));
 

@@ -74,7 +74,7 @@ namespace LittleEreseSystemV3.Data
             DataTable table = Db.Query(
 @"SELECT a.appointment_id,
          a.start_time, a.end_time,
-         c.last_name + ', ' + c.first_name AS client_name,
+         " + ClientRepository.NameSql("c.") + @" AS client_name,
          a.booking_source,
          a.status,
          ISNULL(b.payment_status, 'Unpaid') AS payment_status
@@ -86,8 +86,9 @@ WHERE a.appointment_date = @appointment_date
        OR (@status = 'Active' AND a.status NOT IN ('Cancelled', 'Rescheduled'))
        OR (@status NOT IN ('All', 'Active') AND a.status = @status))
   AND (@search = ''
-       OR (c.last_name + ', ' + c.first_name) LIKE @like
+       OR (" + ClientRepository.NameSql("c.") + @") LIKE @like
        OR c.first_name LIKE @like
+       OR c.middle_name LIKE @like
        OR c.last_name LIKE @like)
 ORDER BY a.start_time, a.appointment_id",
                 Db.P("@appointment_date", date.Date),
@@ -218,7 +219,7 @@ ORDER BY ar.appointment_room_id");
 @"SELECT a.appointment_id,
          a.appointment_date,
          a.start_time,
-         c.last_name + ', ' + c.first_name AS client_name,
+         " + ClientRepository.NameSql("c.") + @" AS client_name,
          a.status,
          ISNULL(b.payment_status, 'Unpaid') AS payment_status
 FROM Appointments a
@@ -318,7 +319,7 @@ ORDER BY asv.appointment_service_id",
             DataTable table = Db.Query(
 @"SELECT a.appointment_id, a.client_id, a.user_id, a.appointment_date, a.start_time, a.end_time,
          a.booking_source, a.status, a.notes, a.cancelled_at, a.created_at, a.updated_at,
-         c.last_name + ', ' + c.first_name AS client_name
+         " + ClientRepository.NameSql("c.") + @" AS client_name
 FROM Appointments a
 INNER JOIN Clients c ON c.client_id = a.client_id
 WHERE a.appointment_id = @appointment_id",

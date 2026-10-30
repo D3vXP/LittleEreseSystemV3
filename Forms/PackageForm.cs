@@ -74,7 +74,10 @@ namespace LittleEreseSystemV3.Forms
                 DataRow row = ClientRepository.GetById(ClientId);
                 if (row == null) return "-";
 
-                return Db.Get<string>(row["last_name"]) + ", " + Db.Get<string>(row["first_name"]);
+                // Same "Last, First Middle" wording as the client lists; the middle name is optional.
+                string middle = Db.Get<string>(row["middle_name"]);
+                return Db.Get<string>(row["last_name"]) + ", " + Db.Get<string>(row["first_name"]) +
+                    (string.IsNullOrWhiteSpace(middle) ? string.Empty : " " + middle);
             }
             catch (Exception ex)
             {

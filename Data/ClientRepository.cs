@@ -13,6 +13,9 @@ namespace LittleEreseSystemV3.Data
     /// </summary>
     internal static class ClientRepository
     {
+        /// <summary>The middle_name column is VARCHAR(50); the form also limits the box to this.</summary>
+        private const int MaxNameLength = 50;
+
         /// <summary>
         /// The checkboxes of the paper health form, in the exact order they are printed.
         /// WHY one list: every screen builds its checkboxes from here, so a new condition is added
@@ -72,6 +75,18 @@ namespace LittleEreseSystemV3.Data
         }
 
         /// <summary>
+        /// The SQL text that shows a client by name: "Last, First Middle" (the middle name is
+        /// optional, so ISNULL keeps the comma form without a double space).
+        /// WHY one method: every screen that lists or picks a client shows the same wording, so a
+        /// change of the format is made once here. Pass the alias WITH the dot, for example "c.".
+        /// </summary>
+        public static string NameSql(string alias)
+        {
+            return alias + "last_name + ', ' + " + alias + "first_name + ISNULL(' ' + " +
+                alias + "middle_name, '')";
+        }
+
+        /// <summary>
         /// The clients for the grid.
         ///   text    - matches the name (first or last), the "Last, First" form or the contact number
         ///   consent - "All" | "Signed" | "Not signed"
@@ -83,7 +98,7 @@ namespace LittleEreseSystemV3.Data
         {
             string sql =
                 "SELECT c.client_id, " +
-                "       c.last_name + ', ' + c.first_name AS full_name, " +
+                "       " + NameSql("c.") + " AS full_name, " +
                 "       c.contact_number, c.birth_date, c.gender, " +
                 "       CASE WHEN c.consent_status = 1 THEN 'Signed' ELSE 'Pending' END AS consent_text, " +
                 "       (SELECT MAX(a.appointment_date) FROM Appointments a " +
@@ -92,7 +107,8 @@ namespace LittleEreseSystemV3.Data
                 "WHERE (@search = '' " +
                 "       OR c.first_name LIKE @like " +
                 "       OR c.last_name LIKE @like " +
-                "       OR (c.last_name + ', ' + c.first_name) LIKE @like " +
+                "       OR c.middle_name LIKE @like " +
+                "       OR (" + NameSql("c.") + ") LIKE @like " +
                 "       OR c.contact_number LIKE @like) " +
                 "  AND (@consent = 'All' " +
                 "       OR (@consent = 'Signed' AND c.consent_status = 1) " +
@@ -111,7 +127,7 @@ namespace LittleEreseSystemV3.Data
         public static DataRow GetById(int clientId)
         {
             DataTable table = Db.Query(
-                "SELECT client_id, first_name, last_name, birth_date, gender, contact_number, " +
+                "SELECT client_id, first_name, middle_name, last_name, birth_date, gender, contact_number, " +
                 "       address, allergies, medical_history, health_conditions, treatment_history, " +
                 "       consent_status, " +
                 "       created_at, updated_at " +
@@ -167,26 +183,29 @@ namespace LittleEreseSystemV3.Data
         {
             return Db.Query(
                 "SELECT client_id, " +
-                "       last_name + ', ' + first_name + ' - ' + contact_number AS display_name " +
+                "       " + NameSql("") + " + ' - ' + contact_number AS display_name, " +
+                "       first_name + ' ' + ISNULL(middle_name + ' ', '') + last_name + ' ' + " +
+                "       " + NameSql("") + " + ' ' + contact_number AS search_text " +
                 "FROM Clients ORDER BY last_name, first_name");
         }
 
         /// <summary>Inserts a client and returns the new client_id. An empty optional box is stored as NULL.</summary>
-        public static int Add(string firstName, string lastName, DateTime? birthDate, string gender,
+        public static int Add(string firstName, string middleName, string lastName, DateTime? birthDate, string gender,
             string contact, string address, string allergies, string medicalHistory,
             string healthConditions, string treatmentHistory, bool consentSigned)
         {
             EnsureClientIsOldEnough(birthDate);
 
             object id = Db.Scalar(
-                "INSERT INTO Clients (first_name, last_name, birth_date, gender, contact_number, " +
+                "INSERT INTO Clients (first_name, middle_name, last_name, birth_date, gender, contact_number, " +
                 "                     address, allergies, medical_history, health_conditions, " +
                 "                     treatment_history, consent_status) " +
-                "VALUES (@first_name, @last_name, @birth_date, @gender, @contact_number, " +
+                "VALUES (@first_name, @middle_name, @last_name, @birth_date, @gender, @contact_number, " +
                 "        @address, @allergies, @medical_history, @health_conditions, " +
                 "        @treatment_history, @consent_status); " +
                 "SELECT CAST(SCOPE_IDENTITY() AS int);",
                 Db.P("@first_name", Trim(firstName)),
+                Db.P("@middle_name", TrimTo(middleName, MaxNameLength)),
                 Db.P("@last_name", Trim(lastName)),
                 Db.P("@birth_date", birthDate.HasValue ? (object)birthDate.Value.Date : null),
                 Db.P("@gender", Trim(gender)),
@@ -205,14 +224,15 @@ namespace LittleEreseSystemV3.Data
         /// Updates a client and stamps updated_at.
         /// An empty optional text box is stored as NULL, not as "" (named parameters, never SQL text).
         /// </summary>
-        public static void Update(int clientId, string firstName, string lastName, DateTime? birthDate,
+        public static void Update(int clientId, string firstName, string middleName, string lastName, DateTime? birthDate,
             string gender, string contact, string address, string allergies, string medicalHistory,
             string healthConditions, string treatmentHistory, bool consentSigned)
         {
             EnsureClientIsOldEnough(birthDate);
 
             Db.Execute(
-                "UPDATE Clients SET first_name = @first_name, last_name = @last_name, " +
+                "UPDATE Clients SET first_name = @first_name, middle_name = @middle_name, " +
+                "       last_name = @last_name, " +
                 "       birth_date = @birth_date, gender = @gender, contact_number = @contact_number, " +
                 "       address = @address, allergies = @allergies, medical_history = @medical_history, " +
                 "       health_conditions = @health_conditions, " +
@@ -220,6 +240,7 @@ namespace LittleEreseSystemV3.Data
                 "       updated_at = GETDATE() " +
                 "WHERE client_id = @client_id",
                 Db.P("@first_name", Trim(firstName)),
+                Db.P("@middle_name", TrimTo(middleName, MaxNameLength)),
                 Db.P("@last_name", Trim(lastName)),
                 Db.P("@birth_date", birthDate.HasValue ? (object)birthDate.Value.Date : null),
                 Db.P("@gender", Trim(gender)),
@@ -380,6 +401,14 @@ namespace LittleEreseSystemV3.Data
         {
             if (string.IsNullOrWhiteSpace(value)) return null;
             return value.Trim();
+        }
+
+        /// <summary>Same as Trim, but the text is cut to the column length (the middle name is VARCHAR(50)).</summary>
+        private static object TrimTo(string value, int maxLength)
+        {
+            string text = Trim(value);
+            if (text == null) return null;
+            return text.Length > maxLength ? text.Substring(0, maxLength) : text;
         }
 
         /// <summary>

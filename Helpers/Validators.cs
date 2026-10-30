@@ -21,6 +21,9 @@ namespace LittleEreseSystemV3.Helpers
         // POLISH: 2-50 characters: letters, spaces, dots, apostrophes and hyphens (for names like "Ma. Cruz-Santos").
         public const string NameRegex = @"^[A-Za-z .'\-]{2,50}$";
 
+        // The middle name is optional and may be a single initial ("M."), so 1-50 characters.
+        private const string OptionalNameRegex = @"^[A-Za-z .'\-]{1,50}$";
+
         private const int MinimumPasswordLength = 8;
 
         // A client must be at least this old on the day of saving (PROJECT_RULES.md).
@@ -75,6 +78,20 @@ namespace LittleEreseSystemV3.Helpers
             if (!Regex.IsMatch(name, NameRegex)) return false;
 
             // A name made only of dots / spaces is not a real name.
+            return Regex.IsMatch(name, @"[A-Za-z]");
+        }
+
+        /// <summary>
+        /// True when the optional middle name is empty OR a real name (letters, spaces, dots,
+        /// apostrophes, hyphens; at most 50 characters). It may be a single initial like "M.".
+        /// </summary>
+        public static bool IsOptionalName(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return true;
+
+            string name = value.Trim();
+            if (!Regex.IsMatch(name, OptionalNameRegex)) return false;
+
             return Regex.IsMatch(name, @"[A-Za-z]");
         }
 

@@ -55,6 +55,8 @@ namespace LittleEreseSystemV3.Forms
             this.lblLastName = new System.Windows.Forms.Label();
             this.txtFirstName = new System.Windows.Forms.TextBox();
             this.lblFirstName = new System.Windows.Forms.Label();
+            this.txtMiddleName = new System.Windows.Forms.TextBox();
+            this.lblMiddleName = new System.Windows.Forms.Label();
             this.pnlFooter = new System.Windows.Forms.Panel();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
@@ -121,6 +123,8 @@ namespace LittleEreseSystemV3.Forms
             this.pnlContent.Controls.Add(this.lblBirthDate);
             this.pnlContent.Controls.Add(this.txtLastName);
             this.pnlContent.Controls.Add(this.lblLastName);
+            this.pnlContent.Controls.Add(this.txtMiddleName);
+            this.pnlContent.Controls.Add(this.lblMiddleName);
             this.pnlContent.Controls.Add(this.txtFirstName);
             this.pnlContent.Controls.Add(this.lblFirstName);
             this.pnlContent.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -133,7 +137,7 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.chkConsentSigned.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.chkConsentSigned.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.chkConsentSigned.Location = new System.Drawing.Point(16, 616);
+            this.chkConsentSigned.Location = new System.Drawing.Point(16, 646);
             this.chkConsentSigned.Name = "chkConsentSigned";
             this.chkConsentSigned.Size = new System.Drawing.Size(520, 24);
             this.chkConsentSigned.TabIndex = 21;
@@ -154,19 +158,19 @@ namespace LittleEreseSystemV3.Forms
             // clbHealth
             // 
             this.clbHealth.CheckOnClick = true;
-            this.clbHealth.ColumnWidth = 170;
+            this.clbHealth.ColumnWidth = 240;
             this.clbHealth.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.clbHealth.FormattingEnabled = true;
             this.clbHealth.Location = new System.Drawing.Point(16, 372);
             this.clbHealth.MultiColumn = true;
             this.clbHealth.Name = "clbHealth";
-            this.clbHealth.Size = new System.Drawing.Size(520, 110);
+            this.clbHealth.Size = new System.Drawing.Size(520, 150);
             this.clbHealth.TabIndex = 16;
             // 
             // txtTreatmentHistory
             // 
             this.txtTreatmentHistory.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtTreatmentHistory.Location = new System.Drawing.Point(16, 568);
+            this.txtTreatmentHistory.Location = new System.Drawing.Point(16, 598);
             this.txtTreatmentHistory.Multiline = true;
             this.txtTreatmentHistory.Name = "txtTreatmentHistory";
             this.txtTreatmentHistory.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
@@ -177,7 +181,7 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.lblTreatmentHistory.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblTreatmentHistory.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblTreatmentHistory.Location = new System.Drawing.Point(16, 550);
+            this.lblTreatmentHistory.Location = new System.Drawing.Point(16, 580);
             this.lblTreatmentHistory.Name = "lblTreatmentHistory";
             this.lblTreatmentHistory.Size = new System.Drawing.Size(520, 18);
             this.lblTreatmentHistory.TabIndex = 19;
@@ -187,7 +191,7 @@ namespace LittleEreseSystemV3.Forms
             // txtMedicalHistory
             // 
             this.txtMedicalHistory.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtMedicalHistory.Location = new System.Drawing.Point(16, 502);
+            this.txtMedicalHistory.Location = new System.Drawing.Point(16, 544);
             this.txtMedicalHistory.Multiline = true;
             this.txtMedicalHistory.Name = "txtMedicalHistory";
             this.txtMedicalHistory.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
@@ -198,7 +202,7 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.lblMedicalHistory.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblMedicalHistory.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblMedicalHistory.Location = new System.Drawing.Point(16, 484);
+            this.lblMedicalHistory.Location = new System.Drawing.Point(16, 526);
             this.lblMedicalHistory.Name = "lblMedicalHistory";
             this.lblMedicalHistory.Size = new System.Drawing.Size(520, 18);
             this.lblMedicalHistory.TabIndex = 17;
@@ -325,18 +329,18 @@ namespace LittleEreseSystemV3.Forms
             // txtLastName
             // 
             this.txtLastName.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtLastName.Location = new System.Drawing.Point(16, 77);
+            this.txtLastName.Location = new System.Drawing.Point(370, 31);
             this.txtLastName.Name = "txtLastName";
-            this.txtLastName.Size = new System.Drawing.Size(240, 25);
+            this.txtLastName.Size = new System.Drawing.Size(165, 25);
             this.txtLastName.TabIndex = 3;
             // 
             // lblLastName
             // 
             this.lblLastName.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblLastName.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblLastName.Location = new System.Drawing.Point(16, 58);
+            this.lblLastName.Location = new System.Drawing.Point(370, 12);
             this.lblLastName.Name = "lblLastName";
-            this.lblLastName.Size = new System.Drawing.Size(520, 18);
+            this.lblLastName.Size = new System.Drawing.Size(165, 18);
             this.lblLastName.TabIndex = 2;
             this.lblLastName.Text = "Last name";
             this.lblLastName.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -346,7 +350,7 @@ namespace LittleEreseSystemV3.Forms
             this.txtFirstName.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.txtFirstName.Location = new System.Drawing.Point(16, 31);
             this.txtFirstName.Name = "txtFirstName";
-            this.txtFirstName.Size = new System.Drawing.Size(240, 25);
+            this.txtFirstName.Size = new System.Drawing.Size(165, 25);
             this.txtFirstName.TabIndex = 1;
             // 
             // lblFirstName
@@ -355,10 +359,30 @@ namespace LittleEreseSystemV3.Forms
             this.lblFirstName.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
             this.lblFirstName.Location = new System.Drawing.Point(16, 12);
             this.lblFirstName.Name = "lblFirstName";
-            this.lblFirstName.Size = new System.Drawing.Size(520, 18);
+            this.lblFirstName.Size = new System.Drawing.Size(165, 18);
             this.lblFirstName.TabIndex = 0;
             this.lblFirstName.Text = "First name";
             this.lblFirstName.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // txtMiddleName
+            // 
+            this.txtMiddleName.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.txtMiddleName.Location = new System.Drawing.Point(193, 31);
+            this.txtMiddleName.MaxLength = 50;
+            this.txtMiddleName.Name = "txtMiddleName";
+            this.txtMiddleName.Size = new System.Drawing.Size(165, 25);
+            this.txtMiddleName.TabIndex = 2;
+            // 
+            // lblMiddleName
+            // 
+            this.lblMiddleName.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblMiddleName.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.lblMiddleName.Location = new System.Drawing.Point(193, 12);
+            this.lblMiddleName.Name = "lblMiddleName";
+            this.lblMiddleName.Size = new System.Drawing.Size(165, 18);
+            this.lblMiddleName.TabIndex = 1;
+            this.lblMiddleName.Text = "Middle name (optional)";
+            this.lblMiddleName.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // pnlFooter
             // 
@@ -431,7 +455,7 @@ namespace LittleEreseSystemV3.Forms
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(560, 760);
+            this.ClientSize = new System.Drawing.Size(560, 700);
             this.Controls.Add(this.pnlContent);
             this.Controls.Add(this.pnlFooter);
             this.Controls.Add(this.pnlHeader);
@@ -461,6 +485,8 @@ namespace LittleEreseSystemV3.Forms
         private System.Windows.Forms.TextBox txtFirstName;
         private System.Windows.Forms.Label lblLastName;
         private System.Windows.Forms.TextBox txtLastName;
+        private System.Windows.Forms.Label lblMiddleName;
+        private System.Windows.Forms.TextBox txtMiddleName;
         private System.Windows.Forms.Label lblBirthDate;
         private System.Windows.Forms.DateTimePicker dtpBirthDate;
         private System.Windows.Forms.Label lblAge;

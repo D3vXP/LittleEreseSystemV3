@@ -133,7 +133,7 @@ namespace LittleEreseSystemV3.Data
         {
             DataTable table = Db.Query(
 @"SELECT a.appointment_id, a.start_time, a.end_time,
-         c.last_name + ', ' + c.first_name AS client_name,
+         " + ClientRepository.NameSql("c.") + @" AS client_name,
          a.status,
          ISNULL(b.payment_status, 'Unpaid') AS payment_status,
          ISNULL(b.balance_due, 0) AS balance_due
@@ -221,7 +221,7 @@ ORDER BY a.start_time, a.appointment_id",
 
             DataTable table = Db.Query(
                 "SELECT TOP 500 a.appointment_id, a.appointment_date, a.start_time, a.end_time, " +
-                "       c.last_name + ', ' + c.first_name AS client_name, " +
+                "       " + ClientRepository.NameSql("c.") + " AS client_name, " +
                 "       a.status, " +
                 "       ISNULL(b.payment_status, 'Unpaid') AS payment_status, " +
                 "       ISNULL(b.balance_due, 0) AS balance_due " +
@@ -279,7 +279,7 @@ ORDER BY a.start_time, a.appointment_id",
          ISNULL(paid.paid_amount, 0) AS paid_so_far,
          a.appointment_date, a.start_time, a.end_time,
          a.status AS appointment_status,
-         c.last_name + ', ' + c.first_name AS client_name,
+         " + ClientRepository.NameSql("c.") + @" AS client_name,
          ISNULL(p.promo_name, '') AS promo_name
 FROM Appointments a
 INNER JOIN Clients c ON c.client_id = a.client_id
@@ -347,7 +347,7 @@ ORDER BY asv.appointment_service_id",
 
             DataTable table = Db.Query(
 @"SELECT b.billing_id, b.total_amount, b.payment_status,
-         c.last_name + ', ' + c.first_name AS client_name,
+         " + ClientRepository.NameSql("c.") + @" AS client_name,
          paid.paid_amount AS amount_paid,
          last_pay.payment_date, last_pay.payment_method, last_pay.reference_number,
          a.appointment_id
@@ -364,8 +364,9 @@ OUTER APPLY (SELECT TOP 1 p.payment_date, p.payment_method, p.reference_number
 WHERE last_pay.payment_date >= @from_date
   AND last_pay.payment_date < @to_date
   AND (@search = ''
-       OR (c.last_name + ', ' + c.first_name) LIKE @like
+       OR (" + ClientRepository.NameSql("c.") + @") LIKE @like
        OR c.first_name LIKE @like
+       OR c.middle_name LIKE @like
        OR c.last_name LIKE @like)
   AND (@method = 'All' OR last_pay.payment_method = @method)
 ORDER BY last_pay.payment_date DESC, b.billing_id DESC",
@@ -409,7 +410,7 @@ ORDER BY last_pay.payment_date DESC, b.billing_id DESC",
             DataTable table = Db.Query(
 @"SELECT b.billing_id, b.subtotal, b.discount_amount, b.total_amount, b.balance_due,
          ISNULL(paid.paid_amount, 0) AS amount_paid,
-         c.last_name + ', ' + c.first_name AS client_name,
+         " + ClientRepository.NameSql("c.") + @" AS client_name,
          a.appointment_id, a.appointment_date,
          last_pay.payment_date, last_pay.payment_method, last_pay.reference_number,
          asv.quantity, asv.price, s.service_name

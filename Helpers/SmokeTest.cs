@@ -323,6 +323,7 @@ namespace LittleEreseSystemV3.Helpers
             CheckMigration003Data();
             CheckMigration004Data();
             CheckMigration005Applied();
+            CheckMigration007Data();
 
             // The read-only availability checks (Step 48). Nothing is written here.
             CheckAvailability();
@@ -628,7 +629,7 @@ ORDER BY a.appointment_id");
         {
             try
             {
-                ClientRepository.Add("Test", "Smoke Age", birthDate, "Female", "09170000000",
+                ClientRepository.Add("Test", "", "Smoke Age", birthDate, "Female", "09170000000",
                     "", "", "", "", "", false);
                 Fail(label + " (the save was allowed)");
             }
@@ -780,6 +781,17 @@ ORDER BY a.appointment_id");
         {
             CheckScalarAtLeast("Migration 005 applied = ", 1,
                 "SELECT COUNT(*) FROM dbo.SchemaVersion WHERE script_name = '005_zero_bills_paid.sql'");
+        }
+
+        /// <summary>
+        /// Migration 007: the optional middle_name column must exist, otherwise a client with two
+        /// people of the same name could not be told apart. Read-only; "at least" style.
+        /// </summary>
+        private static void CheckMigration007Data()
+        {
+            CheckScalarAtLeast("Migration 007 column exists = ", 1,
+                "SELECT COUNT(*) FROM sys.columns " +
+                "WHERE object_id = OBJECT_ID('dbo.Clients') AND name = 'middle_name'");
         }
 
         /// <summary>GetLog for the last 7 days must run and come back with the columns the grid needs.</summary>

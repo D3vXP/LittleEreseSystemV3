@@ -59,7 +59,7 @@ ORDER BY u.full_name",
             return Db.Query(
 @"SELECT c.commission_id, a.appointment_date AS service_date,
          u.full_name AS staff_name,
-         cl.last_name + ', ' + cl.first_name AS client_name,
+         " + ClientRepository.NameSql("cl.") + @" AS client_name,
          s.service_name,
          CASE WHEN c.commission_rate > 0
               THEN ROUND(c.commission_amount * 100.0 / c.commission_rate, 2)

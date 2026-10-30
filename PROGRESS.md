@@ -2,6 +2,28 @@
 
 Update this file at the end of every task.
 
+- Step 78 (this task): clients may have an optional middle name, shown everywhere a client is named.
+  - Database\Migrations\007_client_middle_name.sql (new): adds Clients.middle_name VARCHAR(50) NULL,
+    safe to run twice (IF COL_LENGTH). The wildcard Content Include="Database\Migrations\*.sql"
+    already copies it, so LittleEreseSystemV3.csproj was NOT edited.
+  - Data\ClientRepository.cs: new NameSql(alias) returns "Last, First Middle"; MiddleName is taken
+    right after firstName by Add and Update (empty box = NULL, trimmed, cut to 50 with the new
+    TrimTo); GetById returns middle_name; Search also matches middle_name and uses NameSql for
+    full_name; GetForCombo's display_name uses NameSql and a new search_text column.
+  - Data\AppointmentRepository.cs, Data\BillingRepository.cs, Data\CommissionRepository.cs: every
+    "last_name + ', ' + first_name" list / search now calls ClientRepository.NameSql - 12 queries.
+  - Forms\ClientEditForm: txtMiddleName beside the first and last name (three equal boxes in one
+    row), validated only when filled (new Validators.IsOptionalName), loaded and saved.
+    clbHealth now shows every label completely (one column 240 px wide, 150 px tall) and
+    "Other medical conditions" moved down so the two do not overlap; the form grew to 560 x 700.
+  - Controls\ucClients.cs: the detail card shows "Last, First Middle" (the grid already did).
+    Forms\PackageForm.cs: the read-only client line shows the middle name too.
+  - Helpers\SmokeTest.cs: new read-only CheckMigration007Data (99 checks). PROJECT_RULES.md: the
+    new client-fields line. docs\screenshots\ClientEditForm.png and ucClients.png refreshed.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --preview
+    ClientEditForm and ucClients look right; --smoketest 99 passed / 0 failed / 0 skipped; app
+    started once on the existing database (migration 007 applied), closed, no error.log.
+
 - Step 77 (this task): the Billing queue has a search box and two filters.
   - Data\BillingRepository.cs: new public GetList(search, unpaidOnly, paidOnly) - all dates, the
     client search split on spaces (every word must be in first name, last name or contact number,
