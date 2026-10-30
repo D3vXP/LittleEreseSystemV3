@@ -294,6 +294,7 @@ namespace LittleEreseSystemV3.Helpers
             CheckBillingAppointmentStatusWithoutAppointment();
             CheckZeroBillsPaid();
             CheckBalancesOnlyWithBalance();
+            CheckBillingListModes();
 
             // The three read-only Commission / Report checks (Step 20). Nothing is written here.
             CheckCommissionSummary();
@@ -937,6 +938,38 @@ ORDER BY a.appointment_id");
                 string message = label + " (rows = " + balances.Rows.Count + ")";
                 if (wrong == 0) Pass(message);
                 else Fail(message + " - " + wrong + " row(s) with balance_due <= 0");
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// The three modes of the queue list must run without an error, and the paid mode must
+        /// only hand back bills that are 'Paid'. Read-only: only SELECTs are run.
+        /// </summary>
+        private static void CheckBillingListModes()
+        {
+            const string label = "BillingRepository.GetList(paid) only returns paid bills";
+            try
+            {
+                // The plain day queue mode is GetQueue; the three list modes are checked here.
+                BillingRepository.GetList("", true, false);
+                BillingRepository.GetList("maria", false, false);
+
+                DataTable paid = BillingRepository.GetList("", false, true);
+
+                int wrong = 0;
+                foreach (DataRow row in paid.Rows)
+                {
+                    if (!string.Equals(Db.Get<string>(row["payment_status"]), "Paid",
+                            StringComparison.OrdinalIgnoreCase)) wrong++;
+                }
+
+                string message = label + " (rows = " + paid.Rows.Count + ")";
+                if (wrong == 0) Pass(message);
+                else Fail(message + " - " + wrong + " row(s) are not Paid");
             }
             catch (Exception ex)
             {

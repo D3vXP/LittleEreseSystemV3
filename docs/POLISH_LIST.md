@@ -4,12 +4,13 @@ A `POLISH` comment marks a place where the owner (or a future developer) may wan
 word, a limit, a rule or a colour. Nothing here is broken; these are the "you could tweak this"
 spots. Line numbers refer to the final version of each file.
 
-Total: **26 comments** in **12 files**.
+Total: **29 comments** in **15 files** (Step 77 added Controls\ucBilling.cs).
 
 ## Controls\
 
 | File | Line | Text |
 |---|---|---|
+| Controls\ucBilling.cs | 282 | the wording of the count line. |
 | Controls\ucCalendarMonth.cs | 29 | move BusyFrom if the owner wants the amber warning earlier or later. |
 | Controls\ucDashboard.cs | 146 | the heading follows the prompt wording; shorten it here if the owner prefers. |
 | Controls\ucSettings.cs | 49 | change the "-" placeholder if you prefer an empty line. |

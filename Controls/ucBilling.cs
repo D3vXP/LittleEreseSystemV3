@@ -214,11 +214,14 @@ namespace LittleEreseSystemV3.Controls
             _loading = true;
             try
             {
+                // Three modes: the day queue is the default; a search text or a ticked filter
+                // switches to the all-dates list (newest date first).
+                bool listMode = AllDatesMode();
+
                 try
                 {
-                    // The tick shows every unpaid balance on any date; the day queue is the default.
-                    dgvQueue.DataSource = chkAllBalances.Checked
-                        ? BillingRepository.GetBalances()
+                    dgvQueue.DataSource = listMode
+                        ? BillingRepository.GetList(txtQueueSearch.Text, chkAllBalances.Checked, chkPaidList.Checked)
                         : BillingRepository.GetQueue(dtpQueueDate.Value.Date);
                 }
                 catch (Exception ex)
@@ -247,16 +250,47 @@ namespace LittleEreseSystemV3.Controls
             }
 
             // The two lists are counted in their own words: the day queue or every open balance.
-            lblQueueCount.Text = chkAllBalances.Checked
-                ? dgvQueue.Rows.Count + " unpaid balances"
-                : dgvQueue.Rows.Count + " in the queue";
+            lblQueueCount.Text = QueueCountText(dgvQueue.Rows.Count);
 
             // The date picker only makes sense for the day queue.
-            dtpQueueDate.Enabled = !chkAllBalances.Checked;
+            dtpQueueDate.Enabled = !AllDatesMode();
             btnQueueToday.Enabled = dtpQueueDate.Enabled;
 
             if (appointmentId > 0) ShowBill(appointmentId);
             else ClearBill();
+        }
+
+        /// <summary>
+        /// True when the grid must list the appointments of ANY date: something was typed in the
+        /// search box, or at least one of the two filters is ticked. Otherwise the grid is the
+        /// plain day queue of dtpQueueDate.
+        /// </summary>
+        private bool AllDatesMode()
+        {
+            return txtQueueSearch.Text.Trim().Length > 0 || chkAllBalances.Checked || chkPaidList.Checked;
+        }
+
+        /// <summary>
+        /// The count line in the words of the mode that is shown ("12 in the queue",
+        /// "3 unpaid / partial bills for 'maria'", "5 completed and paid bills (all dates)").
+        /// </summary>
+        private string QueueCountText(int rows)
+        {
+            if (!AllDatesMode()) return rows + " in the queue";
+
+            string term = txtQueueSearch.Text.Trim();
+            // POLISH: the wording of the count line.
+            string what;
+            if (chkAllBalances.Checked && chkPaidList.Checked) what = "appointments";
+            else if (chkAllBalances.Checked) what = "unpaid / partial bills";
+            else if (chkPaidList.Checked) what = "completed and paid bills";
+            else what = "appointments";
+
+            string text = rows + " " + what;
+            if (term.Length > 0) text += " for '" + term + "'";
+            else text += " (all dates)";
+
+            return text;
         }
 
         private int CurrentAppointmentId()
@@ -305,7 +339,10 @@ namespace LittleEreseSystemV3.Controls
             _loading = true;
             try
             {
+                // The queue goes back to its default day mode, so a search or a tick leaves no trace.
+                txtQueueSearch.Text = string.Empty;
                 chkAllBalances.Checked = false;
+                chkPaidList.Checked = false;
 
                 if (date >= dtpQueueDate.MinDate && date <= dtpQueueDate.MaxDate) dtpQueueDate.Value = date;
                 else dtpQueueDate.Value = DateTime.Today;
@@ -678,6 +715,23 @@ namespace LittleEreseSystemV3.Controls
         {
             if (_loading) return;
             LoadQueue(0);
+        }
+
+        /// <summary>The second filter ticks freely (no mutual exclusion) and reloads right away.</summary>
+        private void chkPaidList_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_loading) return;
+            LoadQueue(0);
+        }
+
+        /// <summary>
+        /// Typing in the search box reloads the list at once. The appointment that is already
+        /// selected stays selected while it is still listed, so the bill card does not jump away.
+        /// </summary>
+        private void txtQueueSearch_TextChanged(object sender, EventArgs e)
+        {
+            if (_loading) return;
+            LoadQueue(CurrentAppointmentId());
         }
 
         private void dgvQueue_SelectionChanged(object sender, EventArgs e)

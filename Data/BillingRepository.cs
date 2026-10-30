@@ -177,17 +177,60 @@ ORDER BY a.start_time, a.appointment_id",
         /// </summary>
         public static DataTable GetBalances()
         {
+            // The balances list is the all-dates list with only the unpaid / partial filter.
+            return GetList("", true, false);
+        }
+
+        /// <summary>
+        /// The billing list of ANY date for the queue grid, in one of its three modes.
+        /// search is trimmed and split on spaces; EVERY word must be found in the client's first
+        /// name, last name or contact number (LIKE %word%, wildcards escaped, through parameters).
+        /// Only one tick filters the payments: unpaidOnly adds payment_status 'Unpaid' / 'Partial'
+        /// or balance_due > 0, paidOnly adds payment_status 'Paid', and both ticked (or neither)
+        /// adds no payment filter at all. Cancelled and rescheduled appointments are not work, so
+        /// they are never listed. Same columns as GetQueue, with the date in the time_range text
+        /// ("Nov 19 - 3:00 PM - 3:30 PM"); newest date first, at most 500 rows.
+        /// </summary>
+        public static DataTable GetList(string search, bool unpaidOnly, bool paidOnly)
+        {
+            List<SqlParameter> parameters = new List<SqlParameter>();
+            string filter = "";
+
+            // Every typed word must be somewhere in the name or in the contact number.
+            string[] words = (search ?? "").Trim().Split(' ');
+            for (int i = 0; i < words.Length; i++)
+            {
+                string word = words[i].Trim();
+                if (word.Length == 0) continue;
+
+                string placeholder = "@word" + parameters.Count;
+                parameters.Add(Db.P(placeholder, "%" + EscapeLike(word) + "%"));
+                filter += " AND (c.first_name LIKE " + placeholder + " ESCAPE '\\'" +
+                          " OR c.last_name LIKE " + placeholder + " ESCAPE '\\'" +
+                          " OR c.contact_number LIKE " + placeholder + " ESCAPE '\\')";
+            }
+
+            if (unpaidOnly && !paidOnly)
+            {
+                filter += " AND (b.payment_status IN ('Unpaid', 'Partial') OR b.balance_due > 0)";
+            }
+            else if (paidOnly && !unpaidOnly)
+            {
+                filter += " AND b.payment_status = 'Paid'";
+            }
+
             DataTable table = Db.Query(
-@"SELECT a.appointment_id, a.appointment_date, a.start_time, a.end_time,
-         c.last_name + ', ' + c.first_name AS client_name,
-         a.status,
-         ISNULL(b.payment_status, 'Unpaid') AS payment_status,
-         ISNULL(b.balance_due, 0) AS balance_due
-FROM Appointments a
-INNER JOIN Clients c ON c.client_id = a.client_id
-INNER JOIN Billing b ON b.appointment_id = a.appointment_id
-WHERE a.status IN ('Upcoming', 'Ongoing') AND b.balance_due > 0
-ORDER BY a.appointment_date, a.start_time, a.appointment_id");
+                "SELECT TOP 500 a.appointment_id, a.appointment_date, a.start_time, a.end_time, " +
+                "       c.last_name + ', ' + c.first_name AS client_name, " +
+                "       a.status, " +
+                "       ISNULL(b.payment_status, 'Unpaid') AS payment_status, " +
+                "       ISNULL(b.balance_due, 0) AS balance_due " +
+                "FROM Appointments a " +
+                "INNER JOIN Clients c ON c.client_id = a.client_id " +
+                "INNER JOIN Billing b ON b.appointment_id = a.appointment_id " +
+                "WHERE a.status <> 'Cancelled' AND a.status <> 'Rescheduled'" + filter + " " +
+                "ORDER BY a.appointment_date DESC, a.start_time, a.appointment_id",
+                parameters.ToArray());
 
             List<int> ids = new List<int>();
             foreach (DataRow row in table.Rows)
@@ -1040,6 +1083,20 @@ ORDER BY asv.appointment_service_id",
         private static string Clock(TimeSpan value)
         {
             return DateTime.Today.Add(value).ToString("h:mm tt");
+        }
+
+        /// <summary>
+        /// Makes one typed word safe for a LIKE pattern: the SQL wildcards [ ] % _ and the escape
+        /// character itself get the escape prefix, so a search for "50%" or "[maria" finds text and
+        /// never matches more than the user asked for.
+        /// </summary>
+        private static string EscapeLike(string word)
+        {
+            return word.Replace("\\", "\\\\")
+                       .Replace("[", "\\[")
+                       .Replace("]", "\\]")
+                       .Replace("%", "\\%")
+                       .Replace("_", "\\_");
         }
 
     }

@@ -2,6 +2,32 @@
 
 Update this file at the end of every task.
 
+- Step 77 (this task): the Billing queue has a search box and two filters.
+  - Data\BillingRepository.cs: new public GetList(search, unpaidOnly, paidOnly) - all dates, the
+    client search split on spaces (every word must be in first name, last name or contact number,
+    LIKE with [ ] % _ escaped and parameters only), the payment filter only when exactly one tick
+    is set, status <> Cancelled / Rescheduled, TOP 500, newest date first; GetBalances() now just
+    calls GetList("", true, false); new private EscapeLike.
+  - Controls\ucBilling.Designer.cs: the checkbox row of tlpQueueToolbar became three rows -
+    txtQueueSearch (Client, fills the width, MinimumWidth 180), then flpQueueFilters with the
+    unchanged chkAllBalances and the new chkPaidList ("Completed and paid (all dates)"), then
+    lblQueueCount on its own line, so nothing overlaps or is cut when the left panel is narrow;
+    queue grid columns re-measured (Time 176 / Client 150 / Services 84 / Status 68 / Payment 72 /
+    Balance 80 minimum, FillWeight 30/22/18/10/8/10) and splitMain 380 / 660 / 320 so the all-dates
+    words are not truncated at 1366 x 768.
+  - Controls\ucBilling.cs: LoadQueue picks the source (GetList when a search text is typed or a
+    filter is ticked, otherwise the day GetQueue) and disables the date picker in the list mode;
+    new AllDatesMode and QueueCountText ("12 in the queue", "3 unpaid / partial bills for 'maria'");
+    txtQueueSearch_TextChanged keeps the selected appointment while it is still listed;
+    chkPaidList_CheckedChanged reloads (the two ticks are independent); ShowAppointment clears the
+    search box and unticks both filters before it sets the date.
+  - PROJECT_RULES.md: one bullet under the billing rules describing the three modes.
+    docs\POLISH_LIST.md: the new POLISH comment. docs\screenshots\ucBilling.png refreshed.
+    LittleEreseSystemV3.csproj was NOT edited.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --smoketest 98
+    passed / 0 failed / 0 skipped (new check GetList(paid) only returns paid bills); app started
+    once, stayed open, closed, no error.log.
+
 - Step 76 (this task): the X button logs out, and a double click in Appointments opens Billing.
   - Forms\MainForm.cs: btnLogout_Click and the new OnFormClosing (CloseReason.UserClosing) share
     one private LogOut() that writes the 'Logout' activity row and closes the form; a _loggingOut

@@ -66,6 +66,10 @@ namespace LittleEreseSystemV3.Controls
             this.btnQueueToday = new System.Windows.Forms.Button();
             this.btnRefresh = new System.Windows.Forms.Button();
             this.chkAllBalances = new System.Windows.Forms.CheckBox();
+            this.flpQueueFilters = new System.Windows.Forms.FlowLayoutPanel();
+            this.lblQueueSearch = new System.Windows.Forms.Label();
+            this.txtQueueSearch = new System.Windows.Forms.TextBox();
+            this.chkPaidList = new System.Windows.Forms.CheckBox();
             this.lblQueueCount = new System.Windows.Forms.Label();
             this.pnlBill = new System.Windows.Forms.Panel();
             this.tlpBill = new System.Windows.Forms.TableLayoutPanel();
@@ -137,6 +141,7 @@ namespace LittleEreseSystemV3.Controls
             this.pnlQueueToolbar.SuspendLayout();
             this.tlpQueueToolbar.SuspendLayout();
             this.flpQueueTop.SuspendLayout();
+            this.flpQueueFilters.SuspendLayout();
             this.pnlBill.SuspendLayout();
             this.tlpBill.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvBillLines)).BeginInit();
@@ -185,14 +190,19 @@ namespace LittleEreseSystemV3.Controls
             // 
             this.splitMain.Panel1.Controls.Add(this.pnlQueueGrid);
             this.splitMain.Panel1.Controls.Add(this.pnlQueueToolbar);
-            this.splitMain.Panel1MinSize = 300;
+            // The left panel must stay at least as wide as the queue toolbar's widest row
+            // (the two checkboxes side by side), so nothing is ever cut off.
+            this.splitMain.Panel1MinSize = 380;
             // 
             // splitMain.Panel2
             // 
             this.splitMain.Panel2.Controls.Add(this.pnlBill);
-            this.splitMain.Panel2MinSize = 340;
+            this.splitMain.Panel2MinSize = 320;
             this.splitMain.Size = new System.Drawing.Size(986, 601);
-            this.splitMain.SplitterDistance = 470;
+            // The queue side is wide enough for the all-dates words ("Nov 19 - 3:00 PM - 3:30 PM",
+            // "Aquino, Carlo Miguel"), so those rows are never cut off at 1366 x 768; the bill card
+            // keeps its own width and scrolls when the window is smaller.
+            this.splitMain.SplitterDistance = 660;
             this.splitMain.SplitterWidth = 6;
             this.splitMain.TabIndex = 0;
             // 
@@ -276,9 +286,9 @@ namespace LittleEreseSystemV3.Controls
             // colQueueTime
             // 
             this.colQueueTime.DataPropertyName = "time_range";
-            this.colQueueTime.FillWeight = 21F;
+            this.colQueueTime.FillWeight = 30F;
             this.colQueueTime.HeaderText = "Time";
-            this.colQueueTime.MinimumWidth = 130;
+            this.colQueueTime.MinimumWidth = 176;
             this.colQueueTime.Name = "colQueueTime";
             this.colQueueTime.ReadOnly = true;
             this.colQueueTime.Width = 118;
@@ -288,7 +298,7 @@ namespace LittleEreseSystemV3.Controls
             this.colQueueClient.DataPropertyName = "client_name";
             this.colQueueClient.FillWeight = 22F;
             this.colQueueClient.HeaderText = "Client";
-            this.colQueueClient.MinimumWidth = 60;
+            this.colQueueClient.MinimumWidth = 150;
             this.colQueueClient.Name = "colQueueClient";
             this.colQueueClient.ReadOnly = true;
             this.colQueueClient.Width = 120;
@@ -296,9 +306,9 @@ namespace LittleEreseSystemV3.Controls
             // colQueueServices
             // 
             this.colQueueServices.DataPropertyName = "services";
-            this.colQueueServices.FillWeight = 24F;
+            this.colQueueServices.FillWeight = 18F;
             this.colQueueServices.HeaderText = "Services";
-            this.colQueueServices.MinimumWidth = 60;
+            this.colQueueServices.MinimumWidth = 84;
             this.colQueueServices.Name = "colQueueServices";
             this.colQueueServices.ReadOnly = true;
             this.colQueueServices.Width = 120;
@@ -306,9 +316,9 @@ namespace LittleEreseSystemV3.Controls
             // colQueueStatus
             // 
             this.colQueueStatus.DataPropertyName = "status";
-            this.colQueueStatus.FillWeight = 13F;
+            this.colQueueStatus.FillWeight = 10F;
             this.colQueueStatus.HeaderText = "Status";
-            this.colQueueStatus.MinimumWidth = 62;
+            this.colQueueStatus.MinimumWidth = 68;
             this.colQueueStatus.Name = "colQueueStatus";
             this.colQueueStatus.ReadOnly = true;
             this.colQueueStatus.Width = 80;
@@ -316,9 +326,9 @@ namespace LittleEreseSystemV3.Controls
             // colQueuePayment
             // 
             this.colQueuePayment.DataPropertyName = "payment_status";
-            this.colQueuePayment.FillWeight = 12F;
+            this.colQueuePayment.FillWeight = 8F;
             this.colQueuePayment.HeaderText = "Payment";
-            this.colQueuePayment.MinimumWidth = 62;
+            this.colQueuePayment.MinimumWidth = 72;
             this.colQueuePayment.Name = "colQueuePayment";
             this.colQueuePayment.ReadOnly = true;
             this.colQueuePayment.Width = 80;
@@ -330,9 +340,9 @@ namespace LittleEreseSystemV3.Controls
             dataGridViewCellStyle4.Padding = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.colQueueBalance.DefaultCellStyle = dataGridViewCellStyle4;
             this.colQueueBalance.DataPropertyName = "balance_due";
-            this.colQueueBalance.FillWeight = 14F;
+            this.colQueueBalance.FillWeight = 10F;
             this.colQueueBalance.HeaderText = "Balance";
-            this.colQueueBalance.MinimumWidth = 76;
+            this.colQueueBalance.MinimumWidth = 80;
             this.colQueueBalance.Name = "colQueueBalance";
             this.colQueueBalance.ReadOnly = true;
             this.colQueueBalance.Width = 90;
@@ -345,26 +355,32 @@ namespace LittleEreseSystemV3.Controls
             this.pnlQueueToolbar.Dock = System.Windows.Forms.DockStyle.Top;
             this.pnlQueueToolbar.Location = new System.Drawing.Point(0, 0);
             this.pnlQueueToolbar.Name = "pnlQueueToolbar";
-            this.pnlQueueToolbar.Size = new System.Drawing.Size(394, 76);
+            this.pnlQueueToolbar.Size = new System.Drawing.Size(394, 118);
             this.pnlQueueToolbar.TabIndex = 0;
             // 
             // tlpQueueToolbar
             // 
             this.tlpQueueToolbar.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
             this.tlpQueueToolbar.ColumnCount = 2;
-            this.tlpQueueToolbar.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 58F));
-            this.tlpQueueToolbar.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 42F));
-            this.tlpQueueToolbar.Controls.Add(this.chkAllBalances, 0, 1);
-            this.tlpQueueToolbar.Controls.Add(this.lblQueueCount, 1, 1);
+            this.tlpQueueToolbar.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 61F));
+            this.tlpQueueToolbar.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlpQueueToolbar.Controls.Add(this.lblQueueSearch, 0, 1);
+            this.tlpQueueToolbar.Controls.Add(this.txtQueueSearch, 1, 1);
+            this.tlpQueueToolbar.Controls.Add(this.flpQueueFilters, 0, 2);
+            this.tlpQueueToolbar.Controls.Add(this.lblQueueCount, 0, 3);
             this.tlpQueueToolbar.Controls.Add(this.flpQueueTop, 0, 0);
             this.tlpQueueToolbar.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlpQueueToolbar.Location = new System.Drawing.Point(0, 0);
             this.tlpQueueToolbar.Name = "tlpQueueToolbar";
-            this.tlpQueueToolbar.RowCount = 2;
+            this.tlpQueueToolbar.RowCount = 4;
             this.tlpQueueToolbar.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 40F));
-            this.tlpQueueToolbar.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 34F));
+            this.tlpQueueToolbar.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 32F));
+            this.tlpQueueToolbar.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26F));
+            this.tlpQueueToolbar.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
             this.tlpQueueToolbar.SetColumnSpan(this.flpQueueTop, 2);
-            this.tlpQueueToolbar.Size = new System.Drawing.Size(392, 74);
+            this.tlpQueueToolbar.SetColumnSpan(this.flpQueueFilters, 2);
+            this.tlpQueueToolbar.SetColumnSpan(this.lblQueueCount, 2);
+            this.tlpQueueToolbar.Size = new System.Drawing.Size(392, 116);
             this.tlpQueueToolbar.TabIndex = 0;
             // 
             // flpQueueTop
@@ -383,6 +399,47 @@ namespace LittleEreseSystemV3.Controls
             this.flpQueueTop.Size = new System.Drawing.Size(334, 30);
             this.flpQueueTop.TabIndex = 0;
             this.flpQueueTop.WrapContents = false;
+            // 
+            // lblQueueSearch
+            // 
+            this.lblQueueSearch.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.lblQueueSearch.AutoSize = true;
+            this.lblQueueSearch.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblQueueSearch.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
+            this.lblQueueSearch.Location = new System.Drawing.Point(12, 46);
+            this.lblQueueSearch.Margin = new System.Windows.Forms.Padding(12, 0, 6, 0);
+            this.lblQueueSearch.Name = "lblQueueSearch";
+            this.lblQueueSearch.Size = new System.Drawing.Size(43, 19);
+            this.lblQueueSearch.TabIndex = 4;
+            this.lblQueueSearch.Text = "Client";
+            this.lblQueueSearch.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // txtQueueSearch
+            // 
+            this.txtQueueSearch.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtQueueSearch.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.txtQueueSearch.Location = new System.Drawing.Point(61, 43);
+            this.txtQueueSearch.Margin = new System.Windows.Forms.Padding(0, 3, 12, 0);
+            this.txtQueueSearch.MinimumSize = new System.Drawing.Size(180, 25);
+            this.txtQueueSearch.Name = "txtQueueSearch";
+            this.txtQueueSearch.Size = new System.Drawing.Size(318, 25);
+            this.txtQueueSearch.TabIndex = 5;
+            this.txtQueueSearch.TextChanged += new System.EventHandler(this.txtQueueSearch_TextChanged);
+            // 
+            // flpQueueFilters
+            // 
+            this.flpQueueFilters.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.flpQueueFilters.AutoSize = true;
+            this.flpQueueFilters.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.flpQueueFilters.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
+            this.flpQueueFilters.Controls.Add(this.chkAllBalances);
+            this.flpQueueFilters.Controls.Add(this.chkPaidList);
+            this.flpQueueFilters.Location = new System.Drawing.Point(12, 74);
+            this.flpQueueFilters.Margin = new System.Windows.Forms.Padding(12, 0, 0, 0);
+            this.flpQueueFilters.Name = "flpQueueFilters";
+            this.flpQueueFilters.Size = new System.Drawing.Size(360, 21);
+            this.flpQueueFilters.TabIndex = 6;
+            this.flpQueueFilters.WrapContents = true;
             // 
             // lblQueueDate
             // 
@@ -454,28 +511,43 @@ namespace LittleEreseSystemV3.Controls
             this.chkAllBalances.Cursor = System.Windows.Forms.Cursors.Hand;
             this.chkAllBalances.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.chkAllBalances.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.chkAllBalances.Location = new System.Drawing.Point(12, 46);
-            this.chkAllBalances.Margin = new System.Windows.Forms.Padding(12, 6, 0, 0);
+            this.chkAllBalances.Location = new System.Drawing.Point(0, 0);
+            this.chkAllBalances.Margin = new System.Windows.Forms.Padding(0, 1, 12, 0);
             this.chkAllBalances.Name = "chkAllBalances";
             this.chkAllBalances.Size = new System.Drawing.Size(160, 19);
-            this.chkAllBalances.TabIndex = 4;
+            this.chkAllBalances.TabIndex = 0;
             this.chkAllBalances.Text = "Unpaid balances (all dates)";
             this.chkAllBalances.UseVisualStyleBackColor = true;
             this.chkAllBalances.CheckedChanged += new System.EventHandler(this.chkAllBalances_CheckedChanged);
             // 
+            // chkPaidList
+            // 
+            this.chkPaidList.AutoSize = true;
+            this.chkPaidList.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.chkPaidList.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.chkPaidList.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.chkPaidList.Location = new System.Drawing.Point(172, 0);
+            this.chkPaidList.Margin = new System.Windows.Forms.Padding(0, 1, 0, 0);
+            this.chkPaidList.Name = "chkPaidList";
+            this.chkPaidList.Size = new System.Drawing.Size(188, 19);
+            this.chkPaidList.TabIndex = 1;
+            this.chkPaidList.Text = "Completed and paid (all dates)";
+            this.chkPaidList.UseVisualStyleBackColor = true;
+            this.chkPaidList.CheckedChanged += new System.EventHandler(this.chkPaidList_CheckedChanged);
+            // 
             // lblQueueCount
             // 
-            this.lblQueueCount.Anchor = System.Windows.Forms.AnchorStyles.Right;
+            this.lblQueueCount.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.lblQueueCount.AutoSize = true;
             this.lblQueueCount.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblQueueCount.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblQueueCount.Location = new System.Drawing.Point(299, 49);
-            this.lblQueueCount.Margin = new System.Windows.Forms.Padding(0, 0, 12, 0);
+            this.lblQueueCount.Location = new System.Drawing.Point(12, 100);
+            this.lblQueueCount.Margin = new System.Windows.Forms.Padding(12, 0, 0, 0);
             this.lblQueueCount.Name = "lblQueueCount";
             this.lblQueueCount.Size = new System.Drawing.Size(81, 15);
-            this.lblQueueCount.TabIndex = 1;
+            this.lblQueueCount.TabIndex = 7;
             this.lblQueueCount.Text = "0 in the queue";
-            this.lblQueueCount.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.lblQueueCount.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // pnlBill
             // 
@@ -1401,10 +1473,13 @@ namespace LittleEreseSystemV3.Controls
             this.pnlQueueGrid.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvQueue)).EndInit();
             this.pnlQueueToolbar.ResumeLayout(false);
+            this.pnlQueueToolbar.PerformLayout();
             this.tlpQueueToolbar.ResumeLayout(false);
             this.tlpQueueToolbar.PerformLayout();
             this.flpQueueTop.ResumeLayout(false);
             this.flpQueueTop.PerformLayout();
+            this.flpQueueFilters.ResumeLayout(false);
+            this.flpQueueFilters.PerformLayout();
             this.pnlBill.ResumeLayout(false);
             this.tlpBill.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvBillLines)).EndInit();
@@ -1448,6 +1523,10 @@ namespace LittleEreseSystemV3.Controls
         private System.Windows.Forms.Button btnQueueToday;
         private System.Windows.Forms.Button btnRefresh;
         private System.Windows.Forms.CheckBox chkAllBalances;
+        private System.Windows.Forms.FlowLayoutPanel flpQueueFilters;
+        private System.Windows.Forms.Label lblQueueSearch;
+        private System.Windows.Forms.TextBox txtQueueSearch;
+        private System.Windows.Forms.CheckBox chkPaidList;
         private System.Windows.Forms.Label lblQueueCount;
         private System.Windows.Forms.Panel pnlBill;
         private System.Windows.Forms.TableLayoutPanel tlpBill;
