@@ -2,6 +2,41 @@
 
 Update this file at the end of every task.
 
+- Step 81 (this task): the booking dialog gained a service search with tick boxes and a client
+  search. Forms\AppointmentForm.cs (the Designer kept its layout; only the catalogue grid columns
+  were re-measured - see below).
+  - Services by tick: new _checkedServices (HashSet<int>). colCatPick shows the tick of each row,
+    a click commits the cell (CurrentCellDirtyStateChanged) and writes the set at once, and
+    lblCheckedCount reads "N checked". FillCatalog paints the ticks back after every search or
+    category change (RestoreCheckedTicks -> PaintCheckedTicks), so a ticked service that is NOT in
+    the current list stays ticked; the set is emptied by "Add checked services" or when the dialog
+    closes. A "[PROMO] ..." entry hides the tick column (Add takes the whole promotion).
+  - "Add checked services" adds every ticked service through AddServiceLine(id, 0) quietly
+    (_loading around the loop, ONE Recalculate at the end, then the last added line selected). A
+    ticked service already in the appointment is skipped and named in ONE Messages.Info("<name> is
+    already in this appointment."); with nothing ticked the button still adds the highlighted row,
+    and a double click always adds that one service.
+  - Service search (txtServiceSearch, "Search a service..." as a grey hint): every typed word must
+    be in the service OR the category name (DataView RowFilter, words quoted and neutralised). New
+    read-only catalogue column colCatCategory shows the category, so similar services are told
+    apart. Empty box = the chosen category as before.
+  - Client search (txtClientSearch): every typed word must be in the client's search_text
+    (GetForCombo), the combo is re-bound quietly and keeps the chosen client only while he still
+    matches (otherwise SelectedIndex = -1 and the "no client chosen" line, never an automatic
+    pick), and the list drops down when something matches. "+ New" clears the filter and selects the
+    client that was just added.
+  - Reschedule mode disables both search boxes together with the catalogue.
+  - Designer: colCatCategory added (declaration, Columns.AddRange, properties, field); colCatName /
+    colCatCategory Fill, colCatPrice / colCatDuration FIXED width (a Fill weight let the clamped
+    last column overflow the narrow left column and cut its text); grpServices / grpSelected /
+    grpSummary margins 6 -> 3 px, so the 1024x680 minimum shows every header whole.
+  - PROJECT_RULES.md: the booking-dialog rule extended with the tick set, the service search and
+    the client search.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 23 files exit 0; --preview
+    AppointmentForm looked at (6 fix rounds on the catalogue columns; every header now complete at
+    the 1024x680 minimum, i.e. the smallest supported size); --smoketest 101 passed / 0 failed.
+    docs\screenshots\AppointmentForm.png refreshed.
+
 - Step 80 (this task): the booking dialog is now a maximized three-column screen (Services /
   Selected services / Summary) with a client strip on top. Designer layout only; the .cs file was
   NOT changed.

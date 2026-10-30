@@ -75,6 +75,7 @@ namespace LittleEreseSystemV3.Forms
             this.colCatServiceId = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colCatPick = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.colCatName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colCatCategory = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colCatPrice = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colCatDuration = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.flpServiceButtons = new System.Windows.Forms.FlowLayoutPanel();
@@ -233,7 +234,7 @@ namespace LittleEreseSystemV3.Forms
             this.grpServices.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.grpServices.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
             this.grpServices.Location = new System.Drawing.Point(0, 0);
-            this.grpServices.Margin = new System.Windows.Forms.Padding(0, 0, 6, 0);
+            this.grpServices.Margin = new System.Windows.Forms.Padding(0, 0, 3, 0);
             this.grpServices.Name = "grpServices";
             this.grpServices.Size = new System.Drawing.Size(313, 514);
             this.grpServices.TabIndex = 0;
@@ -306,7 +307,7 @@ namespace LittleEreseSystemV3.Forms
             this.grpSelected.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.grpSelected.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
             this.grpSelected.Location = new System.Drawing.Point(325, 0);
-            this.grpSelected.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
+            this.grpSelected.Margin = new System.Windows.Forms.Padding(3, 0, 3, 0);
             this.grpSelected.Name = "grpSelected";
             this.grpSelected.Size = new System.Drawing.Size(363, 514);
             this.grpSelected.TabIndex = 1;
@@ -338,7 +339,7 @@ namespace LittleEreseSystemV3.Forms
             this.grpSummary.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.grpSummary.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
             this.grpSummary.Location = new System.Drawing.Point(700, 0);
-            this.grpSummary.Margin = new System.Windows.Forms.Padding(6, 0, 0, 0);
+            this.grpSummary.Margin = new System.Windows.Forms.Padding(3, 0, 0, 0);
             this.grpSummary.Name = "grpSummary";
             this.grpSummary.Size = new System.Drawing.Size(239, 514);
             this.grpSummary.TabIndex = 2;
@@ -675,6 +676,7 @@ namespace LittleEreseSystemV3.Forms
             this.colCatServiceId,
             this.colCatPick,
             this.colCatName,
+            this.colCatCategory,
             this.colCatPrice,
             this.colCatDuration});
             dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
@@ -719,32 +721,44 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.colCatName.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
             this.colCatName.DataPropertyName = "service_name";
-            this.colCatName.FillWeight = 62F;
+            this.colCatName.FillWeight = 52F;
             this.colCatName.HeaderText = "Service";
-            this.colCatName.MinimumWidth = 108;
+            this.colCatName.MinimumWidth = 70;
             this.colCatName.Name = "colCatName";
             this.colCatName.ReadOnly = true;
             // 
+            // colCatCategory
+            // 
+            this.colCatCategory.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.colCatCategory.DataPropertyName = "category_name";
+            this.colCatCategory.FillWeight = 32F;
+            this.colCatCategory.HeaderText = "Category";
+            this.colCatCategory.MinimumWidth = 48;
+            this.colCatCategory.Name = "colCatCategory";
+            this.colCatCategory.ReadOnly = true;
+            // 
             // colCatPrice
             // 
-            this.colCatPrice.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            // Price and Min are FIXED width: with a Fill weight the two clamped columns push the
+            // last one past the edge of the narrow left column, where its text is cut off.
+            this.colCatPrice.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
             this.colCatPrice.DataPropertyName = "price";
             this.colCatPrice.DefaultCellStyle.Format = "N2";
-            this.colCatPrice.FillWeight = 22F;
             this.colCatPrice.HeaderText = "Price";
-            this.colCatPrice.MinimumWidth = 80;
+            this.colCatPrice.MinimumWidth = 82;
             this.colCatPrice.Name = "colCatPrice";
             this.colCatPrice.ReadOnly = true;
+            this.colCatPrice.Width = 82;
             // 
             // colCatDuration
             // 
-            this.colCatDuration.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.colCatDuration.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
             this.colCatDuration.DataPropertyName = "duration_minutes";
-            this.colCatDuration.FillWeight = 16F;
             this.colCatDuration.HeaderText = "Min";
-            this.colCatDuration.MinimumWidth = 52;
+            this.colCatDuration.MinimumWidth = 46;
             this.colCatDuration.Name = "colCatDuration";
             this.colCatDuration.ReadOnly = true;
+            this.colCatDuration.Width = 46;
             // 
             // flpServiceButtons
             // 
@@ -1390,6 +1404,7 @@ namespace LittleEreseSystemV3.Forms
         private System.Windows.Forms.DataGridViewTextBoxColumn colCatServiceId;
         private System.Windows.Forms.DataGridViewCheckBoxColumn colCatPick;
         private System.Windows.Forms.DataGridViewTextBoxColumn colCatName;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colCatCategory;
         private System.Windows.Forms.DataGridViewTextBoxColumn colCatPrice;
         private System.Windows.Forms.DataGridViewTextBoxColumn colCatDuration;
         private System.Windows.Forms.FlowLayoutPanel flpServiceButtons;

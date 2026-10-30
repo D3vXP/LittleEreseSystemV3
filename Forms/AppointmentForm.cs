@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
+using System.Text;
 using System.Windows.Forms;
 using LittleEreseSystemV3.Data;
 using LittleEreseSystemV3.Helpers;
@@ -25,6 +26,11 @@ namespace LittleEreseSystemV3.Forms
 
         // Shown under the client picker until one is chosen.
         private const string NoClientMessage = "Pick a client to see the medical alerts.";
+
+        // The grey hint of the two search boxes. The Designer shows these words inside the empty
+        // box, so the code below must never treat them as a search term.
+        private const string ServiceSearchHint = "Search a service...";
+        private const string ClientSearchHint = "Type a first name, last name or number";
 
         /// <summary>The appointment being rescheduled, or 0 to book a new one.</summary>
         public int RescheduleId { get; set; }
@@ -64,6 +70,14 @@ namespace LittleEreseSystemV3.Forms
         // them without asking the database again.
         private DataTable _catalog;
 
+        // Every client, so the search box can filter the combo without asking the database again.
+        private DataTable _clients;
+
+        // The services ticked in the catalog grid. The grid is re-bound on every search or category
+        // change (which clears the tick cells), so the ticks live HERE: a ticked service that is not
+        // in the current list stays ticked until it is added or the dialog closes.
+        private readonly HashSet<int> _checkedServices = new HashSet<int>();
+
         // What the last recalculation worked out, so the availability check and the save agree.
         private decimal _subtotal;
         private decimal _discount;
@@ -99,6 +113,17 @@ namespace LittleEreseSystemV3.Forms
             cboLineTech.SelectionChangeCommitted += cboLineTech_SelectionChangeCommitted;
             cboLineNurse.SelectionChangeCommitted += cboLineNurse_SelectionChangeCommitted;
 
+            // The search boxes and the tick column belong to the catalog and the client combo, so
+            // they are wired here as well (the Designer holds no handler for them yet).
+            txtServiceSearch.TextChanged += txtServiceSearch_TextChanged;
+            txtServiceSearch.Enter += txtServiceSearch_Enter;
+            txtServiceSearch.Leave += txtServiceSearch_Leave;
+            txtClientSearch.TextChanged += txtClientSearch_TextChanged;
+            txtClientSearch.Enter += txtClientSearch_Enter;
+            txtClientSearch.Leave += txtClientSearch_Leave;
+            dgvCatalog.CurrentCellDirtyStateChanged += dgvCatalog_CurrentCellDirtyStateChanged;
+            dgvCatalog.CellValueChanged += dgvCatalog_CellValueChanged;
+
             _loading = true;
             try
             {
@@ -112,6 +137,12 @@ namespace LittleEreseSystemV3.Forms
                 FillCategories();
                 FillCatalog();
                 FillClients();
+
+                // Both search boxes start on their grey hint, so nothing is filtered yet and the
+                // typed words are never mistaken for a search term.
+                ShowHint(txtServiceSearch, ServiceSearchHint);
+                ShowHint(txtClientSearch, ClientSearchHint);
+                UpdateCheckedCount();
             }
             finally
             {
@@ -243,16 +274,36 @@ namespace LittleEreseSystemV3.Forms
                 return;
             }
 
+            string term = SearchTerm(txtServiceSearch);
+
+            // Typing in the search box takes over the list: the ACTIVE services of every category
+            // whose name (or category name) carries every typed word. The ticks stay, because they
+            // live in _checkedServices, not in the grid.
+            if (term.Length > 0)
+            {
+                colCatPick.Visible = true;
+
+                DataView found = new DataView(_catalog);
+                found.RowFilter = CatalogFilter(term);
+                dgvCatalog.DataSource = found;
+                PaintCheckedTicks();
+                return;
+            }
+
             DataView view = new DataView(_catalog);
             int promoId = SelectedPromoCategoryId();
 
             // A promo entry shows the services the promotion is made of, so the desk sees what it
-            // is about to add.
+            // is about to add. The tick column disappears, because Add takes the whole promotion.
             if (promoId > 0)
             {
+                colCatPick.Visible = false;
                 dgvCatalog.DataSource = PromoServicesView(promoId);
+                PaintCheckedTicks();
                 return;
             }
+
+            colCatPick.Visible = true;
 
             string category = cboCategoryFilter.SelectedItem == null
                 ? "All categories"
@@ -266,6 +317,7 @@ namespace LittleEreseSystemV3.Forms
             }
 
             dgvCatalog.DataSource = view;
+            PaintCheckedTicks();
         }
 
         /// <summary>
@@ -313,17 +365,78 @@ namespace LittleEreseSystemV3.Forms
         {
             try
             {
-                DataTable clients = ClientRepository.GetForCombo();
-
-                cboClient.DisplayMember = "display_name";
-                cboClient.ValueMember = "client_id";
-                cboClient.DataSource = clients;
-                cboClient.SelectedIndex = -1;
+                _clients = ClientRepository.GetForCombo();
             }
             catch (Exception ex)
             {
                 Messages.DbError(ex);
+                _clients = null;
+                return;
             }
+
+            FilterClients();
+        }
+
+        /// <summary>
+        /// Re-binds the client combo with the clients the search box still matches. The typed text
+        /// is not a selection: the combo keeps the client that is already chosen while he still
+        /// matches, and falls back to "no client chosen" instead of silently picking the first row.
+        /// </summary>
+        private void FilterClients()
+        {
+            if (_clients == null) return;
+
+            int previousId = SelectedClientId();
+            DataView view = new DataView(_clients);
+            string filter = ClientFilter(SearchTerm(txtClientSearch));
+            if (filter.Length > 0) view.RowFilter = filter;
+
+            // Re-binding a bound combo raises SelectedIndexChanged for the row it picks by itself,
+            // which would choose a client the user never chose; the rebuild stays quiet.
+            bool wasLoading = _loading;
+            _loading = true;
+            int newId;
+            try
+            {
+                cboClient.DisplayMember = "display_name";
+                cboClient.ValueMember = "client_id";
+                cboClient.DataSource = view;
+
+                // The client is only put back when he still matches, so typing never moves the
+                // selection and the work below never runs for a client the user did not change.
+                if (previousId <= 0 || !SelectComboValue(cboClient, previousId))
+                {
+                    // Nothing is picked for the user: the list is simply left with no selection,
+                    // which is the same as the client who was chosen no longer matching.
+                    cboClient.SelectedIndex = -1;
+                }
+
+                newId = SelectedClientId();
+            }
+            finally
+            {
+                _loading = wasLoading;
+            }
+
+            // Typing alone never changes the chosen client, so nothing is recomputed for it.
+            if (newId != previousId) ClientChanged();
+        }
+
+        /// <summary>
+        /// Everything that depends on the chosen client, run in one place: the medical alert line,
+        /// the package labels and prices, the placement of the lines and the totals.
+        /// </summary>
+        private void ClientChanged()
+        {
+            if (_loading) return;
+
+            ShowClientInfo(SelectedClientId());
+            RefreshLinePackages();
+            RevalidateLines();
+            // The free times also depend on the client (he cannot be in two places), so the time
+            // list of the selected line is rebuilt here as well.
+            UpdateLinePanel();
+            Recalculate();
         }
 
         /// <summary>
@@ -443,8 +556,13 @@ namespace LittleEreseSystemV3.Forms
                 dgvCatalog.Enabled = false;
                 btnAddService.Enabled = false;
                 btnRemoveService.Enabled = false;
+
+                // The two search boxes belong to the catalog and the client combo, so they are
+                // locked with them (a reschedule never changes the services or the client).
                 dgvSelected.ReadOnly = true;
                 txtNotes.ReadOnly = true;
+                txtServiceSearch.Enabled = false;
+                txtClientSearch.Enabled = false;
 
                 // The EARLIEST placed line is the one the desk moves; the other lines keep their
                 // distance from it, so it is selected in the grid right away.
@@ -510,8 +628,11 @@ namespace LittleEreseSystemV3.Forms
             return user == null ? string.Empty : Db.Get<string>(user["full_name"]);
         }
 
-        /// <summary>Selects the row of a bound combo box whose value column equals value.</summary>
-        private static void SelectComboValue(ComboBox combo, int value)
+        /// <summary>
+        /// Selects the row of a bound combo box whose value column equals value. Returns true when
+        /// the row was found, so the caller can tell "nothing is selected" from "it is not there".
+        /// </summary>
+        private static bool SelectComboValue(ComboBox combo, int value)
         {
             for (int i = 0; i < combo.Items.Count; i++)
             {
@@ -521,9 +642,11 @@ namespace LittleEreseSystemV3.Forms
                 if (Db.Get<int>(view["client_id"]) == value)
                 {
                     combo.SelectedIndex = i;
-                    return;
+                    return true;
                 }
             }
+
+            return false;
         }
 
         // ---------------------------------------------------------------- events
@@ -535,7 +658,9 @@ namespace LittleEreseSystemV3.Forms
                 form.EditId = 0;
                 if (form.ShowDialog(this) != DialogResult.OK) return;
 
-                // The new client is the one being booked, so the combo is refilled and selects it.
+                // The new client is the one being booked: the search box is cleared so the whole
+                // list comes back, and the new client is the row that is selected.
+                ShowHint(txtClientSearch, ClientSearchHint);
                 FillClients();
                 SelectComboValue(cboClient, form.SavedClientId);
                 ShowClientInfo(form.SavedClientId);
@@ -544,19 +669,7 @@ namespace LittleEreseSystemV3.Forms
 
         private void cboClient_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (_loading) return;
-
-            int clientId = SelectedClientId();
-            ShowClientInfo(clientId);
-
-            // The package label and the price of a package service depend on the client,
-            // so the lines are rebuilt from the catalog for the new client.
-            RefreshLinePackages();
-            RevalidateLines();
-            // The free times also depend on the client (the client cannot be in two places), so the
-            // time list of the selected line is refilled here as well.
-            UpdateLinePanel();
-            Recalculate();
+            ClientChanged();
         }
 
         private void ShowClientInfo(int clientId)
@@ -610,6 +723,248 @@ namespace LittleEreseSystemV3.Forms
             lblClientInfo.ForeColor = Theme.TextDark;
         }
 
+        // ---------------------------------------------------------------- the two search boxes
+
+        /// <summary>
+        /// Puts a grey hint in an empty search box. The hint is text like any other, so every
+        /// reader of the box goes through SearchTerm, which returns "" for it.
+        /// </summary>
+        private static void ShowHint(TextBox box, string hint)
+        {
+            box.ForeColor = Theme.TextMuted;
+            box.Text = hint;
+        }
+
+        /// <summary>
+        /// The words the user really typed. An empty box and the grey hint both read as "", so a
+        /// hint is never used as a search term.
+        /// </summary>
+        private static string SearchTerm(TextBox box)
+        {
+            string text = box.Text == null ? string.Empty : box.Text.Trim();
+            if (text.Length == 0) return string.Empty;
+
+            // The box still shows its hint in grey, so nothing was typed yet.
+            if (text == ServiceSearchHint || text == ClientSearchHint) return string.Empty;
+
+            return text;
+        }
+
+        /// <summary>Clears the hint as soon as the box is used, so the user types on an empty box.</summary>
+        private void SearchBox_Enter(object sender, EventArgs e)
+        {
+            TextBox box = sender as TextBox;
+            if (box == null) return;
+            if (box.ForeColor != Theme.TextMuted) return;
+
+            box.Text = string.Empty;
+            box.ForeColor = Theme.TextDark;
+        }
+
+        /// <summary>Puts the hint back when the box is left empty, so it always says what it does.</summary>
+        private void SearchBox_Leave(object sender, EventArgs e)
+        {
+            TextBox box = sender as TextBox;
+            if (box == null) return;
+            if (box.Text.Trim().Length > 0) return;
+
+            ShowHint(box, ReferenceEquals(box, txtServiceSearch) ? ServiceSearchHint : ClientSearchHint);
+        }
+
+        private void txtServiceSearch_Enter(object sender, EventArgs e)
+        {
+            SearchBox_Enter(sender, e);
+        }
+
+        private void txtServiceSearch_Leave(object sender, EventArgs e)
+        {
+            SearchBox_Leave(sender, e);
+        }
+
+        private void txtClientSearch_Enter(object sender, EventArgs e)
+        {
+            SearchBox_Enter(sender, e);
+        }
+
+        private void txtClientSearch_Leave(object sender, EventArgs e)
+        {
+            SearchBox_Leave(sender, e);
+        }
+
+        /// <summary>Typing in the service search rebuilds the catalogue list on every keystroke.</summary>
+        private void txtServiceSearch_TextChanged(object sender, EventArgs e)
+        {
+            if (_loading) return;
+            FilterCatalog();
+        }
+
+        /// <summary>
+        /// Typing in the client search filters the combo on every keystroke. The list drops down
+        /// while something matches, so the desk sees who to pick instead of typing a whole name.
+        /// </summary>
+        private void txtClientSearch_TextChanged(object sender, EventArgs e)
+        {
+            if (_loading) return;
+
+            FilterClients();
+
+            string term = SearchTerm(txtClientSearch);
+            if (term.Length > 0 && cboClient.Items.Count > 0 && !cboClient.DroppedDown)
+            {
+                cboClient.DroppedDown = true;
+            }
+        }
+
+        /// <summary>
+        /// Every word of the service search must be in the service name or in its category name.
+        /// A DataView filter is a small expression language, so the typed text is quoted and the
+        /// characters that mean something to it (quote and square bracket) are neutralised.
+        /// </summary>
+        private static string CatalogFilter(string term)
+        {
+            List<string> words = SplitWords(term);
+            if (words.Count == 0) return string.Empty;
+
+            List<string> parts = new List<string>();
+            foreach (string word in words)
+            {
+                string escaped = EscapeRowFilter(word);
+                parts.Add("(service_name LIKE '%" + escaped + "%' OR category_name LIKE '%" +
+                    escaped + "%')");
+            }
+
+            return string.Join(" AND ", parts.ToArray());
+        }
+
+        /// <summary>Every word of the client search must be in the client's search_text column.</summary>
+        private static string ClientFilter(string term)
+        {
+            List<string> words = SplitWords(term);
+            if (words.Count == 0) return string.Empty;
+
+            List<string> parts = new List<string>();
+            foreach (string word in words)
+            {
+                parts.Add("search_text LIKE '%" + EscapeRowFilter(word) + "%'");
+            }
+
+            return string.Join(" AND ", parts.ToArray());
+        }
+
+        /// <summary>The words of a typed text, empty entries dropped (spaces mean "every word").</summary>
+        private static List<string> SplitWords(string term)
+        {
+            List<string> words = new List<string>();
+
+            string[] raw = (term == null ? string.Empty : term).Split(' ');
+            foreach (string word in raw)
+            {
+                string trimmed = word.Trim();
+                if (trimmed.Length > 0) words.Add(trimmed);
+            }
+
+            return words;
+        }
+
+        /// <summary>
+        /// Makes a typed word safe inside a DataView RowFilter string: a percent or an asterisk
+        /// (DataView's own wildcards) is taken out, a quote is doubled, and the two characters the
+        /// filter expression reserves (the tilde and the opening bracket) are escaped with a tilde.
+        /// </summary>
+        private static string EscapeRowFilter(string word)
+        {
+            StringBuilder safe = new StringBuilder();
+
+            foreach (char letter in word)
+            {
+                // % and * are LIKE wildcards: a user typing them means the plain letter, so they
+                // are dropped instead of turning the search into "everything".
+                if (letter == '%' || letter == '*') continue;
+
+                // ~ escapes and [ opens a column name, so both need the tilde in front of them.
+                if (letter == '~' || letter == '[')
+                {
+                    safe.Append('~').Append(letter);
+                    continue;
+                }
+
+                if (letter == '\'')
+                {
+                    safe.Append("''");
+                    continue;
+                }
+
+                safe.Append(letter);
+            }
+
+            return safe.ToString();
+        }
+
+        // ---------------------------------------------------------------- the ticked services
+
+        /// <summary>
+        /// The tick of one catalogue row, kept in the set as soon as the user clicks it (the cell
+        /// edit is committed here, otherwise the value is only known when the row loses focus).
+        /// </summary>
+        private void dgvCatalog_CurrentCellDirtyStateChanged(object sender, EventArgs e)
+        {
+            if (!dgvCatalog.IsCurrentCellDirty) return;
+            if (dgvCatalog.CurrentCell == null) return;
+            if (dgvCatalog.CurrentCell.OwningColumn.Name != "colCatPick") return;
+
+            dgvCatalog.CommitEdit(DataGridViewDataErrorContexts.Commit);
+        }
+
+        private void dgvCatalog_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        {
+            // While the ticks are painted back from the set, the set is already the truth.
+            if (_loading) return;
+            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
+            if (dgvCatalog.Columns[e.ColumnIndex].Name != "colCatPick") return;
+
+            int serviceId = Db.Get<int>(dgvCatalog.Rows[e.RowIndex].Cells["colCatServiceId"].Value);
+            if (serviceId <= 0) return;
+
+            bool ticked = Db.Get<bool>(dgvCatalog.Rows[e.RowIndex].Cells["colCatPick"].Value);
+            if (ticked) _checkedServices.Add(serviceId);
+            else _checkedServices.Remove(serviceId);
+
+            UpdateCheckedCount();
+        }
+
+        /// <summary>
+        /// Paints the ticks of the set into the grid again after it was re-bound (search or
+        /// category change), and clears the ones that are no longer ticked.
+        /// </summary>
+        private void PaintCheckedTicks()
+        {
+            if (!dgvCatalog.Columns.Contains("colCatPick")) return;
+
+            // The tick column is not bound to a data column, so re-binding the grid drops the
+            // ticks; they are painted back from the set here. The writes stay quiet, because the
+            // set is already the truth and the change event has nothing to add.
+            bool wasLoading = _loading;
+            _loading = true;
+            try
+            {
+                foreach (DataGridViewRow row in dgvCatalog.Rows)
+                {
+                    int serviceId = Db.Get<int>(row.Cells["colCatServiceId"].Value);
+                    if (serviceId > 0) row.Cells["colCatPick"].Value = _checkedServices.Contains(serviceId);
+                }
+            }
+            finally
+            {
+                _loading = wasLoading;
+            }
+        }
+
+        private void UpdateCheckedCount()
+        {
+            // POLISH: the wording of the tick counter.
+            lblCheckedCount.Text = _checkedServices.Count + " checked";
+        }
+
         private void cboCategoryFilter_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (_loading) return;
@@ -624,7 +979,19 @@ namespace LittleEreseSystemV3.Forms
         private void dgvCatalog_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
-            AddSelectedCatalogService();
+
+            // A double click always adds the one service under the pointer, whatever is ticked.
+            int promoId = SelectedPromoCategoryId();
+            if (promoId > 0)
+            {
+                AddPromoLines(promoId);
+                return;
+            }
+
+            int serviceId = Db.Get<int>(dgvCatalog.Rows[e.RowIndex].Cells["colCatServiceId"].Value);
+            if (serviceId <= 0) return;
+
+            AddServiceLine(serviceId, 0);
         }
 
         /// <summary>
@@ -642,12 +1009,82 @@ namespace LittleEreseSystemV3.Forms
                 return;
             }
 
+            // Every ticked service is added in one go; only when nothing is ticked does the button
+            // fall back to the row under the pointer (the double click always adds one service).
+            if (_checkedServices.Count > 0)
+            {
+                AddCheckedServices();
+                return;
+            }
+
             if (dgvCatalog.CurrentRow == null) return;
 
             int serviceId = Db.Get<int>(dgvCatalog.CurrentRow.Cells["colCatServiceId"].Value);
             if (serviceId <= 0) return;
 
             AddServiceLine(serviceId, 0);
+        }
+
+        /// <summary>
+        /// Adds every ticked service, quietly (the totals are worked out once at the end), then
+        /// clears the ticks and selects the last added line. A ticked service that is already in
+        /// the appointment is skipped and named in ONE message, so the desk can fix it in one go.
+        /// </summary>
+        private void AddCheckedServices()
+        {
+            List<int> serviceIds = new List<int>(_checkedServices);
+            serviceIds.Sort();
+
+            List<string> alreadyIn = new List<string>();
+
+            _loading = true;
+            try
+            {
+                foreach (int serviceId in serviceIds)
+                {
+                    if (FindLine(serviceId) != null)
+                    {
+                        alreadyIn.Add(ServiceNameOf(serviceId));
+                        continue;
+                    }
+
+                    AddServiceLine(serviceId, 0);
+                }
+            }
+            finally
+            {
+                _loading = false;
+            }
+
+            // The ticks belong to the services that were just dealt with, so they are cleared and
+            // the grid shows an empty column again.
+            _checkedServices.Clear();
+            UpdateCheckedCount();
+            PaintCheckedTicks();
+
+            if (alreadyIn.Count > 0)
+            {
+                Messages.Info("'" + string.Join("', '", alreadyIn.ToArray()) +
+                    "' is already in this appointment.");
+            }
+
+            Recalculate();
+
+            // The last added line is the one being worked on, so its row is selected (Qty, staff).
+            if (serviceIds.Count > 0)
+            {
+                GridHelper.SelectRowById(dgvSelected, "colSelServiceId", serviceIds[serviceIds.Count - 1]);
+            }
+        }
+
+        /// <summary>The service name of the catalog, so a message can name a service that was ticked.</summary>
+        private string ServiceNameOf(int serviceId)
+        {
+            DataRow row = CatalogRow(serviceId);
+            if (row != null) return Db.Get<string>(row["service_name"]);
+
+            DataRowView line = FindLine(serviceId);
+            return line == null ? "This service" : Db.Get<string>(line[AppointmentRepository.ColServiceName]);
         }
 
         /// <summary>
