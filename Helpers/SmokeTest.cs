@@ -281,6 +281,7 @@ namespace LittleEreseSystemV3.Helpers
             CheckClientSearch();
             CheckClientCombo();
             CheckEmptyPackageList();
+            CheckFindSameName();
 
             // The three read-only Appointment checks (Step 16). Nothing is written or changed here.
             CheckAppointmentDayList();
@@ -1206,6 +1207,62 @@ ORDER BY a.appointment_id");
             {
                 DataTable clients = ClientRepository.GetForCombo();
                 Pass(label + " rows = " + clients.Rows.Count);
+            }
+            catch (Exception ex)
+            {
+                Fail(label, ex);
+            }
+        }
+
+        /// <summary>
+        /// Read-only: a client that is in the book is found by his own name, and a name nobody has
+        /// is not found. Nothing is written and no client row is changed.
+        /// </summary>
+        private static void CheckFindSameName()
+        {
+            const string label = "ClientRepository.FindSameName";
+            try
+            {
+                DataTable clients = ClientRepository.Search("", "All");
+                if (clients == null || clients.Rows.Count == 0)
+                {
+                    Skipped(label + " (no client to look up)");
+                    return;
+                }
+
+                DataRow known = ClientRepository.GetById(Db.Get<int>(clients.Rows[0]["client_id"]));
+                if (known == null)
+                {
+                    Skipped(label + " (the first client disappeared)");
+                    return;
+                }
+
+                DataTable found = ClientRepository.FindSameName(
+                    Db.Get<string>(known["first_name"]),
+                    Db.Get<string>(known["middle_name"]),
+                    Db.Get<string>(known["last_name"]),
+                    0);
+
+                // The client himself is not in the way (exclude 0 means "new client"), so his own
+                // name must find him again.
+                bool sameNameFound = false;
+                if (found != null)
+                {
+                    for (int i = 0; i < found.Rows.Count; i++)
+                    {
+                        if (Db.Get<int>(found.Rows[i]["client_id"]) == Db.Get<int>(known["client_id"]))
+                        {
+                            sameNameFound = true;
+                        }
+                    }
+                }
+
+                DataTable nothing = ClientRepository.FindSameName("Zzqx", "", "NoSuchGuestName", 0);
+                bool strangerFound = nothing == null || nothing.Rows.Count == 0;
+
+                if (sameNameFound && strangerFound) Pass(label + " (known name found, made-up name not found)");
+                else Fail(label + " (known name found = " + sameNameFound +
+                    ", made-up name rows = " + (nothing == null ? "null" : nothing.Rows.Count.ToString()) + ")");
             }
             catch (Exception ex)
             {

@@ -2,6 +2,35 @@
 
 Update this file at the end of every task.
 
+- Step 79 (this task): a NEW client whose first and last name is already in the book is shown
+  beside the existing person before anything is saved.
+  - Data\ClientRepository.cs: new read-only FindSameName(firstName, middleName, lastName,
+    excludeClientId) - first and last name must match, the middle name counts as equal when it is
+    the same OR one of the two is empty, case-insensitive and trimmed, the edited client is skipped
+    (excludeClientId), ordered by client_id; returns client_id, full_name (NameSql), birth_date,
+    gender, contact_number, address.
+  - Forms\DuplicateClientForm (.cs / .Designer.cs / .resx, new): header "This name already exists",
+    two equal cards in one TableLayoutPanel ("New client" from what was typed, "Existing client"
+    from the first match), a combo above the right card only when there is more than one match,
+    buttons "Add anyway" (primary) / "Use existing client" / "Go back" (Cancel, Esc). Public
+    ChosenAction (AddAnyway / UseExisting / GoBack), ExistingClientId, NewClient and Candidates;
+    read-only, nothing is written to the database.
+  - Forms\ClientEditForm.cs: NEW clients only (never when editing) call FindSameName after
+    ValidateFields and before Add; "Add anyway" inserts as before, "Use existing client" inserts
+    nothing, sets SavedClientId to the existing id and a new UsedExisting = true, "Go back" keeps
+    the form open with the typed data; a failed look-up never blocks the save. The new private
+    ConfirmSameName / NewClientRow do the work, and the phone-number warning is untouched.
+  - Callers: ucClients already reloads and selects SavedClientId after Add, and the booking dialog
+    already refills its combo and selects SavedClientId, so a reused client is selected in both.
+  - LittleEreseSystemV3.csproj WAS edited: the three Compile / EmbeddedResource entries of the new
+    form (with DependentUpon). Helpers\SmokeTest.cs: new read-only CheckFindSameName (a known demo
+    client's name is found again, a made-up name is not) - 101 checks. PROJECT_RULES.md: the new
+    "same name warning" bullet under the client rules.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 23 files exit 0; --preview
+    DuplicateClientForm looked at (both cards, three buttons, nothing cut or overlapping);
+    --smoketest 101 passed / 0 failed / 0 skipped; app started once on the existing database,
+    stayed open, closed, no error.log. docs\screenshots\DuplicateClientForm.png added.
+
 - Step 78 (this task): clients may have an optional middle name, shown everywhere a client is named.
   - Database\Migrations\007_client_middle_name.sql (new): adds Clients.middle_name VARCHAR(50) NULL,
     safe to run twice (IF COL_LENGTH). The wildcard Content Include="Database\Migrations\*.sql"

@@ -18,6 +18,12 @@ namespace LittleEreseSystemV3.Forms
         /// <summary>The client that was saved (the new id after an Add), so the grid can select it.</summary>
         public int SavedClientId { get; private set; }
 
+        /// <summary>
+        /// True when "Use existing client" was chosen for a duplicate name: nothing was inserted,
+        /// and SavedClientId holds the client already on file. The callers treat that id the same way.
+        /// </summary>
+        public bool UsedExisting { get; private set; }
+
         public ClientEditForm()
         {
             InitializeComponent();
@@ -206,6 +212,18 @@ namespace LittleEreseSystemV3.Forms
                 }
                 else
                 {
+                    // A new guest whose first and last name is already in the book may be the SAME
+                    // person, so the two are shown side by side before a second record is written.
+                    if (!ConfirmSameName(firstName, middleName, lastName, birthDate, gender, contact)) return;
+
+                    // "Use existing client" means the record already on file is the one wanted.
+                    if (UsedExisting)
+                    {
+                        DialogResult = DialogResult.OK;
+                        Close();
+                        return;
+                    }
+
                     SavedClientId = ClientRepository.Add(firstName, middleName, lastName, birthDate, gender, contact,
                         txtAddress.Text, txtAllergies.Text, txtMedicalHistory.Text,
                         CheckedHealthConditions(), txtTreatmentHistory.Text, chkConsentSigned.Checked);
@@ -222,6 +240,87 @@ namespace LittleEreseSystemV3.Forms
 
             DialogResult = DialogResult.OK;
             Close();
+        }
+
+        /// <summary>
+        /// Looks for clients that already carry the typed first and last name and, when there are
+        /// any, shows them beside the new client. Returns false when the user chose "Go back", so
+        /// the edit form stays open with the typed data and nothing is saved.
+        /// On "Add anyway" the method returns true and the caller inserts as usual; on
+        /// "Use existing client" it sets UsedExisting and SavedClientId and the caller stops.
+        /// </summary>
+        private bool ConfirmSameName(string firstName, string middleName, string lastName,
+            DateTime? birthDate, string gender, string contact)
+        {
+            DataTable matches;
+            try
+            {
+                matches = ClientRepository.FindSameName(firstName, middleName, lastName, EditId);
+            }
+            catch (Exception ex)
+            {
+                // The warning is a help, not a rule, so a failed look-up must never block a save.
+                Messages.DbError(ex);
+                return true;
+            }
+
+            if (matches == null || matches.Rows.Count == 0) return true;
+
+            using (DuplicateClientForm form = new DuplicateClientForm())
+            {
+                form.NewClient = NewClientRow(firstName, middleName, lastName, birthDate, gender, contact);
+                form.Candidates = matches;
+
+                form.ShowDialog(this);
+
+                // The window closed without a decision (the X) means "do not save": the user must
+                // make the choice on purpose, so the edit form stays open with the typed data.
+                if (form.DialogResult != DialogResult.OK) return false;
+
+                if (form.ChosenAction == DuplicateClientForm.DuplicateAction.AddAnyway) return true;
+
+                if (form.ChosenAction == DuplicateClientForm.DuplicateAction.UseExisting)
+                {
+                    UsedExisting = true;
+                    SavedClientId = form.ExistingClientId;
+
+                    ActivityRepository.Log(Session.UserId, "Use existing", "Clients",
+                        lastName + ", " + firstName + " matched client_id " + form.ExistingClientId);
+
+                    return true;
+                }
+            }
+
+            // Go back (or the window was closed): the user keeps working in the edit form.
+            return false;
+        }
+
+        /// <summary>
+        /// The typed data in the shape ClientRepository.FindSameName returns, so the two cards of
+        /// the duplicate window are filled by the same code no matter where the row comes from.
+        /// </summary>
+        private DataRow NewClientRow(string firstName, string middleName, string lastName,
+            DateTime? birthDate, string gender, string contact)
+        {
+            DataTable table = new DataTable();
+            table.Columns.Add("client_id", typeof(int));
+            table.Columns.Add("full_name", typeof(string));
+            table.Columns.Add("birth_date", typeof(DateTime));
+            table.Columns.Add("gender", typeof(string));
+            table.Columns.Add("contact_number", typeof(string));
+            table.Columns.Add("address", typeof(string));
+
+            DataRow row = table.NewRow();
+            row["client_id"] = 0;
+            row["full_name"] = lastName + ", " + firstName +
+                (string.IsNullOrWhiteSpace(middleName) ? string.Empty : " " + middleName.Trim());
+            row["birth_date"] = birthDate.HasValue ? (object)birthDate.Value.Date : DBNull.Value;
+            row["gender"] = gender;
+            row["contact_number"] = contact;
+            row["address"] = txtAddress.Text;
+            table.Rows.Add(row);
+
+            return row;
         }
 
         /// <summary>Shows the red error icons and returns false when something is still wrong.</summary>

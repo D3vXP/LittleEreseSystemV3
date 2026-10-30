@@ -189,6 +189,35 @@ namespace LittleEreseSystemV3.Data
                 "FROM Clients ORDER BY last_name, first_name");
         }
 
+        /// <summary>
+        /// The clients that already carry the typed name, so the front desk can see whether a
+        /// "new" guest is really somebody already in the book. The first and last name must match;
+        /// the middle name counts as equal when it is the same OR when one of the two is empty
+        /// (many guests give the middle name only once, and two people may share first and last name).
+        /// excludeClientId skips the client being edited (0 for a new client, who is never himself).
+        /// Returns client_id, full_name ("Last, First Middle"), birth_date, gender, contact_number
+        /// and address. The comparison ignores letter case and spaces around the typed text.
+        /// </summary>
+        public static DataTable FindSameName(string firstName, string middleName, string lastName, int excludeClientId)
+        {
+            return Db.Query(
+                "SELECT c.client_id, " +
+                "       " + NameSql("c.") + " AS full_name, " +
+                "       c.birth_date, c.gender, c.contact_number, c.address " +
+                "FROM Clients c " +
+                "WHERE c.client_id <> @exclude_client_id " +
+                "  AND UPPER(LTRIM(RTRIM(c.first_name))) = UPPER(@first_name) " +
+                "  AND UPPER(LTRIM(RTRIM(c.last_name))) = UPPER(@last_name) " +
+                "  AND (UPPER(ISNULL(LTRIM(RTRIM(c.middle_name)), '')) = UPPER(@middle_name) " +
+                "       OR ISNULL(LTRIM(RTRIM(c.middle_name)), '') = '' " +
+                "       OR @middle_name = '') " +
+                "ORDER BY c.client_id",
+                Db.P("@exclude_client_id", excludeClientId),
+                Db.P("@first_name", Trim(firstName) ?? string.Empty),
+                Db.P("@last_name", Trim(lastName) ?? string.Empty),
+                Db.P("@middle_name", Trim(middleName) ?? string.Empty));
+        }
+
         /// <summary>Inserts a client and returns the new client_id. An empty optional box is stored as NULL.</summary>
         public static int Add(string firstName, string middleName, string lastName, DateTime? birthDate, string gender,
             string contact, string address, string allergies, string medicalHistory,
