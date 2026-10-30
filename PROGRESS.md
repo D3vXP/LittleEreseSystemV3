@@ -2,6 +2,34 @@
 
 Update this file at the end of every task.
 
+- Step 80 (this task): the booking dialog is now a maximized three-column screen (Services /
+  Selected services / Summary) with a client strip on top. Designer layout only; the .cs file was
+  NOT changed.
+  - Forms\AppointmentForm.Designer.cs is rebuilt around Dock / TableLayoutPanel percent sizes:
+    tlpContent (top strip + body), tlpTop (flpTopControls + lblClientInfo), tlpBody (34/40/26
+    percent) with grpServices, grpSelected and grpSummary; the old fixed row heights, pnlFooter
+    and pnlFooterLine are gone and Book / Cancel now sit at the bottom of the Summary column
+    (Book still the AcceptButton, Cancel still the CancelButton).
+  - New controls: txtClientSearch (hint "Type a first name, last name or number"), txtServiceSearch
+    ("Search a service..."), colCatPick (DataGridViewCheckBoxColumn, header empty, width 32, the
+    only writable catalogue column), lblCheckedCount ("0 checked"), flpCatalogActions,
+    tlpServices, tlpSubtotal-style containers, flpSummaryButtons. No handler is wired for the new
+    controls yet (the next prompt adds them); the Load event does not touch them.
+  - Moved controls: flpClient (now holds the search box), flpSchedule, lblClientInfo, flpCatalogHeader,
+    pnlCatalog, dgvCatalog, flpServiceButtons (Remove only), btnAddService (now "Add checked
+    services" inside flpCatalogActions), pnlSelected, dgvSelected, grpLine (Technician and Nurse
+    stacked), lblSlotInfo, flpSubtotal, flpDiscount, flpTotal, flpRequired, lblNotes, txtNotes,
+    btnSave, btnCancel. lblPromoNote stays in the Summary column.
+  - Form: WindowState Maximized, Sizable, MaximizeBox true, MinimizeBox false,
+    StartPosition CenterParent, MinimumSize 1024x680. Tab order follows the screen
+    (client search, client, +New, date, source, category, service search, catalogue, Add,
+    selected grid, line dropdowns, notes, Book, Cancel).
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 23 files exit 0; --preview
+    AppointmentForm rendered at its 1024x680 minimum (3 fix rounds: the grpLine note was cut, the
+    summary strip and the selected-service header column widths); --smoketest 101 passed / 0 failed;
+    app started once, alive after 14 s, closed, no error.log. docs\screenshots\AppointmentForm.png
+    refreshed.
+
 - Step 79 (this task): a NEW client whose first and last name is already in the book is shown
   beside the existing person before anything is saved.
   - Data\ClientRepository.cs: new read-only FindSameName(firstName, middleName, lastName,

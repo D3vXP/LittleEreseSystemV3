@@ -42,6 +42,20 @@ namespace LittleEreseSystemV3.Forms
             this.pnlHeaderLine = new System.Windows.Forms.Panel();
             this.pnlScroll = new System.Windows.Forms.Panel();
             this.tlpContent = new System.Windows.Forms.TableLayoutPanel();
+            this.tlpTop = new System.Windows.Forms.TableLayoutPanel();
+            this.flpTopControls = new System.Windows.Forms.FlowLayoutPanel();
+            this.txtClientSearch = new System.Windows.Forms.TextBox();
+            this.tlpBody = new System.Windows.Forms.TableLayoutPanel();
+            this.grpServices = new System.Windows.Forms.GroupBox();
+            this.tlpServices = new System.Windows.Forms.TableLayoutPanel();
+            this.txtServiceSearch = new System.Windows.Forms.TextBox();
+            this.flpCatalogActions = new System.Windows.Forms.FlowLayoutPanel();
+            this.lblCheckedCount = new System.Windows.Forms.Label();
+            this.grpSelected = new System.Windows.Forms.GroupBox();
+            this.tlpSelected = new System.Windows.Forms.TableLayoutPanel();
+            this.grpSummary = new System.Windows.Forms.GroupBox();
+            this.tlpSummary = new System.Windows.Forms.TableLayoutPanel();
+            this.flpSummaryButtons = new System.Windows.Forms.FlowLayoutPanel();
             this.flpClient = new System.Windows.Forms.FlowLayoutPanel();
             this.lblClient = new System.Windows.Forms.Label();
             this.cboClient = new System.Windows.Forms.ComboBox();
@@ -59,6 +73,7 @@ namespace LittleEreseSystemV3.Forms
             this.pnlCatalog = new System.Windows.Forms.Panel();
             this.dgvCatalog = new System.Windows.Forms.DataGridView();
             this.colCatServiceId = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colCatPick = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.colCatName = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colCatPrice = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colCatDuration = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -98,28 +113,36 @@ namespace LittleEreseSystemV3.Forms
             this.lblRequired = new System.Windows.Forms.Label();
             this.lblNotes = new System.Windows.Forms.Label();
             this.txtNotes = new System.Windows.Forms.TextBox();
-            this.pnlFooter = new System.Windows.Forms.Panel();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
-            this.pnlFooterLine = new System.Windows.Forms.Panel();
             this.errorProvider1 = new System.Windows.Forms.ErrorProvider(this.components);
             this.pnlHeader.SuspendLayout();
             this.pnlScroll.SuspendLayout();
             this.tlpContent.SuspendLayout();
+            this.tlpTop.SuspendLayout();
+            this.flpTopControls.SuspendLayout();
             this.flpClient.SuspendLayout();
             this.flpSchedule.SuspendLayout();
+            this.tlpBody.SuspendLayout();
+            this.grpServices.SuspendLayout();
+            this.tlpServices.SuspendLayout();
+            this.flpCatalogActions.SuspendLayout();
             this.flpCatalogHeader.SuspendLayout();
             this.pnlCatalog.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvCatalog)).BeginInit();
             this.flpServiceButtons.SuspendLayout();
+            this.grpSelected.SuspendLayout();
+            this.tlpSelected.SuspendLayout();
             this.pnlSelected.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvSelected)).BeginInit();
+            this.grpSummary.SuspendLayout();
+            this.tlpSummary.SuspendLayout();
             this.flpSubtotal.SuspendLayout();
             this.flpDiscount.SuspendLayout();
             this.flpTotal.SuspendLayout();
             this.flpRequired.SuspendLayout();
+            this.flpSummaryButtons.SuspendLayout();
             this.grpLine.SuspendLayout();
-            this.pnlFooter.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -167,67 +190,249 @@ namespace LittleEreseSystemV3.Forms
             // 
             // tlpContent
             // 
-            this.tlpContent.AutoSize = true;
-            this.tlpContent.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.tlpContent.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
-            this.tlpContent.ColumnCount = 6;
-            this.tlpContent.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.66667F));
-            this.tlpContent.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.66667F));
-            this.tlpContent.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.66667F));
-            this.tlpContent.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.66667F));
-            this.tlpContent.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.66667F));
-            this.tlpContent.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.66667F));
-            this.tlpContent.Controls.Add(this.flpClient, 0, 0);
-            this.tlpContent.SetColumnSpan(this.flpClient, 3);
-            this.tlpContent.Controls.Add(this.flpSchedule, 3, 0);
-            this.tlpContent.SetColumnSpan(this.flpSchedule, 3);
-            this.tlpContent.Controls.Add(this.lblClientInfo, 0, 1);
-            this.tlpContent.SetColumnSpan(this.lblClientInfo, 3);
-            this.tlpContent.Controls.Add(this.lblSlotInfo, 3, 1);
-            this.tlpContent.SetColumnSpan(this.lblSlotInfo, 3);
-            this.tlpContent.Controls.Add(this.flpCatalogHeader, 0, 2);
-            this.tlpContent.SetColumnSpan(this.flpCatalogHeader, 3);
-            this.tlpContent.Controls.Add(this.flpServiceButtons, 3, 2);
-            this.tlpContent.SetColumnSpan(this.flpServiceButtons, 3);
-            this.tlpContent.Controls.Add(this.pnlCatalog, 0, 3);
-            this.tlpContent.SetColumnSpan(this.pnlCatalog, 6);
-            this.tlpContent.Controls.Add(this.pnlSelected, 0, 4);
-            this.tlpContent.SetColumnSpan(this.pnlSelected, 6);
-            this.tlpContent.Controls.Add(this.grpLine, 0, 5);
-            this.tlpContent.SetColumnSpan(this.grpLine, 6);
-            this.tlpContent.Controls.Add(this.flpSubtotal, 0, 6);
-            this.tlpContent.SetColumnSpan(this.flpSubtotal, 2);
-            this.tlpContent.Controls.Add(this.flpDiscount, 2, 6);
-            this.tlpContent.SetColumnSpan(this.flpDiscount, 2);
-            this.tlpContent.Controls.Add(this.flpTotal, 4, 6);
-            this.tlpContent.SetColumnSpan(this.flpTotal, 2);
-            this.tlpContent.Controls.Add(this.flpRequired, 0, 7);
-            this.tlpContent.SetColumnSpan(this.flpRequired, 6);
-            this.tlpContent.Controls.Add(this.lblPromoNote, 0, 8);
-            this.tlpContent.SetColumnSpan(this.lblPromoNote, 6);
-            this.tlpContent.Controls.Add(this.lblNotes, 0, 9);
-            this.tlpContent.SetColumnSpan(this.lblNotes, 6);
-            this.tlpContent.Controls.Add(this.txtNotes, 0, 10);
-            this.tlpContent.SetColumnSpan(this.txtNotes, 6);
-            this.tlpContent.Dock = System.Windows.Forms.DockStyle.Top;
+            this.tlpContent.ColumnCount = 1;
+            this.tlpContent.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlpContent.Controls.Add(this.tlpTop, 0, 0);
+            this.tlpContent.Controls.Add(this.tlpBody, 0, 1);
+            this.tlpContent.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlpContent.Location = new System.Drawing.Point(0, 0);
             this.tlpContent.Margin = new System.Windows.Forms.Padding(12);
             this.tlpContent.Name = "tlpContent";
             this.tlpContent.Padding = new System.Windows.Forms.Padding(12);
-            this.tlpContent.RowCount = 11;
-            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
-            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
-            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 112F));
-            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 126F));
-            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 126F));
-            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26F));
-            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26F));
-            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 36F));
+            this.tlpContent.RowCount = 2;
+            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tlpContent.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tlpContent.Size = new System.Drawing.Size(963, 596);
             this.tlpContent.TabIndex = 0;
+            // 
+            // tlpBody
+            // 
+            this.tlpBody.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
+            this.tlpBody.ColumnCount = 3;
+            this.tlpBody.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 34F));
+            this.tlpBody.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 40F));
+            this.tlpBody.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 26F));
+            this.tlpBody.Controls.Add(this.grpServices, 0, 0);
+            this.tlpBody.Controls.Add(this.grpSelected, 1, 0);
+            this.tlpBody.Controls.Add(this.grpSummary, 2, 0);
+            this.tlpBody.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlpBody.Location = new System.Drawing.Point(12, 70);
+            this.tlpBody.Margin = new System.Windows.Forms.Padding(0);
+            this.tlpBody.Name = "tlpBody";
+            this.tlpBody.RowCount = 1;
+            this.tlpBody.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlpBody.Size = new System.Drawing.Size(939, 514);
+            this.tlpBody.TabIndex = 1;
+            // 
+            // grpServices
+            // 
+            this.grpServices.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
+            this.grpServices.Controls.Add(this.tlpServices);
+            this.grpServices.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.grpServices.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.grpServices.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
+            this.grpServices.Location = new System.Drawing.Point(0, 0);
+            this.grpServices.Margin = new System.Windows.Forms.Padding(0, 0, 6, 0);
+            this.grpServices.Name = "grpServices";
+            this.grpServices.Size = new System.Drawing.Size(313, 514);
+            this.grpServices.TabIndex = 0;
+            this.grpServices.TabStop = false;
+            this.grpServices.Text = "Services";
+            // 
+            // tlpServices
+            // 
+            this.tlpServices.ColumnCount = 1;
+            this.tlpServices.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlpServices.Controls.Add(this.flpCatalogHeader, 0, 0);
+            this.tlpServices.Controls.Add(this.txtServiceSearch, 0, 1);
+            this.tlpServices.Controls.Add(this.pnlCatalog, 0, 2);
+            this.tlpServices.Controls.Add(this.flpCatalogActions, 0, 3);
+            this.tlpServices.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlpServices.Location = new System.Drawing.Point(3, 21);
+            this.tlpServices.Name = "tlpServices";
+            this.tlpServices.RowCount = 4;
+            this.tlpServices.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 34F));
+            this.tlpServices.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 31F));
+            this.tlpServices.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlpServices.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 38F));
+            this.tlpServices.Size = new System.Drawing.Size(307, 490);
+            this.tlpServices.TabIndex = 0;
+            // 
+            // txtServiceSearch
+            // 
+            this.txtServiceSearch.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtServiceSearch.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.txtServiceSearch.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.txtServiceSearch.Location = new System.Drawing.Point(0, 34);
+            this.txtServiceSearch.Margin = new System.Windows.Forms.Padding(0);
+            this.txtServiceSearch.Name = "txtServiceSearch";
+            this.txtServiceSearch.Size = new System.Drawing.Size(307, 25);
+            this.txtServiceSearch.TabIndex = 1;
+            this.txtServiceSearch.Text = "Search a service...";
+            // 
+            // flpCatalogActions
+            // 
+            this.flpCatalogActions.AutoSize = true;
+            this.flpCatalogActions.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.flpCatalogActions.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
+            this.flpCatalogActions.Controls.Add(this.lblCheckedCount);
+            this.flpCatalogActions.Controls.Add(this.btnAddService);
+            this.flpCatalogActions.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.flpCatalogActions.Location = new System.Drawing.Point(0, 452);
+            this.flpCatalogActions.Margin = new System.Windows.Forms.Padding(0);
+            this.flpCatalogActions.Name = "flpCatalogActions";
+            this.flpCatalogActions.Size = new System.Drawing.Size(307, 38);
+            this.flpCatalogActions.TabIndex = 3;
+            this.flpCatalogActions.WrapContents = false;
+            // 
+            // lblCheckedCount
+            // 
+            this.lblCheckedCount.AutoSize = true;
+            this.lblCheckedCount.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblCheckedCount.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.lblCheckedCount.Location = new System.Drawing.Point(0, 11);
+            this.lblCheckedCount.Margin = new System.Windows.Forms.Padding(0, 11, 10, 0);
+            this.lblCheckedCount.Name = "lblCheckedCount";
+            this.lblCheckedCount.Size = new System.Drawing.Size(62, 15);
+            this.lblCheckedCount.TabIndex = 0;
+            this.lblCheckedCount.Text = "0 checked";
+            // 
+            // grpSelected
+            // 
+            this.grpSelected.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
+            this.grpSelected.Controls.Add(this.tlpSelected);
+            this.grpSelected.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.grpSelected.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.grpSelected.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
+            this.grpSelected.Location = new System.Drawing.Point(325, 0);
+            this.grpSelected.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
+            this.grpSelected.Name = "grpSelected";
+            this.grpSelected.Size = new System.Drawing.Size(363, 514);
+            this.grpSelected.TabIndex = 1;
+            this.grpSelected.TabStop = false;
+            this.grpSelected.Text = "Selected services";
+            // 
+            // tlpSelected
+            // 
+            this.tlpSelected.ColumnCount = 1;
+            this.tlpSelected.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlpSelected.Controls.Add(this.pnlSelected, 0, 0);
+            this.tlpSelected.Controls.Add(this.grpLine, 0, 1);
+            this.tlpSelected.Controls.Add(this.flpServiceButtons, 0, 2);
+            this.tlpSelected.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlpSelected.Location = new System.Drawing.Point(3, 21);
+            this.tlpSelected.Name = "tlpSelected";
+            this.tlpSelected.RowCount = 3;
+            this.tlpSelected.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlpSelected.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 240F));
+            this.tlpSelected.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 38F));
+            this.tlpSelected.Size = new System.Drawing.Size(357, 490);
+            this.tlpSelected.TabIndex = 0;
+            // 
+            // grpSummary
+            // 
+            this.grpSummary.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
+            this.grpSummary.Controls.Add(this.tlpSummary);
+            this.grpSummary.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.grpSummary.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.grpSummary.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
+            this.grpSummary.Location = new System.Drawing.Point(700, 0);
+            this.grpSummary.Margin = new System.Windows.Forms.Padding(6, 0, 0, 0);
+            this.grpSummary.Name = "grpSummary";
+            this.grpSummary.Size = new System.Drawing.Size(239, 514);
+            this.grpSummary.TabIndex = 2;
+            this.grpSummary.TabStop = false;
+            this.grpSummary.Text = "Summary";
+            // 
+            // tlpSummary
+            // 
+            this.tlpSummary.ColumnCount = 1;
+            this.tlpSummary.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlpSummary.Controls.Add(this.flpSubtotal, 0, 0);
+            this.tlpSummary.Controls.Add(this.lblPromoNote, 0, 1);
+            this.tlpSummary.Controls.Add(this.flpDiscount, 0, 2);
+            this.tlpSummary.Controls.Add(this.flpTotal, 0, 3);
+            this.tlpSummary.Controls.Add(this.flpRequired, 0, 4);
+            this.tlpSummary.Controls.Add(this.lblSlotInfo, 0, 5);
+            this.tlpSummary.Controls.Add(this.lblNotes, 0, 6);
+            this.tlpSummary.Controls.Add(this.txtNotes, 0, 7);
+            this.tlpSummary.Controls.Add(this.flpSummaryButtons, 0, 8);
+            this.tlpSummary.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlpSummary.Location = new System.Drawing.Point(3, 21);
+            this.tlpSummary.Name = "tlpSummary";
+            this.tlpSummary.RowCount = 9;
+            this.tlpSummary.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 28F));
+            this.tlpSummary.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 32F));
+            this.tlpSummary.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 28F));
+            this.tlpSummary.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 32F));
+            this.tlpSummary.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tlpSummary.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 76F));
+            this.tlpSummary.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
+            this.tlpSummary.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlpSummary.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 44F));
+            this.tlpSummary.Size = new System.Drawing.Size(233, 490);
+            this.tlpSummary.TabIndex = 0;
+            // 
+            // flpSummaryButtons
+            // 
+            this.flpSummaryButtons.AutoSize = true;
+            this.flpSummaryButtons.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.flpSummaryButtons.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
+            this.flpSummaryButtons.Controls.Add(this.btnSave);
+            this.flpSummaryButtons.Controls.Add(this.btnCancel);
+            this.flpSummaryButtons.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.flpSummaryButtons.Location = new System.Drawing.Point(0, 446);
+            this.flpSummaryButtons.Margin = new System.Windows.Forms.Padding(0);
+            this.flpSummaryButtons.Name = "flpSummaryButtons";
+            this.flpSummaryButtons.Size = new System.Drawing.Size(233, 44);
+            this.flpSummaryButtons.TabIndex = 8;
+            this.flpSummaryButtons.WrapContents = false;
+            // 
+            // tlpTop
+            // 
+            this.tlpTop.AutoSize = true;
+            this.tlpTop.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.tlpTop.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
+            this.tlpTop.ColumnCount = 1;
+            this.tlpTop.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlpTop.Controls.Add(this.flpTopControls, 0, 0);
+            this.tlpTop.Controls.Add(this.lblClientInfo, 0, 1);
+            this.tlpTop.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlpTop.Location = new System.Drawing.Point(12, 12);
+            this.tlpTop.Margin = new System.Windows.Forms.Padding(0);
+            this.tlpTop.Name = "tlpTop";
+            this.tlpTop.RowCount = 2;
+            this.tlpTop.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tlpTop.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tlpTop.Size = new System.Drawing.Size(939, 46);
+            this.tlpTop.TabIndex = 0;
+            // 
+            // flpTopControls
+            // 
+            this.flpTopControls.AutoSize = true;
+            this.flpTopControls.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.flpTopControls.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
+            this.flpTopControls.Controls.Add(this.flpClient);
+            this.flpTopControls.Controls.Add(this.flpSchedule);
+            this.flpTopControls.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.flpTopControls.Location = new System.Drawing.Point(0, 0);
+            this.flpTopControls.Margin = new System.Windows.Forms.Padding(0);
+            this.flpTopControls.Name = "flpTopControls";
+            this.flpTopControls.Size = new System.Drawing.Size(939, 26);
+            this.flpTopControls.TabIndex = 0;
+            this.flpTopControls.WrapContents = true;
+            // 
+            // txtClientSearch
+            // 
+            this.txtClientSearch.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.txtClientSearch.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
+            this.txtClientSearch.Location = new System.Drawing.Point(49, 3);
+            this.txtClientSearch.Margin = new System.Windows.Forms.Padding(0, 3, 8, 0);
+            this.txtClientSearch.Name = "txtClientSearch";
+            this.txtClientSearch.Size = new System.Drawing.Size(240, 25);
+            this.txtClientSearch.TabIndex = 1;
+            this.txtClientSearch.Text = "Type a first name, last name or number";
             // 
             // flpClient
             // 
@@ -236,12 +441,13 @@ namespace LittleEreseSystemV3.Forms
             this.flpClient.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flpClient.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.flpClient.Controls.Add(this.lblClient);
+            this.flpClient.Controls.Add(this.txtClientSearch);
             this.flpClient.Controls.Add(this.cboClient);
             this.flpClient.Controls.Add(this.btnNewClient);
             this.flpClient.Location = new System.Drawing.Point(12, 0);
             this.flpClient.Margin = new System.Windows.Forms.Padding(0);
             this.flpClient.Name = "flpClient";
-            this.flpClient.Size = new System.Drawing.Size(438, 30);
+            this.flpClient.Size = new System.Drawing.Size(686, 30);
             this.flpClient.TabIndex = 0;
             this.flpClient.WrapContents = false;
             // 
@@ -268,7 +474,7 @@ namespace LittleEreseSystemV3.Forms
             this.cboClient.Margin = new System.Windows.Forms.Padding(0, 3, 12, 0);
             this.cboClient.Name = "cboClient";
             this.cboClient.Size = new System.Drawing.Size(270, 25);
-            this.cboClient.TabIndex = 1;
+            this.cboClient.TabIndex = 2;
             this.cboClient.SelectedIndexChanged += new System.EventHandler(this.cboClient_SelectedIndexChanged);
             // 
             // btnNewClient
@@ -286,7 +492,7 @@ namespace LittleEreseSystemV3.Forms
             this.btnNewClient.Margin = new System.Windows.Forms.Padding(0);
             this.btnNewClient.Name = "btnNewClient";
             this.btnNewClient.Size = new System.Drawing.Size(87, 30);
-            this.btnNewClient.TabIndex = 2;
+            this.btnNewClient.TabIndex = 3;
             this.btnNewClient.Text = "+ New";
             this.btnNewClient.UseVisualStyleBackColor = false;
             this.btnNewClient.Click += new System.EventHandler(this.btnNewClient_Click);
@@ -300,7 +506,7 @@ namespace LittleEreseSystemV3.Forms
             this.lblClientInfo.Margin = new System.Windows.Forms.Padding(0);
             this.lblClientInfo.Name = "lblClientInfo";
             this.lblClientInfo.Size = new System.Drawing.Size(469, 20);
-            this.lblClientInfo.TabIndex = 2;
+            this.lblClientInfo.TabIndex = 1;
             this.lblClientInfo.Text = "Consent status and medical alerts appear here.";
             this.lblClientInfo.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
@@ -380,11 +586,11 @@ namespace LittleEreseSystemV3.Forms
             this.lblSlotInfo.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblSlotInfo.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblSlotInfo.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(217)))), ((int)(((byte)(142)))), ((int)(((byte)(4)))));
-            this.lblSlotInfo.Location = new System.Drawing.Point(481, 42);
+            this.lblSlotInfo.Location = new System.Drawing.Point(0, 148);
             this.lblSlotInfo.Margin = new System.Windows.Forms.Padding(0);
             this.lblSlotInfo.Name = "lblSlotInfo";
-            this.lblSlotInfo.Size = new System.Drawing.Size(470, 20);
-            this.lblSlotInfo.TabIndex = 3;
+            this.lblSlotInfo.Size = new System.Drawing.Size(233, 74);
+            this.lblSlotInfo.TabIndex = 5;
             this.lblSlotInfo.Text = "Availability and opening hours are checked here.";
             // 
             // flpCatalogHeader
@@ -399,7 +605,7 @@ namespace LittleEreseSystemV3.Forms
             this.flpCatalogHeader.Margin = new System.Windows.Forms.Padding(0);
             this.flpCatalogHeader.Name = "flpCatalogHeader";
             this.flpCatalogHeader.Size = new System.Drawing.Size(370, 30);
-            this.flpCatalogHeader.TabIndex = 4;
+            this.flpCatalogHeader.TabIndex = 0;
             this.flpCatalogHeader.WrapContents = false;
             // 
             // lblCategoryFilter
@@ -437,8 +643,8 @@ namespace LittleEreseSystemV3.Forms
             this.pnlCatalog.Margin = new System.Windows.Forms.Padding(0);
             this.pnlCatalog.Name = "pnlCatalog";
             this.pnlCatalog.Padding = new System.Windows.Forms.Padding(1);
-            this.pnlCatalog.Size = new System.Drawing.Size(939, 112);
-            this.pnlCatalog.TabIndex = 6;
+            this.pnlCatalog.Size = new System.Drawing.Size(307, 387);
+            this.pnlCatalog.TabIndex = 2;
             // 
             // dgvCatalog
             // 
@@ -467,6 +673,7 @@ namespace LittleEreseSystemV3.Forms
             this.dgvCatalog.ColumnHeadersHeight = 30;
             this.dgvCatalog.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.colCatServiceId,
+            this.colCatPick,
             this.colCatName,
             this.colCatPrice,
             this.colCatDuration});
@@ -485,11 +692,10 @@ namespace LittleEreseSystemV3.Forms
             this.dgvCatalog.Location = new System.Drawing.Point(1, 1);
             this.dgvCatalog.MultiSelect = false;
             this.dgvCatalog.Name = "dgvCatalog";
-            this.dgvCatalog.ReadOnly = true;
             this.dgvCatalog.RowHeadersVisible = false;
             this.dgvCatalog.RowTemplate.Height = 26;
             this.dgvCatalog.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dgvCatalog.Size = new System.Drawing.Size(935, 110);
+            this.dgvCatalog.Size = new System.Drawing.Size(303, 385);
             this.dgvCatalog.TabIndex = 0;
             this.dgvCatalog.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvCatalog_CellDoubleClick);
             // 
@@ -501,13 +707,21 @@ namespace LittleEreseSystemV3.Forms
             this.colCatServiceId.ReadOnly = true;
             this.colCatServiceId.Visible = false;
             // 
+            // colCatPick
+            // 
+            this.colCatPick.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
+            this.colCatPick.HeaderText = "";
+            this.colCatPick.MinimumWidth = 32;
+            this.colCatPick.Name = "colCatPick";
+            this.colCatPick.Width = 32;
+            // 
             // colCatName
             // 
             this.colCatName.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
             this.colCatName.DataPropertyName = "service_name";
-            this.colCatName.FillWeight = 58F;
+            this.colCatName.FillWeight = 62F;
             this.colCatName.HeaderText = "Service";
-            this.colCatName.MinimumWidth = 200;
+            this.colCatName.MinimumWidth = 108;
             this.colCatName.Name = "colCatName";
             this.colCatName.ReadOnly = true;
             // 
@@ -518,7 +732,7 @@ namespace LittleEreseSystemV3.Forms
             this.colCatPrice.DefaultCellStyle.Format = "N2";
             this.colCatPrice.FillWeight = 22F;
             this.colCatPrice.HeaderText = "Price";
-            this.colCatPrice.MinimumWidth = 100;
+            this.colCatPrice.MinimumWidth = 80;
             this.colCatPrice.Name = "colCatPrice";
             this.colCatPrice.ReadOnly = true;
             // 
@@ -526,25 +740,24 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.colCatDuration.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
             this.colCatDuration.DataPropertyName = "duration_minutes";
-            this.colCatDuration.FillWeight = 20F;
+            this.colCatDuration.FillWeight = 16F;
             this.colCatDuration.HeaderText = "Min";
-            this.colCatDuration.MinimumWidth = 70;
+            this.colCatDuration.MinimumWidth = 52;
             this.colCatDuration.Name = "colCatDuration";
             this.colCatDuration.ReadOnly = true;
             // 
             // flpServiceButtons
             // 
-            this.flpServiceButtons.Anchor = System.Windows.Forms.AnchorStyles.Right;
             this.flpServiceButtons.AutoSize = true;
             this.flpServiceButtons.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flpServiceButtons.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
-            this.flpServiceButtons.Controls.Add(this.btnAddService);
             this.flpServiceButtons.Controls.Add(this.btnRemoveService);
-            this.flpServiceButtons.Location = new System.Drawing.Point(755, 62);
+            this.flpServiceButtons.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.flpServiceButtons.Location = new System.Drawing.Point(0, 452);
             this.flpServiceButtons.Margin = new System.Windows.Forms.Padding(0);
             this.flpServiceButtons.Name = "flpServiceButtons";
-            this.flpServiceButtons.Size = new System.Drawing.Size(196, 30);
-            this.flpServiceButtons.TabIndex = 5;
+            this.flpServiceButtons.Size = new System.Drawing.Size(357, 38);
+            this.flpServiceButtons.TabIndex = 2;
             this.flpServiceButtons.WrapContents = false;
             // 
             // btnAddService
@@ -559,11 +772,11 @@ namespace LittleEreseSystemV3.Forms
             this.btnAddService.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnAddService.ForeColor = System.Drawing.Color.White;
             this.btnAddService.Location = new System.Drawing.Point(0, 0);
-            this.btnAddService.Margin = new System.Windows.Forms.Padding(0, 0, 8, 0);
+            this.btnAddService.Margin = new System.Windows.Forms.Padding(0, 4, 8, 0);
             this.btnAddService.Name = "btnAddService";
-            this.btnAddService.Size = new System.Drawing.Size(90, 30);
-            this.btnAddService.TabIndex = 0;
-            this.btnAddService.Text = "Add >";
+            this.btnAddService.Size = new System.Drawing.Size(180, 30);
+            this.btnAddService.TabIndex = 1;
+            this.btnAddService.Text = "Add checked services";
             this.btnAddService.UseVisualStyleBackColor = false;
             this.btnAddService.Click += new System.EventHandler(this.btnAddService_Click);
             // 
@@ -578,11 +791,11 @@ namespace LittleEreseSystemV3.Forms
             this.btnRemoveService.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnRemoveService.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnRemoveService.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(164)))), ((int)(((byte)(123)))), ((int)(((byte)(43)))));
-            this.btnRemoveService.Location = new System.Drawing.Point(98, 0);
+            this.btnRemoveService.Location = new System.Drawing.Point(0, 4);
             this.btnRemoveService.Margin = new System.Windows.Forms.Padding(0);
             this.btnRemoveService.Name = "btnRemoveService";
             this.btnRemoveService.Size = new System.Drawing.Size(98, 30);
-            this.btnRemoveService.TabIndex = 1;
+            this.btnRemoveService.TabIndex = 0;
             this.btnRemoveService.Text = "Remove";
             this.btnRemoveService.UseVisualStyleBackColor = false;
             this.btnRemoveService.Click += new System.EventHandler(this.btnRemoveService_Click);
@@ -593,12 +806,12 @@ namespace LittleEreseSystemV3.Forms
             this.pnlSelected.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.pnlSelected.Controls.Add(this.dgvSelected);
             this.pnlSelected.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pnlSelected.Location = new System.Drawing.Point(12, 204);
+            this.pnlSelected.Location = new System.Drawing.Point(0, 0);
             this.pnlSelected.Margin = new System.Windows.Forms.Padding(0);
             this.pnlSelected.Name = "pnlSelected";
             this.pnlSelected.Padding = new System.Windows.Forms.Padding(1);
-            this.pnlSelected.Size = new System.Drawing.Size(939, 126);
-            this.pnlSelected.TabIndex = 7;
+            this.pnlSelected.Size = new System.Drawing.Size(357, 212);
+            this.pnlSelected.TabIndex = 0;
             // 
             // dgvSelected
             // 
@@ -673,7 +886,7 @@ namespace LittleEreseSystemV3.Forms
             this.colSelName.DataPropertyName = "service_name";
             this.colSelName.FillWeight = 30F;
             this.colSelName.HeaderText = "Service";
-            this.colSelName.MinimumWidth = 150;
+            this.colSelName.MinimumWidth = 84;
             this.colSelName.Name = "colSelName";
             this.colSelName.ReadOnly = true;
             // 
@@ -686,7 +899,7 @@ namespace LittleEreseSystemV3.Forms
             this.colSelQty.DataPropertyName = "quantity";
             this.colSelQty.FillWeight = 8F;
             this.colSelQty.HeaderText = "Qty";
-            this.colSelQty.MinimumWidth = 48;
+            this.colSelQty.MinimumWidth = 30;
             this.colSelQty.Name = "colSelQty";
             // 
             // colSelPrice
@@ -696,7 +909,7 @@ namespace LittleEreseSystemV3.Forms
             this.colSelPrice.DefaultCellStyle.Format = "N2";
             this.colSelPrice.FillWeight = 14F;
             this.colSelPrice.HeaderText = "Price";
-            this.colSelPrice.MinimumWidth = 90;
+            this.colSelPrice.MinimumWidth = 58;
             this.colSelPrice.Name = "colSelPrice";
             this.colSelPrice.ReadOnly = true;
             // 
@@ -709,7 +922,7 @@ namespace LittleEreseSystemV3.Forms
             this.colSelDuration.DataPropertyName = "duration_minutes";
             this.colSelDuration.FillWeight = 8F;
             this.colSelDuration.HeaderText = "Min";
-            this.colSelDuration.MinimumWidth = 52;
+            this.colSelDuration.MinimumWidth = 30;
             this.colSelDuration.Name = "colSelDuration";
             this.colSelDuration.ReadOnly = true;
             // 
@@ -719,7 +932,7 @@ namespace LittleEreseSystemV3.Forms
             this.colSelStart.DataPropertyName = "start_text";
             this.colSelStart.FillWeight = 10F;
             this.colSelStart.HeaderText = "Start";
-            this.colSelStart.MinimumWidth = 78;
+            this.colSelStart.MinimumWidth = 56;
             this.colSelStart.Name = "colSelStart";
             this.colSelStart.ReadOnly = true;
             // 
@@ -729,7 +942,7 @@ namespace LittleEreseSystemV3.Forms
             this.colSelEnd.DataPropertyName = "end_text";
             this.colSelEnd.FillWeight = 10F;
             this.colSelEnd.HeaderText = "End";
-            this.colSelEnd.MinimumWidth = 78;
+            this.colSelEnd.MinimumWidth = 40;
             this.colSelEnd.Name = "colSelEnd";
             this.colSelEnd.ReadOnly = true;
             // 
@@ -739,7 +952,7 @@ namespace LittleEreseSystemV3.Forms
             this.colSelTechnician.DataPropertyName = "technician_name";
             this.colSelTechnician.FillWeight = 14F;
             this.colSelTechnician.HeaderText = "Technician";
-            this.colSelTechnician.MinimumWidth = 110;
+            this.colSelTechnician.MinimumWidth = 78;
             this.colSelTechnician.Name = "colSelTechnician";
             this.colSelTechnician.ReadOnly = true;
             // 
@@ -749,7 +962,7 @@ namespace LittleEreseSystemV3.Forms
             this.colSelNurse.DataPropertyName = "nurse_name";
             this.colSelNurse.FillWeight = 14F;
             this.colSelNurse.HeaderText = "Nurse";
-            this.colSelNurse.MinimumWidth = 110;
+            this.colSelNurse.MinimumWidth = 50;
             this.colSelNurse.Name = "colSelNurse";
             this.colSelNurse.ReadOnly = true;
             // 
@@ -759,7 +972,7 @@ namespace LittleEreseSystemV3.Forms
             this.colSelPackage.DataPropertyName = "package_label";
             this.colSelPackage.FillWeight = 10F;
             this.colSelPackage.HeaderText = "Session";
-            this.colSelPackage.MinimumWidth = 80;
+            this.colSelPackage.MinimumWidth = 46;
             this.colSelPackage.Name = "colSelPackage";
             this.colSelPackage.ReadOnly = true;
             // 
@@ -778,11 +991,11 @@ namespace LittleEreseSystemV3.Forms
             this.grpLine.Dock = System.Windows.Forms.DockStyle.Fill;
             this.grpLine.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.grpLine.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
-            this.grpLine.Location = new System.Drawing.Point(12, 330);
+            this.grpLine.Location = new System.Drawing.Point(0, 212);
             this.grpLine.Margin = new System.Windows.Forms.Padding(0);
             this.grpLine.Name = "grpLine";
-            this.grpLine.Size = new System.Drawing.Size(939, 126);
-            this.grpLine.TabIndex = 8;
+            this.grpLine.Size = new System.Drawing.Size(357, 226);
+            this.grpLine.TabIndex = 1;
             this.grpLine.TabStop = false;
             this.grpLine.Text = "Selected service";
             // 
@@ -815,7 +1028,7 @@ namespace LittleEreseSystemV3.Forms
             this.cboLineTime.FormattingEnabled = true;
             this.cboLineTime.Location = new System.Drawing.Point(12, 57);
             this.cboLineTime.Name = "cboLineTime";
-            this.cboLineTime.Size = new System.Drawing.Size(150, 25);
+            this.cboLineTime.Size = new System.Drawing.Size(145, 25);
             this.cboLineTime.TabIndex = 2;
             // 
             // lblLineTech
@@ -823,7 +1036,7 @@ namespace LittleEreseSystemV3.Forms
             this.lblLineTech.AutoSize = true;
             this.lblLineTech.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblLineTech.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblLineTech.Location = new System.Drawing.Point(190, 40);
+            this.lblLineTech.Location = new System.Drawing.Point(170, 40);
             this.lblLineTech.Name = "lblLineTech";
             this.lblLineTech.Size = new System.Drawing.Size(60, 15);
             this.lblLineTech.TabIndex = 3;
@@ -834,9 +1047,9 @@ namespace LittleEreseSystemV3.Forms
             this.cboLineTech.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cboLineTech.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.cboLineTech.FormattingEnabled = true;
-            this.cboLineTech.Location = new System.Drawing.Point(190, 57);
+            this.cboLineTech.Location = new System.Drawing.Point(170, 57);
             this.cboLineTech.Name = "cboLineTech";
-            this.cboLineTech.Size = new System.Drawing.Size(260, 25);
+            this.cboLineTech.Size = new System.Drawing.Size(175, 25);
             this.cboLineTech.TabIndex = 4;
             // 
             // lblLineNurse
@@ -844,7 +1057,7 @@ namespace LittleEreseSystemV3.Forms
             this.lblLineNurse.AutoSize = true;
             this.lblLineNurse.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblLineNurse.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblLineNurse.Location = new System.Drawing.Point(480, 40);
+            this.lblLineNurse.Location = new System.Drawing.Point(12, 86);
             this.lblLineNurse.Name = "lblLineNurse";
             this.lblLineNurse.Size = new System.Drawing.Size(111, 15);
             this.lblLineNurse.TabIndex = 5;
@@ -855,18 +1068,18 @@ namespace LittleEreseSystemV3.Forms
             this.cboLineNurse.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cboLineNurse.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.cboLineNurse.FormattingEnabled = true;
-            this.cboLineNurse.Location = new System.Drawing.Point(480, 57);
+            this.cboLineNurse.Location = new System.Drawing.Point(12, 103);
             this.cboLineNurse.Name = "cboLineNurse";
-            this.cboLineNurse.Size = new System.Drawing.Size(260, 25);
+            this.cboLineNurse.Size = new System.Drawing.Size(175, 25);
             this.cboLineNurse.TabIndex = 6;
             // 
             // lblLineNote
             // 
             this.lblLineNote.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblLineNote.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblLineNote.Location = new System.Drawing.Point(12, 88);
+            this.lblLineNote.Location = new System.Drawing.Point(12, 132);
             this.lblLineNote.Name = "lblLineNote";
-            this.lblLineNote.Size = new System.Drawing.Size(915, 16);
+            this.lblLineNote.Size = new System.Drawing.Size(333, 46);
             this.lblLineNote.TabIndex = 7;
             this.lblLineNote.Text = "Select a service above to set its own start time, its technician and, when the " +
     "service needs an assessment, the nurse who assessed the client.";
@@ -875,9 +1088,9 @@ namespace LittleEreseSystemV3.Forms
             // 
             this.lblSessionPlan.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblSessionPlan.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblSessionPlan.Location = new System.Drawing.Point(12, 106);
+            this.lblSessionPlan.Location = new System.Drawing.Point(12, 180);
             this.lblSessionPlan.Name = "lblSessionPlan";
-            this.lblSessionPlan.Size = new System.Drawing.Size(915, 16);
+            this.lblSessionPlan.Size = new System.Drawing.Size(333, 44);
             this.lblSessionPlan.TabIndex = 8;
             // 
             // lblPromoNote
@@ -885,11 +1098,11 @@ namespace LittleEreseSystemV3.Forms
             this.lblPromoNote.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblPromoNote.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblPromoNote.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(114)))), ((int)(((byte)(102)))));
-            this.lblPromoNote.Location = new System.Drawing.Point(12, 508);
+            this.lblPromoNote.Location = new System.Drawing.Point(0, 28);
             this.lblPromoNote.Margin = new System.Windows.Forms.Padding(0);
             this.lblPromoNote.Name = "lblPromoNote";
-            this.lblPromoNote.Size = new System.Drawing.Size(939, 20);
-            this.lblPromoNote.TabIndex = 13;
+            this.lblPromoNote.Size = new System.Drawing.Size(233, 32);
+            this.lblPromoNote.TabIndex = 1;
             this.lblPromoNote.Text = "The promotion note shows which services it applies to.";
             this.lblPromoNote.Visible = false;
             // 
@@ -900,11 +1113,11 @@ namespace LittleEreseSystemV3.Forms
             this.flpSubtotal.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flpSubtotal.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.flpSubtotal.Controls.Add(this.lblSubtotal);
-            this.flpSubtotal.Location = new System.Drawing.Point(12, 457);
+            this.flpSubtotal.Location = new System.Drawing.Point(0, 0);
             this.flpSubtotal.Margin = new System.Windows.Forms.Padding(0);
             this.flpSubtotal.Name = "flpSubtotal";
-            this.flpSubtotal.Size = new System.Drawing.Size(121, 24);
-            this.flpSubtotal.TabIndex = 9;
+            this.flpSubtotal.Size = new System.Drawing.Size(233, 26);
+            this.flpSubtotal.TabIndex = 0;
             this.flpSubtotal.WrapContents = false;
             // 
             // lblSubtotal
@@ -912,7 +1125,7 @@ namespace LittleEreseSystemV3.Forms
             this.lblSubtotal.AutoSize = true;
             this.lblSubtotal.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblSubtotal.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.lblSubtotal.Location = new System.Drawing.Point(0, 2);
+            this.lblSubtotal.Location = new System.Drawing.Point(0, 4);
             this.lblSubtotal.Margin = new System.Windows.Forms.Padding(0, 2, 0, 0);
             this.lblSubtotal.Name = "lblSubtotal";
             this.lblSubtotal.Size = new System.Drawing.Size(121, 19);
@@ -927,11 +1140,11 @@ namespace LittleEreseSystemV3.Forms
             this.flpDiscount.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flpDiscount.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.flpDiscount.Controls.Add(this.lblDiscount);
-            this.flpDiscount.Location = new System.Drawing.Point(325, 457);
+            this.flpDiscount.Location = new System.Drawing.Point(0, 60);
             this.flpDiscount.Margin = new System.Windows.Forms.Padding(0);
             this.flpDiscount.Name = "flpDiscount";
-            this.flpDiscount.Size = new System.Drawing.Size(124, 24);
-            this.flpDiscount.TabIndex = 10;
+            this.flpDiscount.Size = new System.Drawing.Size(233, 26);
+            this.flpDiscount.TabIndex = 2;
             this.flpDiscount.WrapContents = false;
             // 
             // lblDiscount
@@ -939,7 +1152,7 @@ namespace LittleEreseSystemV3.Forms
             this.lblDiscount.AutoSize = true;
             this.lblDiscount.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblDiscount.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(38)))), ((int)(((byte)(34)))));
-            this.lblDiscount.Location = new System.Drawing.Point(0, 2);
+            this.lblDiscount.Location = new System.Drawing.Point(0, 4);
             this.lblDiscount.Margin = new System.Windows.Forms.Padding(0, 2, 0, 0);
             this.lblDiscount.Name = "lblDiscount";
             this.lblDiscount.Size = new System.Drawing.Size(124, 19);
@@ -954,11 +1167,11 @@ namespace LittleEreseSystemV3.Forms
             this.flpTotal.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flpTotal.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.flpTotal.Controls.Add(this.lblTotal);
-            this.flpTotal.Location = new System.Drawing.Point(638, 456);
+            this.flpTotal.Location = new System.Drawing.Point(0, 88);
             this.flpTotal.Margin = new System.Windows.Forms.Padding(0);
             this.flpTotal.Name = "flpTotal";
-            this.flpTotal.Size = new System.Drawing.Size(94, 26);
-            this.flpTotal.TabIndex = 11;
+            this.flpTotal.Size = new System.Drawing.Size(233, 30);
+            this.flpTotal.TabIndex = 3;
             this.flpTotal.WrapContents = false;
             // 
             // lblTotal
@@ -981,11 +1194,11 @@ namespace LittleEreseSystemV3.Forms
             this.flpRequired.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flpRequired.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
             this.flpRequired.Controls.Add(this.lblRequired);
-            this.flpRequired.Location = new System.Drawing.Point(12, 482);
+            this.flpRequired.Location = new System.Drawing.Point(0, 118);
             this.flpRequired.Margin = new System.Windows.Forms.Padding(0);
             this.flpRequired.Name = "flpRequired";
-            this.flpRequired.Size = new System.Drawing.Size(170, 26);
-            this.flpRequired.TabIndex = 12;
+            this.flpRequired.Size = new System.Drawing.Size(233, 26);
+            this.flpRequired.TabIndex = 4;
             this.flpRequired.WrapContents = false;
             // 
             // lblRequired
@@ -998,45 +1211,32 @@ namespace LittleEreseSystemV3.Forms
             this.lblRequired.Name = "lblRequired";
             this.lblRequired.Size = new System.Drawing.Size(170, 19);
             this.lblRequired.TabIndex = 0;
-            this.lblRequired.Text = "Down payment due after saving";
+            this.lblRequired.Text = "Down payment due";
             this.lblRequired.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // lblNotes
             // 
-            this.lblNotes.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.lblNotes.AutoSize = true;
             this.lblNotes.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblNotes.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(122)))), ((int)(((byte)(89)))), ((int)(((byte)(28)))));
-            this.lblNotes.Location = new System.Drawing.Point(12, 528);
+            this.lblNotes.Location = new System.Drawing.Point(0, 222);
             this.lblNotes.Margin = new System.Windows.Forms.Padding(0);
             this.lblNotes.Name = "lblNotes";
             this.lblNotes.Size = new System.Drawing.Size(48, 19);
-            this.lblNotes.TabIndex = 14;
+            this.lblNotes.TabIndex = 6;
             this.lblNotes.Text = "Notes";
             // 
             // txtNotes
             // 
             this.txtNotes.Dock = System.Windows.Forms.DockStyle.Fill;
             this.txtNotes.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtNotes.Location = new System.Drawing.Point(12, 548);
+            this.txtNotes.Location = new System.Drawing.Point(0, 248);
             this.txtNotes.Margin = new System.Windows.Forms.Padding(0);
             this.txtNotes.Multiline = true;
             this.txtNotes.Name = "txtNotes";
             this.txtNotes.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtNotes.Size = new System.Drawing.Size(939, 36);
-            this.txtNotes.TabIndex = 15;
-            // 
-            // pnlFooter
-            // 
-            this.pnlFooter.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
-            this.pnlFooter.Controls.Add(this.btnCancel);
-            this.pnlFooter.Controls.Add(this.btnSave);
-            this.pnlFooter.Controls.Add(this.pnlFooterLine);
-            this.pnlFooter.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.pnlFooter.Location = new System.Drawing.Point(0, 576);
-            this.pnlFooter.Name = "pnlFooter";
-            this.pnlFooter.Size = new System.Drawing.Size(980, 64);
-            this.pnlFooter.TabIndex = 2;
+            this.txtNotes.Size = new System.Drawing.Size(233, 194);
+            this.txtNotes.TabIndex = 7;
             // 
             // btnCancel
             // 
@@ -1050,11 +1250,12 @@ namespace LittleEreseSystemV3.Forms
             this.btnCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnCancel.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnCancel.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(164)))), ((int)(((byte)(123)))), ((int)(((byte)(43)))));
-            this.btnCancel.Location = new System.Drawing.Point(728, 15);
+            this.btnCancel.Location = new System.Drawing.Point(0, 4);
+            this.btnCancel.Margin = new System.Windows.Forms.Padding(0);
             this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(96, 34);
+            this.btnCancel.Size = new System.Drawing.Size(110, 34);
             this.btnCancel.TabIndex = 1;
-            this.btnCancel.Text = "Close";
+            this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = false;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
@@ -1069,22 +1270,14 @@ namespace LittleEreseSystemV3.Forms
             this.btnSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnSave.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnSave.ForeColor = System.Drawing.Color.White;
-            this.btnSave.Location = new System.Drawing.Point(832, 15);
+            this.btnSave.Location = new System.Drawing.Point(0, 4);
+            this.btnSave.Margin = new System.Windows.Forms.Padding(0, 4, 8, 0);
             this.btnSave.Name = "btnSave";
-            this.btnSave.Size = new System.Drawing.Size(132, 34);
+            this.btnSave.Size = new System.Drawing.Size(118, 34);
             this.btnSave.TabIndex = 0;
-            this.btnSave.Text = "Book Appointment";
+            this.btnSave.Text = "Book";
             this.btnSave.UseVisualStyleBackColor = false;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
-            // 
-            // pnlFooterLine
-            // 
-            this.pnlFooterLine.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(227)))), ((int)(((byte)(218)))), ((int)(((byte)(198)))));
-            this.pnlFooterLine.Dock = System.Windows.Forms.DockStyle.Top;
-            this.pnlFooterLine.Location = new System.Drawing.Point(0, 0);
-            this.pnlFooterLine.Name = "pnlFooterLine";
-            this.pnlFooterLine.Size = new System.Drawing.Size(980, 1);
-            this.pnlFooterLine.TabIndex = 2;
             // 
             // errorProvider1
             // 
@@ -1099,14 +1292,15 @@ namespace LittleEreseSystemV3.Forms
             this.CancelButton = this.btnCancel;
             this.ClientSize = new System.Drawing.Size(980, 640);
             this.Controls.Add(this.pnlScroll);
-            this.Controls.Add(this.pnlFooter);
             this.Controls.Add(this.pnlHeader);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
+            this.MaximizeBox = true;
             this.MinimizeBox = false;
+            this.MinimumSize = new System.Drawing.Size(1024, 680);
             this.Name = "AppointmentForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "New Appointment";
+            this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.Load += new System.EventHandler(this.AppointmentForm_Load);
             this.pnlHeader.ResumeLayout(false);
             this.pnlScroll.ResumeLayout(false);
@@ -1134,7 +1328,23 @@ namespace LittleEreseSystemV3.Forms
             this.flpTotal.PerformLayout();
             this.flpRequired.ResumeLayout(false);
             this.flpRequired.PerformLayout();
-            this.pnlFooter.ResumeLayout(false);
+            this.tlpTop.ResumeLayout(false);
+            this.tlpTop.PerformLayout();
+            this.flpTopControls.ResumeLayout(false);
+            this.flpTopControls.PerformLayout();
+            this.tlpBody.ResumeLayout(false);
+            this.tlpServices.ResumeLayout(false);
+            this.tlpServices.PerformLayout();
+            this.flpCatalogActions.ResumeLayout(false);
+            this.flpCatalogActions.PerformLayout();
+            this.grpSelected.ResumeLayout(false);
+            this.tlpSelected.ResumeLayout(false);
+            this.tlpSummary.ResumeLayout(false);
+            this.tlpSummary.PerformLayout();
+            this.flpSummaryButtons.ResumeLayout(false);
+            this.flpSummaryButtons.PerformLayout();
+            this.grpServices.ResumeLayout(false);
+            this.grpSummary.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider1)).EndInit();
             this.ResumeLayout(false);
 
@@ -1147,6 +1357,20 @@ namespace LittleEreseSystemV3.Forms
         private System.Windows.Forms.Panel pnlHeaderLine;
         private System.Windows.Forms.Panel pnlScroll;
         private System.Windows.Forms.TableLayoutPanel tlpContent;
+        private System.Windows.Forms.TableLayoutPanel tlpTop;
+        private System.Windows.Forms.FlowLayoutPanel flpTopControls;
+        private System.Windows.Forms.TextBox txtClientSearch;
+        private System.Windows.Forms.TableLayoutPanel tlpBody;
+        private System.Windows.Forms.GroupBox grpServices;
+        private System.Windows.Forms.TableLayoutPanel tlpServices;
+        private System.Windows.Forms.TextBox txtServiceSearch;
+        private System.Windows.Forms.FlowLayoutPanel flpCatalogActions;
+        private System.Windows.Forms.Label lblCheckedCount;
+        private System.Windows.Forms.GroupBox grpSelected;
+        private System.Windows.Forms.TableLayoutPanel tlpSelected;
+        private System.Windows.Forms.GroupBox grpSummary;
+        private System.Windows.Forms.TableLayoutPanel tlpSummary;
+        private System.Windows.Forms.FlowLayoutPanel flpSummaryButtons;
         private System.Windows.Forms.FlowLayoutPanel flpClient;
         private System.Windows.Forms.Label lblClient;
         private System.Windows.Forms.ComboBox cboClient;
@@ -1164,6 +1388,7 @@ namespace LittleEreseSystemV3.Forms
         private System.Windows.Forms.Panel pnlCatalog;
         private System.Windows.Forms.DataGridView dgvCatalog;
         private System.Windows.Forms.DataGridViewTextBoxColumn colCatServiceId;
+        private System.Windows.Forms.DataGridViewCheckBoxColumn colCatPick;
         private System.Windows.Forms.DataGridViewTextBoxColumn colCatName;
         private System.Windows.Forms.DataGridViewTextBoxColumn colCatPrice;
         private System.Windows.Forms.DataGridViewTextBoxColumn colCatDuration;
@@ -1203,10 +1428,8 @@ namespace LittleEreseSystemV3.Forms
         private System.Windows.Forms.Label lblRequired;
         private System.Windows.Forms.Label lblNotes;
         private System.Windows.Forms.TextBox txtNotes;
-        private System.Windows.Forms.Panel pnlFooter;
         private System.Windows.Forms.Button btnCancel;
         private System.Windows.Forms.Button btnSave;
-        private System.Windows.Forms.Panel pnlFooterLine;
         private System.Windows.Forms.ErrorProvider errorProvider1;
     }
 }
