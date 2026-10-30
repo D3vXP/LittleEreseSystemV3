@@ -93,8 +93,11 @@ namespace LittleEreseSystemV3.Forms
             // and the two line dropdowns only exist to feed the "Selected service" block.
             dgvSelected.SelectionChanged += dgvSelected_SelectionChanged;
             cboLineTime.SelectedIndexChanged += cboLineTime_SelectedIndexChanged;
-            cboLineTech.SelectedIndexChanged += cboLineTech_SelectedIndexChanged;
-            cboLineNurse.SelectedIndexChanged += cboLineNurse_SelectedIndexChanged;
+            // The two staff dropdowns listen to SelectionChangeCommitted, which fires ONLY when the
+            // user picks: refilling their DataSource in UpdateLinePanel would otherwise raise
+            // SelectedIndexChanged and move a pick the user never made.
+            cboLineTech.SelectionChangeCommitted += cboLineTech_SelectionChangeCommitted;
+            cboLineNurse.SelectionChangeCommitted += cboLineNurse_SelectionChangeCommitted;
 
             _loading = true;
             try
@@ -781,6 +784,8 @@ namespace LittleEreseSystemV3.Forms
             Recalculate();
 
             // The new line is the one being worked on, so it is selected (Qty and Technician).
+            // With ONE line the grid must already show it as selected, because the two staff
+            // dropdowns belong to the selected row; without the selection they would write nowhere.
             GridHelper.SelectRowById(dgvSelected, "colSelServiceId", serviceId);
         }
 
@@ -1016,6 +1021,21 @@ namespace LittleEreseSystemV3.Forms
             line[AppointmentRepository.ColStartTime] = start;
             line["start_text"] = Clock(start);
             line["end_text"] = Clock(AvailabilityRepository.LineEnd(start, duration, quantity));
+        }
+
+        /// <summary>
+        /// Writes the staff of one line: the technician id and name and the assessing nurse id and
+        /// name. The ONE place that writes these four columns, so no handler can forget one of them.
+        /// </summary>
+        private static void WriteLineStaff(DataRowView line, int technicianId, string technicianName,
+            int nurseId, string nurseName)
+        {
+            if (line == null) return;
+
+            line[AppointmentRepository.ColTechnicianId] = technicianId;
+            line["technician_name"] = technicianId > 0 ? technicianName : string.Empty;
+            line[AppointmentRepository.ColAssessedBy] = nurseId;
+            line["nurse_name"] = nurseId > 0 ? nurseName : string.Empty;
         }
 
         /// <summary>The end of the latest line that already has a time, or 0 when none has one.</summary>
@@ -1272,6 +1292,69 @@ namespace LittleEreseSystemV3.Forms
             return serviceId <= 0 ? null : FindLine(serviceId);
         }
 
+        /// <summary>
+        /// Writes the CURRENT pick of cboLineTech and cboLineNurse into the selected line.
+        /// WHY: the two dropdowns are the truth of what the user sees on screen, so they are read
+        /// once more before anything is validated, saved or checked. What the user picked is then
+        /// always what is validated and saved, whatever the order of the events was.
+        /// </summary>
+        private void CommitLinePanel()
+        {
+            DataRowView line = SelectedLine();
+            if (line == null) return;
+
+            int technicianId = Db.Get<int>(line[AppointmentRepository.ColTechnicianId]);
+            string technicianName = Db.Get<string>(line["technician_name"]);
+            int nurseId = Db.Get<int>(line[AppointmentRepository.ColAssessedBy]);
+            string nurseName = Db.Get<string>(line["nurse_name"]);
+
+            // Only a dropdown the user could actually use counts; a disabled one keeps the row.
+            if (cboLineTech.Enabled)
+            {
+                DataRowView picked = cboLineTech.SelectedItem as DataRowView;
+                if (picked != null)
+                {
+                    technicianId = Db.Get<int>(picked["user_id"]);
+                    technicianName = Db.Get<string>(picked["full_name"]);
+                }
+            }
+
+            if (cboLineNurse.Enabled)
+            {
+                DataRowView picked = cboLineNurse.SelectedItem as DataRowView;
+                if (picked != null)
+                {
+                    nurseId = Db.Get<int>(picked["user_id"]);
+                    nurseName = Db.Get<string>(picked["full_name"]);
+                }
+            }
+
+            bool wasLoading = _loading;
+            _loading = true;
+            try
+            {
+                WriteLineStaff(line, technicianId, technicianName, nurseId, nurseName);
+            }
+            finally
+            {
+                _loading = wasLoading;
+            }
+
+            RepaintSelectedRow();
+        }
+
+        /// <summary>
+        /// Repaints the selected row of dgvSelected so a pick shows at once. The two staff columns
+        /// are plain text of a bound row, so the repaint is asked for explicitly.
+        /// </summary>
+        private void RepaintSelectedRow()
+        {
+            foreach (DataGridViewRow row in dgvSelected.Rows)
+            {
+                if (row.Selected) dgvSelected.InvalidateRow(row.Index);
+            }
+        }
+
         private static bool HasUserId(DataTable table, int userId)
         {
             foreach (DataRow row in table.Rows)
@@ -1391,10 +1474,10 @@ namespace LittleEreseSystemV3.Forms
         }
 
         /// <summary>
-        /// Writes the chosen technician of the selected line into that row. The technician is a
-        /// text column now, so the name is written next to the id.
+        /// The user picked a technician for the selected line: the pick is written into its row AND
+        /// kept in the dropdown, so the two can never disagree.
         /// </summary>
-        private void cboLineTech_SelectedIndexChanged(object sender, EventArgs e)
+        private void cboLineTech_SelectionChangeCommitted(object sender, EventArgs e)
         {
             if (_loading || _selectedLine == null) return;
 
@@ -1405,13 +1488,18 @@ namespace LittleEreseSystemV3.Forms
             _loading = true;
             try
             {
-                _selectedLine[AppointmentRepository.ColTechnicianId] = technicianId;
-                _selectedLine["technician_name"] = technicianId > 0 ? technicianName : string.Empty;
+                WriteLineStaff(_selectedLine, technicianId, technicianName,
+                    Db.Get<int>(_selectedLine[AppointmentRepository.ColAssessedBy]),
+                    Db.Get<string>(_selectedLine["nurse_name"]));
             }
             finally
             {
                 _loading = false;
             }
+
+            // The row is bound, so writing it repaints the grid; the repaint is asked for anyway so
+            // the new technician shows immediately, even right after the dropdown closes.
+            RepaintSelectedRow();
 
             // Another technician may free or block the other lines, and this line may now fit at a
             // different time, so the whole plan is re-checked and the time list is refilled.
@@ -1420,8 +1508,8 @@ namespace LittleEreseSystemV3.Forms
             Recalculate();
         }
 
-        /// <summary>Writes the assessing nurse of the selected line into that row.</summary>
-        private void cboLineNurse_SelectedIndexChanged(object sender, EventArgs e)
+        /// <summary>The user picked the assessing nurse of the selected line: it is written into its row.</summary>
+        private void cboLineNurse_SelectionChangeCommitted(object sender, EventArgs e)
         {
             if (_loading || _selectedLine == null) return;
 
@@ -1432,14 +1520,17 @@ namespace LittleEreseSystemV3.Forms
             _loading = true;
             try
             {
-                _selectedLine[AppointmentRepository.ColAssessedBy] = nurseId;
-                _selectedLine["nurse_name"] = nurseId > 0 ? nurseName : string.Empty;
+                WriteLineStaff(_selectedLine,
+                    Db.Get<int>(_selectedLine[AppointmentRepository.ColTechnicianId]),
+                    Db.Get<string>(_selectedLine["technician_name"]),
+                    nurseId, nurseName);
             }
             finally
             {
                 _loading = false;
             }
 
+            RepaintSelectedRow();
             Recalculate();
         }
 
@@ -1741,6 +1832,10 @@ namespace LittleEreseSystemV3.Forms
         /// </summary>
         private void CheckAvailability()
         {
+            // The dropdowns are read once more here, so the message always describes what the user
+            // sees on screen, whatever the order of the events was.
+            CommitLinePanel();
+
             if (_lines.Rows.Count == 0)
             {
                 lblSlotInfo.Text = "Add at least one service. The opening hours and the free rooms are checked here.";
@@ -1794,6 +1889,9 @@ namespace LittleEreseSystemV3.Forms
         /// <summary>The client and the service are checked before anything is saved.</summary>
         private bool ValidateInput()
         {
+            // What the user sees in the two dropdowns is committed before it is checked.
+            CommitLinePanel();
+
             errorProvider1.Clear();
 
             if (SelectedClientId() <= 0)
@@ -1815,6 +1913,9 @@ namespace LittleEreseSystemV3.Forms
 
         private void SaveNewBooking()
         {
+            // The pick of the two staff dropdowns is committed before anything is validated or saved.
+            CommitLinePanel();
+
             List<string> problems;
 
             try

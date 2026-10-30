@@ -2,6 +2,27 @@
 
 Update this file at the end of every task.
 
+- Step 75 (this task): the technician / nurse pick of the booking dialog is never lost.
+  - Forms\AppointmentForm.cs: the dropdowns cboLineTech and cboLineNurse were wired to
+    SelectedIndexChanged, which also fires when UpdateLinePanel refills their DataSource, so the
+    user's pick was overwritten and the four columns of the line stayed empty while the dropdowns
+    showed the names. Both are now wired to SelectionChangeCommitted (fires only when the USER
+    picks) and read SelectedItem as DataRowView.
+  - Forms\AppointmentForm.cs: new private static WriteLineStaff(line, technicianId, technicianName,
+    nurseId, nurseName) writes technician_id, technician_name, assessed_by, nurse_name; the two
+    handlers use it (no duplicated code). New private CommitLinePanel() reads SelectedLine() and the
+    current pick of the two dropdowns (only when enabled and with a selected item) and writes it
+    with WriteLineStaff; it runs at the START of ValidateInput, SaveNewBooking and CheckAvailability,
+    so the pick never depends on the order of events. New private RepaintSelectedRow() invalidates
+    the selected row so the pick shows in the grid at once.
+  - AddServiceLine already selects the new line with GridHelper.SelectRowById (step e, confirmed,
+    unchanged).
+  - PROJECT_RULES.md: new bullet under the booking-dialog rule describing the two dropdowns, the
+    single WriteLineStaff writer and CommitLinePanel. ValidateBooking in AppointmentRepository was
+    NOT changed (its nurse rule is correct). LittleEreseSystemV3.csproj was NOT edited.
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 22 files exit 0; --smoketest 96
+    passed / 0 failed / 0 skipped; app started once, stayed open, closed, no error.log.
+
 - Step 74 (this task): the demo shows a weekly package and a booking with two services at two times.
   - Data\DemoDataSeeder.cs: new SeedWeeklyPackage, called at the END of SeedUpcomingVisits (before
     SeedCancelledVisits). It books the active "Tirzepatide (4 sessions)" package (5000.00) for the
