@@ -374,8 +374,10 @@ namespace LittleEreseSystemV3.Forms
                     decimal left = form.AmountDue - form.AmountToPay;
                     if (left < 0m) left = 0m;
 
+                    // The desk copies this message onto the paper receipt, so it names the amount
+                    // paid, how it was paid, the change (cash only) and the balance still due.
                     string done = "Payment of " + Money.Text(form.AmountToPay) +
-                        " received. Balance left: " + Money.Text(left) + ".";
+                        " received by " + form.Method + ". Balance still due: " + Money.Text(left) + ".";
 
                     if (string.Equals(form.Method, "Cash", StringComparison.OrdinalIgnoreCase) &&
                         form.Tendered > form.AmountToPay)

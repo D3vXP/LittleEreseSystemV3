@@ -2,6 +2,35 @@
 
 Update this file at the end of every task.
 
+- Step 82 (this task): the receipt printing is gone - the owner writes the receipts by hand and
+  owns no printer.
+  - Controls\ucBilling.Designer.cs: btnPrintReceipt removed (field, creation, properties,
+    Controls.Add, Click wiring) together with its tlpBill row (the 42 px RowStyle is gone and
+    RowCount is 7, tlpBill height 532 -> 490), so Collect and Complete / Take Payment still sit at
+    the bottom of the bill card with no gap. btnReprint removed from flpTranButtons as well and the
+    flow panel shrank (214 -> 94 px), so the Transactions toolbar has no empty space.
+  - Controls\ucBilling.cs: the two Theme calls, the two Enabled lines, btnPrintReceipt_Click,
+    btnReprint_Click and the "Print the receipt now?" question are gone. The message after a
+    successful checkout now reads "The appointment of <client> is completed. Paid <amount> by
+    <method>. [Change: <amount>.] Balance still due: 0.00." so the desk can copy it onto the paper
+    receipt.
+  - Forms\PaymentForm.cs: the message after a saved payment names the method too ("Payment of
+    <amount> received by <method>. [Change: <amount>.] Balance still due: <amount>."), so both
+    payment paths give the same four facts.
+  - Helpers\ReceiptPrinter.cs DELETED and its <Compile Include> line removed from
+    LittleEreseSystemV3.csproj (the one project-file change of this task, made with a PowerShell
+    line filter because the loaded project refuses the patch adapter). BillingRepository.GetReceiptData
+    deleted as well (and the section comment now reads "one bill and the transactions list"). No
+    smoke-test check called it, so the count stays 101 -> 101 PASS.
+  - Docs: PROJECT_RULES.md gained the "Receipts are written BY HAND" rule and lost the word
+    "receipt" from the Money rule; docs\POLISH_LIST.md lost the ReceiptPrinter row and item 4 (29 -> 28
+    comments, 15 -> 14 files); docs\DEVELOPER_GUIDE.md now says only GridPrinter never throws. No
+    RETEST_CHECKLIST.md exists in this workspace (nothing to delete there).
+  - Checks: clean rebuild 0 errors / 0 warnings; DesignerAudit 23 files exit 0; --smoketest 101
+    passed / 0 failed; --preview ucBilling (Admin and Staff) looked at - no gap, no cut text;
+    app started once and closed with no error.log. docs\screenshots\ucBilling.png and
+    ucBilling_Staff.png refreshed.
+
 - Step 81 (this task): the booking dialog gained a service search with tick boxes and a client
   search. Forms\AppointmentForm.cs (the Designer kept its layout; only the catalogue grid columns
   were re-measured - see below).

@@ -48,9 +48,7 @@ namespace LittleEreseSystemV3.Controls
             Theme.StyleSecondaryButton(btnRefresh);
             Theme.StylePrimaryButton(btnCollect);
             Theme.StyleSecondaryButton(btnTakePayment);
-            Theme.StyleSecondaryButton(btnPrintReceipt);
             Theme.StylePrimaryButton(btnSearch);
-            Theme.StyleSecondaryButton(btnReprint);
 
             // The Designer only says "N2"; Money is the one formatter of the app.
             Money.ApplyTo(colQueueBalance);
@@ -469,8 +467,6 @@ namespace LittleEreseSystemV3.Controls
             // A payment can be taken at any time on a bill that still owes something.
             btnTakePayment.Enabled = !completed && !cancelled &&
                 Db.Get<decimal>(header["balance_due"]) > 0m;
-
-            btnPrintReceipt.Enabled = true;
         }
 
         /// <summary>Empties the bill card and switches off both buttons.</summary>
@@ -502,7 +498,6 @@ namespace LittleEreseSystemV3.Controls
 
             btnCollect.Enabled = false;
             btnTakePayment.Enabled = false;
-            btnPrintReceipt.Enabled = false;
         }
 
         // ---------------------------------------------------------------- checkout actions
@@ -583,10 +578,9 @@ namespace LittleEreseSystemV3.Controls
                 }
             }
 
-            int billingId;
             try
             {
-                billingId = BillingRepository.Checkout(appointmentId, technicians, method, reference, verified, tendered);
+                BillingRepository.Checkout(appointmentId, technicians, method, reference, verified, tendered);
             }
             catch (InvalidOperationException ex)
             {
@@ -600,26 +594,28 @@ namespace LittleEreseSystemV3.Controls
                 return;
             }
 
+            // The desk copies this message onto the paper receipt, so it names the amount paid,
+            // the method, the change (cash only) and the balance that is still due.
             string done = "The appointment of " + clientName + " is completed.";
+            if (balance > 0m)
+            {
+                done += " Paid " + Money.Text(balance) + " by " + method + ".";
+            }
+            else
+            {
+                done += " Nothing was left to pay.";
+            }
+
             if (string.Equals(method, "Cash", StringComparison.OrdinalIgnoreCase) && tendered > balance)
             {
                 done += " Change: " + Money.Text(tendered - balance) + ".";
             }
 
+            done += " Balance still due: " + Money.Text(0m) + ".";
+
             Messages.Info(done);
 
             LoadQueue(appointmentId);
-
-            if (Messages.Confirm("Print the receipt now?"))
-            {
-                ReceiptPrinter.Print(billingId, true);
-            }
-        }
-
-        private void btnPrintReceipt_Click(object sender, EventArgs e)
-        {
-            if (_bill == null) return;
-            ReceiptPrinter.Print(Db.Get<int>(_bill["billing_id"]), true);
         }
 
         /// <summary>
@@ -797,18 +793,6 @@ namespace LittleEreseSystemV3.Controls
             }
 
             LoadTransactions();
-        }
-
-        private void btnReprint_Click(object sender, EventArgs e)
-        {
-            int billingId = GridHelper.GetSelectedId(dgvTransactions, "colTranBillingId");
-            if (billingId <= 0)
-            {
-                Messages.Warn("Select the payment whose receipt you want to print.");
-                return;
-            }
-
-            ReceiptPrinter.Print(billingId, true);
         }
 
         private void dgvTransactions_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)

@@ -101,7 +101,6 @@ namespace LittleEreseSystemV3.Controls
             this.btnCollect = new System.Windows.Forms.Button();
             this.tlpBillButtons = new System.Windows.Forms.TableLayoutPanel();
             this.btnTakePayment = new System.Windows.Forms.Button();
-            this.btnPrintReceipt = new System.Windows.Forms.Button();
             this.tabTransactions = new System.Windows.Forms.TabPage();
             this.pnlTranGrid = new System.Windows.Forms.Panel();
             this.dgvTransactions = new System.Windows.Forms.DataGridView();
@@ -128,7 +127,6 @@ namespace LittleEreseSystemV3.Controls
             this.cboMethod = new System.Windows.Forms.ComboBox();
             this.flpTranButtons = new System.Windows.Forms.FlowLayoutPanel();
             this.btnSearch = new System.Windows.Forms.Button();
-            this.btnReprint = new System.Windows.Forms.Button();
             this.lblTotals = new System.Windows.Forms.Label();
             this.tabBilling.SuspendLayout();
             this.tabCheckout.SuspendLayout();
@@ -576,11 +574,10 @@ namespace LittleEreseSystemV3.Controls
             this.tlpBill.Controls.Add(this.lblPromoNote, 0, 4);
             this.tlpBill.Controls.Add(this.tlpTotals, 0, 5);
             this.tlpBill.Controls.Add(this.tlpBillButtons, 0, 6);
-            this.tlpBill.Controls.Add(this.btnPrintReceipt, 0, 7);
             this.tlpBill.Dock = System.Windows.Forms.DockStyle.Top;
             this.tlpBill.Location = new System.Drawing.Point(16, 16);
             this.tlpBill.Name = "tlpBill";
-            this.tlpBill.RowCount = 8;
+            this.tlpBill.RowCount = 7;
             this.tlpBill.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 34F));
             this.tlpBill.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
             this.tlpBill.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 158F));
@@ -588,8 +585,7 @@ namespace LittleEreseSystemV3.Controls
             this.tlpBill.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 32F));
             this.tlpBill.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 148F));
             this.tlpBill.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 56F));
-            this.tlpBill.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 42F));
-            this.tlpBill.Size = new System.Drawing.Size(552, 532);
+            this.tlpBill.Size = new System.Drawing.Size(552, 490);
             this.tlpBill.TabIndex = 0;
             // 
             // tlpBillButtons
@@ -1029,27 +1025,6 @@ namespace LittleEreseSystemV3.Controls
             this.btnTakePayment.UseVisualStyleBackColor = false;
             this.btnTakePayment.Click += new System.EventHandler(this.btnTakePayment_Click);
             // 
-            // btnPrintReceipt
-            // 
-            this.btnPrintReceipt.BackColor = System.Drawing.Color.White;
-            this.btnPrintReceipt.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnPrintReceipt.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.btnPrintReceipt.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(164)))), ((int)(((byte)(123)))), ((int)(((byte)(43)))));
-            this.btnPrintReceipt.FlatAppearance.BorderSize = 1;
-            this.btnPrintReceipt.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(227)))), ((int)(((byte)(218)))), ((int)(((byte)(198)))));
-            this.btnPrintReceipt.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
-            this.btnPrintReceipt.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnPrintReceipt.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnPrintReceipt.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(164)))), ((int)(((byte)(123)))), ((int)(((byte)(43)))));
-            this.btnPrintReceipt.Location = new System.Drawing.Point(0, 498);
-            this.btnPrintReceipt.Margin = new System.Windows.Forms.Padding(0, 4, 0, 0);
-            this.btnPrintReceipt.Name = "btnPrintReceipt";
-            this.btnPrintReceipt.Size = new System.Drawing.Size(552, 34);
-            this.btnPrintReceipt.TabIndex = 7;
-            this.btnPrintReceipt.Text = "Print Receipt";
-            this.btnPrintReceipt.UseVisualStyleBackColor = false;
-            this.btnPrintReceipt.Click += new System.EventHandler(this.btnPrintReceipt_Click);
-            // 
             // tabTransactions
             // 
             this.tabTransactions.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
@@ -1394,11 +1369,10 @@ namespace LittleEreseSystemV3.Controls
             this.flpTranButtons.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flpTranButtons.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(255)))));
             this.flpTranButtons.Controls.Add(this.btnSearch);
-            this.flpTranButtons.Controls.Add(this.btnReprint);
             this.flpTranButtons.Location = new System.Drawing.Point(12, 53);
             this.flpTranButtons.Margin = new System.Windows.Forms.Padding(12, 0, 0, 0);
             this.flpTranButtons.Name = "flpTranButtons";
-            this.flpTranButtons.Size = new System.Drawing.Size(214, 30);
+            this.flpTranButtons.Size = new System.Drawing.Size(94, 30);
             this.flpTranButtons.TabIndex = 1;
             this.flpTranButtons.WrapContents = false;
             // 
@@ -1421,26 +1395,6 @@ namespace LittleEreseSystemV3.Controls
             this.btnSearch.Text = "Search";
             this.btnSearch.UseVisualStyleBackColor = false;
             this.btnSearch.Click += new System.EventHandler(this.btnSearch_Click);
-            // 
-            // btnReprint
-            // 
-            this.btnReprint.BackColor = System.Drawing.Color.White;
-            this.btnReprint.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnReprint.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(164)))), ((int)(((byte)(123)))), ((int)(((byte)(43)))));
-            this.btnReprint.FlatAppearance.BorderSize = 1;
-            this.btnReprint.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(227)))), ((int)(((byte)(218)))), ((int)(((byte)(198)))));
-            this.btnReprint.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(247)))), ((int)(((byte)(243)))), ((int)(((byte)(234)))));
-            this.btnReprint.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnReprint.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnReprint.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(164)))), ((int)(((byte)(123)))), ((int)(((byte)(43)))));
-            this.btnReprint.Location = new System.Drawing.Point(94, 0);
-            this.btnReprint.Margin = new System.Windows.Forms.Padding(0);
-            this.btnReprint.Name = "btnReprint";
-            this.btnReprint.Size = new System.Drawing.Size(120, 30);
-            this.btnReprint.TabIndex = 1;
-            this.btnReprint.Text = "Print Receipt";
-            this.btnReprint.UseVisualStyleBackColor = false;
-            this.btnReprint.Click += new System.EventHandler(this.btnReprint_Click);
             // 
             // lblTotals
             // 
@@ -1558,7 +1512,6 @@ namespace LittleEreseSystemV3.Controls
         private System.Windows.Forms.Button btnCollect;
         private System.Windows.Forms.TableLayoutPanel tlpBillButtons;
         private System.Windows.Forms.Button btnTakePayment;
-        private System.Windows.Forms.Button btnPrintReceipt;
         private System.Windows.Forms.Panel pnlTranGrid;
         private System.Windows.Forms.DataGridView dgvTransactions;
         private System.Windows.Forms.DataGridViewTextBoxColumn colTranBillingId;
@@ -1584,7 +1537,6 @@ namespace LittleEreseSystemV3.Controls
         private System.Windows.Forms.ComboBox cboMethod;
         private System.Windows.Forms.FlowLayoutPanel flpTranButtons;
         private System.Windows.Forms.Button btnSearch;
-        private System.Windows.Forms.Button btnReprint;
         private System.Windows.Forms.Label lblTotals;
     }
 }

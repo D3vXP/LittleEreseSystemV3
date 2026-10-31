@@ -117,7 +117,7 @@ namespace LittleEreseSystemV3.Data
         }
 
         // ---------------------------------------------------------------------
-        // READ: the checkout queue, one bill, the transactions list and the receipt
+        // READ: the checkout queue, one bill and the transactions list
         // ---------------------------------------------------------------------
 
         /// <summary>
@@ -392,55 +392,6 @@ ORDER BY last_pay.payment_date DESC, b.billing_id DESC",
 
                 string people;
                 row["staff_names"] = staff.TryGetValue(appointmentId, out people) ? people : "Unassigned";
-            }
-
-            table.Columns.Remove("appointment_id");
-            return table;
-        }
-
-        /// <summary>
-        /// Everything the printed receipt needs, one row per service line (so the header fields
-        /// repeat on every row): billing_id, client_name, appointment_date, payment_date,
-        /// payment_method, reference_number, staff_names, subtotal, discount_amount,
-        /// total_amount, amount_paid, balance_due, service_name, quantity and price.
-        /// A bill without lines returns an empty table.
-        /// </summary>
-        public static DataTable GetReceiptData(int billingId)
-        {
-            DataTable table = Db.Query(
-@"SELECT b.billing_id, b.subtotal, b.discount_amount, b.total_amount, b.balance_due,
-         ISNULL(paid.paid_amount, 0) AS amount_paid,
-         " + ClientRepository.NameSql("c.") + @" AS client_name,
-         a.appointment_id, a.appointment_date,
-         last_pay.payment_date, last_pay.payment_method, last_pay.reference_number,
-         asv.quantity, asv.price, s.service_name
-FROM Billing b
-INNER JOIN Appointments a ON a.appointment_id = b.appointment_id
-INNER JOIN Clients c ON c.client_id = a.client_id
-INNER JOIN AppointmentServices asv ON asv.appointment_id = a.appointment_id
-                                  AND asv.status <> 'Cancelled'
-INNER JOIN Services s ON s.service_id = asv.service_id
-LEFT JOIN (SELECT billing_id, SUM(amount_paid) AS paid_amount FROM Payments
-           WHERE verification_status <> 'Rejected' GROUP BY billing_id) paid
-       ON paid.billing_id = b.billing_id
-OUTER APPLY (SELECT TOP 1 p.payment_date, p.payment_method, p.reference_number
-             FROM Payments p
-             WHERE p.billing_id = b.billing_id AND p.verification_status <> 'Rejected'
-             ORDER BY p.payment_date DESC, p.payment_id DESC) last_pay
-WHERE b.billing_id = @billing_id
-ORDER BY asv.appointment_service_id",
-                Db.P("@billing_id", billingId));
-
-            Dictionary<int, string> staff = NamesForRows(table, "appointment_id", true);
-
-            table.Columns.Add("staff_names", typeof(string));
-
-            foreach (DataRow row in table.Rows)
-            {
-                int appointmentId = Db.Get<int>(row["appointment_id"]);
-
-                string people;
-                row["staff_names"] = staff.TryGetValue(appointmentId, out people) ? people : "-";
             }
 
             table.Columns.Remove("appointment_id");

@@ -4,7 +4,7 @@ A `POLISH` comment marks a place where the owner (or a future developer) may wan
 word, a limit, a rule or a colour. Nothing here is broken; these are the "you could tweak this"
 spots. Line numbers refer to the final version of each file.
 
-Total: **29 comments** in **15 files** (Step 77 added Controls\ucBilling.cs).
+Total: **28 comments** in **14 files** (Step 77 added Controls\ucBilling.cs).
 
 ## Controls\
 
@@ -42,7 +42,6 @@ Total: **29 comments** in **15 files** (Step 77 added Controls\ucBilling.cs).
 | File | Line | Text |
 |---|---|---|
 | Helpers\GridPrinter.cs | 16 | the paper header can be changed here. |
-| Helpers\ReceiptPrinter.cs | 18 | change the receipt header text here if the shop's address changes. |
 | Helpers\Validators.cs | 13 | The Philippine mobile rule below follows the usual 09XXXXXXXXX and +639XXXXXXXXX shapes. |
 | Helpers\Validators.cs | 14 | Add or remove digits here if the shop later accepts landlines or foreign numbers. |
 | Helpers\Validators.cs | 17 | 3-20 letters, digits or underscore. Tighten it if usernames must never contain "_". |
@@ -59,5 +58,3 @@ Total: **29 comments** in **15 files** (Step 77 added Controls\ucBilling.cs).
 2. **Helpers\Validators.cs** - every input rule of the whole system lives in this one file.
 3. **Data\ReportRepository.cs lines 10 and 137** - the two counting decisions that change the
    numbers in the Reports module (cash basis vs. completed basis, reschedule moves vs. dates).
-4. **Helpers\ReceiptPrinter.cs line 18** - the printed receipt header carries the shop's name and
-   address.

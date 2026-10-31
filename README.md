@@ -122,7 +122,7 @@ Example: bin\Debug\LittleEreseSystemV3.exe --preview ucBilling --role Staff
                                     Commission, Report, Activity, Maintenance) plus DemoDataSeeder
                                     and DatabaseBootstrapper (creates the database on the first start)
     Helpers\                        Theme (colours / fonts), Validators (all input rules), Messages,
-                                    GridHelper, GridPrinter, CsvExporter, ReceiptPrinter, IconHelper,
+                                    GridHelper, GridPrinter, CsvExporter, IconHelper,
                                     Session, DesignTime, PasswordHasher, SmokeTest, PreviewTool
     Assets\                         the PNG icons and the login image (loaded at runtime)
     Database\                       LittleEreses_Database.sql (baseline schema, never edited again),

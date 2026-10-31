@@ -224,7 +224,7 @@ Never make a smoke-test check write to the database - it runs on the shop's real
 | A page **never appears** for Staff | It is an Admin-only page. | `MainForm.ApplyRoleVisibility` hides the button and `MainForm.Navigate` refuses the key. Both are on purpose; change them together. |
 | A grid shows **empty cells** | The column's `DataPropertyName` does not match the query alias. | Compare the alias in the repository with the Designer; the smoke test checks the column names of the main queries. |
 | The app closes **without a message** | The exception happened outside the UI thread, or the process was killed. | Look at `bin\Debug\error.log` - Program.cs writes the full exception there with a timestamp. |
-| **Printing** does nothing | No default printer is installed on the machine. | Install one or use "Microsoft Print to PDF". `GridPrinter` / `ReceiptPrinter` never throw. |
+| **Printing** does nothing | No default printer is installed on the machine. | Install one or use "Microsoft Print to PDF". `GridPrinter` never throws. |
 
 ---
 
